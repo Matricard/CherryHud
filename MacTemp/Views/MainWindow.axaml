@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MacTemp.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" Width="200" Height="100"
+        x:Class="MacTemp.Views.MainWindow"
+        TransparencyLevelHint="Transparent"
+        CanResize="False"
+        ExtendClientAreaChromeHints="NoChrome"
+        Background="Transparent"
+        Topmost="True"
+        ExtendClientAreaToDecorationsHint="True"
+        SystemDecorations="BorderOnly"
+        IsHitTestVisible="False"
+        x:DataType="vm:MainWindowViewModel">
+
+    <StackPanel IsHitTestVisible="False" Background="#D0000000">
+         <TextBlock  Margin="40,15,0,0"
+            Text="{Binding CpuTemp}" 
+            Foreground="Cyan"
+            FontSize="24" 
+            FontWeight="Bold" />
+         <TextBlock Margin="40,5,0,0"
+            Foreground="DarkRed"
+            Text="{Binding GpuTemp}" 
+            FontSize="24" 
+            FontWeight="Bold" />
+    </StackPanel>
+</Window>

@@ -1,0 +1,6 @@
+smctemp
+smctemp.dSYM
+*.a
+*.o
+.DS_Store
+*.swp
