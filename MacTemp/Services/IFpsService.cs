@@ -9,12 +9,15 @@ public record FpsData(
     double GpuUsagePercent,
     double GpuVramGb,
     int? BatteryPercent,
-    bool IsBatteryCharging
+    bool IsBatteryCharging,
+    bool IsGameActive
 );
 
 public interface IFpsService
 {
     FpsData GetFpsData();
+    (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample();
+    bool IsGameActive { get; }
     void Start();
     void Stop();
     void RequestPermission();

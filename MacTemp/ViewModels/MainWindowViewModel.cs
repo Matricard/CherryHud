@@ -10,12 +10,14 @@ namespace MacTemp.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
-    private const int HistoryCapacity = 75; // 75 points * 100ms = 7.5 seconds of history (speed)
+    private const int HistoryCapacity = 180; // 180 points @ 60 FPS = 3.0 seconds of history
     private readonly ITemperatureService _temperatureService;
     private readonly IFpsService _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
     private readonly CancellationTokenSource _cts = new();
-    private readonly List<double> _frametimeHistoryBuffer = new(HistoryCapacity);
+    private readonly double[] _bufferA = new double[HistoryCapacity];
+    private readonly double[] _bufferB = new double[HistoryCapacity];
+    private double[] _currentBuffer;
     private bool _isDisposed;
 
     // Header info (style)
@@ -81,6 +83,46 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private double _targetFrametimeMs = 16.67; // 60 FPS = 16.67ms target
 
+    [ObservableProperty]
+    private bool _isGameActive;
+
+    [ObservableProperty]
+    private bool _isOverlayVisible = true;
+
+    [ObservableProperty]
+    private bool _isAutoModeActive = true;
+
+    private bool? _manualVisibilityOverride = true;
+
+    public void ToggleVisibility()
+    {
+        _manualVisibilityOverride = !IsOverlayVisible;
+        IsOverlayVisible = _manualVisibilityOverride.Value;
+        IsAutoModeActive = false;
+    }
+
+    public void ToggleAutoGameMode()
+    {
+        if (IsAutoModeActive)
+        {
+            _manualVisibilityOverride = IsOverlayVisible;
+            IsAutoModeActive = false;
+        }
+        else
+        {
+            _manualVisibilityOverride = null;
+            IsOverlayVisible = IsGameActive;
+            IsAutoModeActive = true;
+        }
+    }
+
+    public void ResetToAutoGameMode()
+    {
+        _manualVisibilityOverride = null;
+        IsOverlayVisible = IsGameActive;
+        IsAutoModeActive = true;
+    }
+
     public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService())
     {
     }
@@ -97,9 +139,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         // Pre-fill history buffer with baseline for clean initial graph rendering
         for (int i = 0; i < HistoryCapacity; i++)
         {
-            _frametimeHistoryBuffer.Add(16.67);
+            _bufferA[i] = 16.67;
+            _bufferB[i] = 16.67;
         }
-        _frametimeHistory = _frametimeHistoryBuffer.ToArray();
+        _currentBuffer = _bufferA;
+        _frametimeHistory = _currentBuffer;
 
         _fpsService.Start();
         _ = StartMonitoringLoopAsync(_cts.Token);
@@ -126,8 +170,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private async Task StartMonitoringLoopAsync(CancellationToken token)
     {
-        // 100ms periodic timer for smooth graph scrolling (7.5 seconds of history)
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+        // 60 FPS periodic timer (16.67ms per tick) for ultra-fluid graph scrolling
+        using var timer = new PeriodicTimer(TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60));
         int tickCounter = 0;
 
         UpdateMetrics(isTextTick: true);
@@ -137,10 +181,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
             {
                 tickCounter++;
-                // In , 'fps_sampling_period' defaults to 500ms (half-second).
-                // All text values (FPS, ms, CPU %, GPU %, RAM, Temps) refresh every 500ms (every 5 ticks of 100ms)
+                // Sync text metrics (FPS text, temps, CPU %, GPU %, RAM, battery, clock) every 500ms (every 30 ticks of 16.67ms)
                 // so they remain steady and readable without frantic jitter.
-                bool isTextTick = (tickCounter % 5 == 0);
+                bool isTextTick = (tickCounter >= 30);
+                if (isTextTick)
+                {
+                    tickCounter = 0;
+                }
                 UpdateMetrics(isTextTick);
             }
         }
@@ -152,47 +199,43 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void UpdateMetrics(bool isTextTick)
     {
-        var fpsData = _fpsService.GetFpsData();
-
-        // 1. Frametime Graph: updates every 100ms for smooth curve animation
-        if (!fpsData.HasPermission)
+        // Instant response (16ms): evaluate game state on every frame tick
+        bool isGame = _fpsService.IsGameActive;
+        if (IsGameActive != isGame)
         {
-            if (isTextTick)
+            IsGameActive = isGame;
+            // When a game becomes active, seamlessly re-align to auto mode
+            if (isGame && _manualVisibilityOverride.HasValue)
+            {
+                _manualVisibilityOverride = null;
+                IsAutoModeActive = true;
+            }
+        }
+
+        bool targetVisibility = _manualVisibilityOverride ?? isGame;
+        if (IsOverlayVisible != targetVisibility)
+        {
+            IsOverlayVisible = targetVisibility;
+        }
+
+        if (isTextTick)
+        {
+            var fpsData = _fpsService.GetFpsData();
+
+            // 1. Text metrics update every 500ms
+            if (!fpsData.HasPermission)
             {
                 FpsDisplay = "Perm. requise";
                 FrametimeDisplay = "Activer";
                 FpsStatusColor = "#FFB300"; // Amber
             }
-
-            _frametimeHistoryBuffer.Add(TargetFrametimeMs);
-            if (_frametimeHistoryBuffer.Count > HistoryCapacity)
+            else
             {
-                _frametimeHistoryBuffer.RemoveAt(0);
-            }
-            FrametimeHistory = _frametimeHistoryBuffer.ToArray();
-        }
-        else
-        {
-            double currentFps = fpsData.Fps;
+                double currentFps = fpsData.Fps;
 
-            if (currentFps > 0.5)
-            {
-                double currentFt = fpsData.CurrentFrametimeMs > 0.1 ? fpsData.CurrentFrametimeMs : (1000.0 / currentFps);
-
-                // Sample the peak frametime in this 100ms interval to catch any micro-stutters on the graph
-                double sampleFt = fpsData.PeakFrametimeMs > 0.1 ? fpsData.PeakFrametimeMs : currentFt;
-
-                _frametimeHistoryBuffer.Add(sampleFt);
-                if (_frametimeHistoryBuffer.Count > HistoryCapacity)
-                {
-                    _frametimeHistoryBuffer.RemoveAt(0);
-                }
-                FrametimeHistory = _frametimeHistoryBuffer.ToArray();
-
-                if (isTextTick)
+                if (currentFps > 0.5)
                 {
                     FpsDisplay = $"{Math.Round(currentFps)} FPS";
-                    // text header displays the steady-state frametime corresponding to the sampled FPS
                     FrametimeDisplay = $"{1000.0 / currentFps:F1} ms";
                     FpsStatusColor = "#00E676"; // vibrant green
 
@@ -209,28 +252,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         TargetFrametimeMs = 33.33; // 30 FPS
                     }
                 }
-            }
-            else
-            {
-                _frametimeHistoryBuffer.Add(TargetFrametimeMs);
-                if (_frametimeHistoryBuffer.Count > HistoryCapacity)
-                {
-                    _frametimeHistoryBuffer.RemoveAt(0);
-                }
-                FrametimeHistory = _frametimeHistoryBuffer.ToArray();
-
-                if (isTextTick)
+                else
                 {
                     FpsDisplay = "-- FPS";
                     FrametimeDisplay = "-- ms";
                     FpsStatusColor = "#8899A6";
                 }
             }
-        }
 
-        // 2. Text metrics (FPS, Frametime, CPU, GPU, RAM, Temps, Battery, Clock) update every 500ms (default)
-        if (isTextTick)
-        {
             CurrentTime = DateTime.Now.ToString("HH:mm");
 
             TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
@@ -298,7 +327,42 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             CpuUsage = $"{Math.Round(res.CpuUsagePercent)}%";
             RamDisplay = $"{res.RamUsedGb:F1} GB";
             RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
+
+            // Update graph on text tick
+            UpdateFrametimeGraph(fpsData.HasPermission, fpsData.Fps, fpsData.CurrentFrametimeMs, fpsData.PeakFrametimeMs);
         }
+        else
+        {
+            // Lightweight 60 FPS tick for silky smooth graph animation without IOKit/SMC overhead
+            var (hasPerm, fps, currentFt, peakFt) = _fpsService.GetFrametimeSample();
+            UpdateFrametimeGraph(hasPerm, fps, currentFt, peakFt);
+        }
+    }
+
+    private void UpdateFrametimeGraph(bool hasPermission, double currentFps, double currentFrametimeMs, double peakFrametimeMs)
+    {
+        double sampleFt;
+        if (!hasPermission)
+        {
+            sampleFt = TargetFrametimeMs;
+        }
+        else if (currentFps > 0.5)
+        {
+            double currentFt = currentFrametimeMs > 0.1 ? currentFrametimeMs : (1000.0 / currentFps);
+            sampleFt = peakFrametimeMs > 0.1 ? peakFrametimeMs : currentFt;
+        }
+        else
+        {
+            sampleFt = TargetFrametimeMs;
+        }
+
+        // Push to double-buffered history with 0 GC allocations
+        double[] nextBuffer = ReferenceEquals(_currentBuffer, _bufferA) ? _bufferB : _bufferA;
+        Array.Copy(_currentBuffer, 1, nextBuffer, 0, HistoryCapacity - 1);
+        nextBuffer[HistoryCapacity - 1] = sampleFt;
+
+        _currentBuffer = nextBuffer;
+        FrametimeHistory = _currentBuffer;
     }
 
     private static string GetStatusColor(double temperature, string defaultColor)

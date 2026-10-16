@@ -21,6 +21,10 @@
                         <NativeMenuItem Header="CherryHud" IsEnabled="False" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Afficher / Masquer" Click="ToggleVisibility_OnClick" />
+                        <NativeMenuItem Header="Mode Auto (En jeu uniquement)"
+                                        ToggleType="CheckBox"
+                                        IsChecked="True"
+                                        Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Quitter CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>

@@ -15,12 +15,141 @@
 @interface FpsMonitor : NSObject <SCStreamOutput, SCStreamDelegate>
 @property (atomic) double currentFps;
 @property (atomic) double currentFrametime;
+@property (atomic) BOOL isGameActive;
 @property (nonatomic, copy) NSString *trackedAppName;
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
 - (double)consumePeakFrametime;
 @end
+
+static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow) {
+    if (!app) return NO;
+    if (app.processIdentifier == getpid()) return NO;
+
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *bundlePath = (app.bundleURL.path ?: @"").lowercaseString;
+    NSString *execPath = (app.executableURL.path ?: @"").lowercaseString;
+
+    // 1. Explicit Exclusions: System apps, browsers, dev tools, productivity, communication
+    static NSArray<NSString *> *excludedPrefixes = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        excludedPrefixes = @[
+            @"com.apple.finder",
+            @"com.apple.dock",
+            @"com.apple.systempreferences",
+            @"com.apple.activitymonitor",
+            @"com.apple.terminal",
+            @"com.apple.safari",
+            @"com.apple.preview",
+            @"com.apple.textedit",
+            @"com.apple.notes",
+            @"com.apple.reminders",
+            @"com.apple.mail",
+            @"com.apple.music",
+            @"com.apple.podcasts",
+            @"com.apple.tv",
+            @"com.apple.calculator",
+            @"com.apple.dt.xcode",
+            @"com.apple.quicktimeplayerx",
+            @"com.google.chrome",
+            @"org.mozilla.firefox",
+            @"com.brave.browser",
+            @"company.thebrowser.arc",
+            @"com.microsoft.edgemac",
+            @"com.microsoft.vscode",
+            @"com.jetbrains.",
+            @"com.tinyspeck.slackmacgap",
+            @"com.hnc.discord",
+            @"ru.keepcoder.telegram",
+            @"net.whatsapp.whatsapp",
+            @"com.spotify.client",
+            @"com.sublimetext.",
+            @"com.postmanlabs.mac",
+            @"com.github.wez.wezterm",
+            @"com.mitchellh.ghostty",
+            @"com.googlecode.iterm2"
+        ];
+    });
+
+    for (NSString *prefix in excludedPrefixes) {
+        if ([bundleId hasPrefix:prefix] || [bundleId containsString:prefix]) {
+            return NO;
+        }
+    }
+
+    // 2. Check macOS Official App Category: public.app-category.games
+    if (app.bundleURL) {
+        NSBundle *bundle = [NSBundle bundleWithURL:app.bundleURL];
+        if (bundle) {
+            NSString *category = [bundle objectForInfoDictionaryKey:@"LSApplicationCategoryType"];
+            if ([category isKindOfClass:[NSString class]] &&
+                [category.lowercaseString containsString:@"games"]) {
+                return YES;
+            }
+        }
+    }
+
+    // 3. Known Game Stores, Launchers, and Game Folders
+    if ([bundlePath containsString:@"/steamapps/"] ||
+        [bundlePath containsString:@"/steam/"] ||
+        [bundlePath containsString:@"/epic games/"] ||
+        [bundlePath containsString:@"/gog galaxy/"] ||
+        [bundlePath containsString:@"/whisky/"] ||
+        [bundlePath containsString:@"/crossover/"] ||
+        [bundlePath containsString:@"/heroic/"] ||
+        [bundlePath containsString:@"/games/"] ||
+        [bundlePath containsString:@"/jeux/"] ||
+        [execPath containsString:@"/steamapps/"] ||
+        [execPath containsString:@"/whisky/"] ||
+        [execPath containsString:@"/crossover/"]) {
+        return YES;
+    }
+
+    // 4. Known Game Publishers, Engines, and Platforms
+    static NSArray<NSString *> *gameKeywords = nil;
+    static dispatch_once_t kwToken;
+    dispatch_once(&kwToken, ^{
+        gameKeywords = @[
+            @"blizzard", @"warcraft", @"starcraft", @"diablo", @"overwatch", @"hearthstone",
+            @"riotgames", @"leagueoflegends", @"valorant",
+            @"ea.mac", @"electronicarts", @"origin",
+            @"feralinteractive", @"aspyr",
+            @"valve", @"dota", @"cs2", @"counter-strike",
+            @"larian", @"baldursgate", @"divinity",
+            @"unity", @"unreal", @"godot",
+            @"roblox", @"minecraft", @"mojang",
+            @"wine64", @"wine", @"wineserver", @"gptk", @"d3d",
+            @"rpcs3", @"ryujinx", @"dolphin", @"pcsx2", @"retroarch", @"ppsspp", @"duckstation",
+            @"finalfantasy", @"residentevil", @"deathstranding", @"cyberpunk", @"hades",
+            @"no man's sky", @"nomanssky", @"liesofp", @"tomb raider", @"civilization"
+        ];
+    });
+
+    for (NSString *kw in gameKeywords) {
+        if ([bundleId containsString:kw] || [appName containsString:kw] || [execPath containsString:kw]) {
+            return YES;
+        }
+    }
+
+    // 5. Full-Screen Detection:
+    // If an application's window covers the entire main display screen and is NOT a desktop app
+    if (targetWindow) {
+        NSScreen *mainScreen = [NSScreen mainScreen];
+        if (mainScreen) {
+            NSRect screenFrame = mainScreen.frame;
+            CGRect winFrame = targetWindow.frame;
+            if (fabs(winFrame.size.width - screenFrame.size.width) <= 20 &&
+                fabs(winFrame.size.height - screenFrame.size.height) <= 40) {
+                return YES;
+            }
+        }
+    }
+
+    return NO;
+}
 
 @implementation FpsMonitor {
     SCStream *_stream;
@@ -42,7 +171,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _queue = dispatch_queue_create("com.mactemp.fpsmonitor", DISPATCH_QUEUE_SERIAL);
+        _queue = dispatch_queue_create("com.cherryhud.fpsmonitor", DISPATCH_QUEUE_SERIAL);
         _lock = OS_UNFAIR_LOCK_INIT;
         _trackedAppName = @"";
         _currentFps = 0.0;
@@ -52,6 +181,7 @@
         _tsHead = 0;
         _tsCount = 0;
         _prevFrameTime = 0;
+        _isGameActive = NO;
     }
     return self;
 }
@@ -67,8 +197,14 @@
         _tsCount = 0;
 
         dispatch_async(dispatch_get_main_queue(), ^{
+            // Register for instant workspace app activation events (0ms latency!)
+            [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+                                                                   selector:@selector(onAppActivated:)
+                                                                       name:NSWorkspaceDidActivateApplicationNotification
+                                                                     object:nil];
+
             [self checkActiveWindow];
-            self->_pollTimer = [NSTimer scheduledTimerWithTimeInterval:1.0
+            self->_pollTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
                                                                 target:self
                                                               selector:@selector(checkActiveWindow)
                                                               userInfo:nil
@@ -77,12 +213,19 @@
     }
 }
 
+- (void)onAppActivated:(NSNotification *)note {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self checkActiveWindow];
+    });
+}
+
 - (void)stop {
     @synchronized (self) {
         if (!_isRunning) return;
         _isRunning = NO;
 
         dispatch_async(dispatch_get_main_queue(), ^{
+            [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
             [self->_pollTimer invalidate];
             self->_pollTimer = nil;
         });
@@ -97,7 +240,62 @@
         _intervalPeakFrametime = 0;
         _tsCount = 0;
         _prevFrameTime = 0;
+        self.isGameActive = NO;
     }
+}
+
+static BOOL IsExcludedApp(NSRunningApplication *app) {
+    if (!app) return YES;
+    if (app.processIdentifier == getpid()) return YES;
+
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    static NSArray<NSString *> *excludedPrefixes = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        excludedPrefixes = @[
+            @"com.apple.finder",
+            @"com.apple.dock",
+            @"com.apple.systempreferences",
+            @"com.apple.activitymonitor",
+            @"com.apple.terminal",
+            @"com.apple.safari",
+            @"com.apple.preview",
+            @"com.apple.textedit",
+            @"com.apple.notes",
+            @"com.apple.reminders",
+            @"com.apple.mail",
+            @"com.apple.music",
+            @"com.apple.podcasts",
+            @"com.apple.tv",
+            @"com.apple.calculator",
+            @"com.apple.dt.xcode",
+            @"com.apple.quicktimeplayerx",
+            @"com.google.chrome",
+            @"org.mozilla.firefox",
+            @"com.brave.browser",
+            @"company.thebrowser.arc",
+            @"com.microsoft.edgemac",
+            @"com.microsoft.vscode",
+            @"com.jetbrains.",
+            @"com.tinyspeck.slackmacgap",
+            @"com.hnc.discord",
+            @"ru.keepcoder.telegram",
+            @"net.whatsapp.whatsapp",
+            @"com.spotify.client",
+            @"com.sublimetext.",
+            @"com.postmanlabs.mac",
+            @"com.github.wez.wezterm",
+            @"com.mitchellh.ghostty",
+            @"com.googlecode.iterm2"
+        ];
+    });
+
+    for (NSString *prefix in excludedPrefixes) {
+        if ([bundleId hasPrefix:prefix] || [bundleId containsString:prefix]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 - (void)checkActiveWindow {
@@ -118,27 +316,51 @@
         return;
     }
 
-    if (frontApp.processIdentifier == _currentPid && _stream != nil) {
-        return; // Already tracking this application
-    }
-
-    _currentPid = frontApp.processIdentifier;
     NSString *appName = frontApp.localizedName ?: @"";
     @synchronized (self) {
         self.trackedAppName = appName;
     }
 
+    // 1. FAST-PATH: Synchronous check (0.001ms)
+    BOOL isKnownGame = IsGameApplication(frontApp, nil);
+
+    if (!isKnownGame) {
+        if (IsExcludedApp(frontApp)) {
+            // Definitively NOT a game (Finder, Safari, Rider, Terminal, etc.)
+            self.isGameActive = NO;
+            if (self->_stream != nil) {
+                [self->_stream stopCaptureWithCompletionHandler:nil];
+                self->_stream = nil;
+            }
+            self->_currentPid = 0;
+            os_unfair_lock_lock(&self->_lock);
+            self.currentFps = 0.0;
+            self.currentFrametime = 0.0;
+            self->_intervalPeakFrametime = 0.0;
+            self->_tsCount = 0;
+            self->_prevFrameTime = 0;
+            os_unfair_lock_unlock(&self->_lock);
+            return;
+        }
+    } else {
+        // Definitively a game (WoW, Steam games, etc.) - mark active IMMEDIATELY (0ms)!
+        self.isGameActive = YES;
+    }
+
+    // 2. Query ScreenCaptureKit to stream the game's window (or verify fullscreen if not a known game)
     [SCShareableContent getShareableContentExcludingDesktopWindows:YES
                                               onScreenWindowsOnly:NO
                                                 completionHandler:^(SCShareableContent *content, NSError *error) {
         if (error || !content || !self->_isRunning) {
+            // Even if SCShareableContent fails or permission is missing,
+            // we PRESERVE self.isGameActive = isKnownGame so the HUD stays visible over the game!
             return;
         }
 
         SCWindow *targetWindow = nil;
         CGFloat maxArea = 0;
         for (SCWindow *w in content.windows) {
-            if (w.owningApplication.processID == self->_currentPid) {
+            if (w.owningApplication.processID == frontApp.processIdentifier) {
                 CGFloat area = w.frame.size.width * w.frame.size.height;
                 if (area > maxArea && area > 100) {
                     maxArea = area;
@@ -147,9 +369,39 @@
             }
         }
 
+        // Check if frontmost application is a game (verifying window geometry if needed)
+        BOOL isGame = isKnownGame || IsGameApplication(frontApp, targetWindow);
+
+        if (!isGame) {
+            // NOT a game: Stop capture immediately
+            self.isGameActive = NO;
+            if (self->_stream != nil) {
+                [self->_stream stopCaptureWithCompletionHandler:nil];
+                self->_stream = nil;
+            }
+            self->_currentPid = 0;
+            os_unfair_lock_lock(&self->_lock);
+            self.currentFps = 0.0;
+            self.currentFrametime = 0.0;
+            self->_intervalPeakFrametime = 0.0;
+            self->_tsCount = 0;
+            self->_prevFrameTime = 0;
+            os_unfair_lock_unlock(&self->_lock);
+            return;
+        }
+
+        // Active game confirmed
+        self.isGameActive = YES;
+
+        if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
+            return; // Already tracking this game stream
+        }
+
         if (!targetWindow) {
             return;
         }
+
+        self->_currentPid = frontApp.processIdentifier;
 
         SCContentFilter *filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:targetWindow];
         SCStreamConfiguration *config = [[SCStreamConfiguration alloc] init];
@@ -269,6 +521,11 @@ void FpsMonitor_Stop(void) {
     if (s_monitor) {
         [s_monitor stop];
     }
+}
+
+bool FpsMonitor_IsGameActive(void) {
+    if (!s_monitor) return false;
+    return s_monitor.isGameActive;
 }
 
 double FpsMonitor_GetFps(void) {
@@ -401,9 +658,12 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
         }
 
         NSMutableArray<NSWindow *> *targets = [NSMutableArray array];
-        if (win) [targets addObject:win];
-        for (NSWindow *w in [NSApp windows]) {
-            if (![targets containsObject:w]) [targets addObject:w];
+        if (win) {
+            [targets addObject:win];
+        } else {
+            for (NSWindow *w in [NSApp windows]) {
+                [targets addObject:w];
+            }
         }
 
         for (NSWindow *w in targets) {
@@ -423,6 +683,9 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
 
             // Do not hide when switching away from the widget
             [w setHidesOnDeactivate:NO];
+            [w setAlphaValue:1.0];
+            [w setIgnoresMouseEvents:NO];
+            [w orderFront:nil];
 
             Class winClass = [w class];
             if (winClass != [NSWindow class]) {
@@ -430,6 +693,42 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
                 class_replaceMethod(winClass, @selector(canBecomeMainWindow), (IMP)ReturnNO, "c@:");
                 class_replaceMethod(winClass, @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
                 class_replaceMethod(winClass, @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
+            }
+        }
+    });
+}
+
+void FpsMonitor_SetOverlayVisible(void *viewOrWindowPtr, bool visible) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSWindow *win = nil;
+        if (viewOrWindowPtr) {
+            id obj = (__bridge id)viewOrWindowPtr;
+            if ([obj isKindOfClass:[NSWindow class]]) {
+                win = (NSWindow *)obj;
+            } else if ([obj isKindOfClass:[NSView class]]) {
+                win = [(NSView *)obj window];
+            }
+        }
+
+        NSMutableArray<NSWindow *> *targets = [NSMutableArray array];
+        if (win) {
+            [targets addObject:win];
+        } else {
+            for (NSWindow *w in [NSApp windows]) {
+                [targets addObject:w];
+            }
+        }
+
+        for (NSWindow *w in targets) {
+            if (visible) {
+                [w setLevel:NSScreenSaverWindowLevel];
+                [w setAlphaValue:1.0];
+                [w setIgnoresMouseEvents:NO];
+                [w orderFront:nil];
+            } else {
+                [w setAlphaValue:0.0];
+                [w setIgnoresMouseEvents:YES];
+                [w orderOut:nil];
             }
         }
     });
