@@ -12,6 +12,13 @@
 
 #define MAX_TIMESTAMPS 360
 
+__attribute__((constructor))
+static void FpsMonitor_LibraryInit(void) {
+    @autoreleasepool {
+        [[NSProcessInfo processInfo] setProcessName:@"CherryHud"];
+    }
+}
+
 @interface FpsMonitor : NSObject <SCStreamOutput, SCStreamDelegate>
 @property (atomic) double currentFps;
 @property (atomic) double currentFrametime;
@@ -736,15 +743,21 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
     NSString *path = (iconPathUtf8 && strlen(iconPathUtf8) > 0) ? [NSString stringWithUTF8String:iconPathUtf8] : nil;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        // Rester impérativement en mode accessoire : n'affiche aucun menu dans la barre de menu de macOS
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-        [NSApp setMainMenu:nil];
+        // 1. S'assurer que le nom du processus est CherryHud
+        [[NSProcessInfo processInfo] setProcessName:@"CherryHud"];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
         if (path) {
             NSImage *img = [[NSImage alloc] initWithContentsOfFile:path];
             if (img) {
                 [NSApp setApplicationIconImage:img];
+                NSImageView *iv = [[NSImageView alloc] init];
+                [iv setImage:img];
+                [[NSApp dockTile] setContentView:iv];
+                [[NSApp dockTile] display];
             }
+        } else if ([NSApp applicationIconImage] != nil) {
+            [[NSApp dockTile] display];
         }
 
         NSWindow *win = nil;
@@ -831,7 +844,7 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
                     [contentVev setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
                     [contentVev setMaterial:NSVisualEffectMaterialHUDWindow];
                     [contentVev setState:NSVisualEffectStateActive];
-                    [contentVev setAlphaValue:0.70];
+                    [contentVev setAlphaValue:0.45];
                     [contentVev setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
                     [contentView addSubview:contentVev positioned:NSWindowBelow relativeTo:nil];
                 } else {
@@ -839,7 +852,7 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
                     [contentVev setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
                     [contentVev setMaterial:NSVisualEffectMaterialHUDWindow];
                     [contentVev setState:NSVisualEffectStateActive];
-                    [contentVev setAlphaValue:0.70];
+                    [contentVev setAlphaValue:0.45];
                     [contentVev setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
                 }
 

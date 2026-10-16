@@ -309,6 +309,9 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Save();
     }
 
+    [ObservableProperty]
+    private bool _isResetConfirmationVisible;
+
     [RelayCommand]
     public void CheckForUpdates()
     {
@@ -316,6 +319,24 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    public void RequestResetDefaults()
+    {
+        IsResetConfirmationVisible = true;
+    }
+
+    [RelayCommand]
+    public void CancelResetDefaults()
+    {
+        IsResetConfirmationVisible = false;
+    }
+
+    [RelayCommand]
+    public void ConfirmResetDefaults()
+    {
+        IsResetConfirmationVisible = false;
+        ResetDefaults();
+    }
+
     public void ResetDefaults()
     {
         SelectedLanguageIndex = (int)AppLanguage.English;

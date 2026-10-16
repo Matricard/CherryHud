@@ -116,10 +116,15 @@ public class LocalizationService : ObservableObject
     public string CheckButton => IsFrench ? "Vérifier..." : "Check...";
 
     public string AuthorText => IsFrench ? "Créé par Mathieu Ricard" : "Created by Mathieu Ricard";
+    public string BuiltWithAvaloniaText => IsFrench ? "Construit avec Avalonia UI & .NET 10" : "Built with Avalonia UI & .NET 10";
     public string LicenseText => IsFrench ? "Copyright © 2026 • Licence MIT" : "Copyright © 2026 • MIT License";
 
-    // Footer
+    // Footer & Confirmation
     public string ResetDefaultsButton => IsFrench ? "Rétablir par défaut" : "Reset to Defaults";
+    public string ResetConfirmTitle => IsFrench ? "Rétablir les paramètres ?" : "Reset Settings?";
+    public string ResetConfirmMessage => IsFrench ? "Voulez-vous vraiment réinitialiser tous les réglages à leurs valeurs par défaut ?" : "Are you sure you want to reset all settings to their default values?";
+    public string CancelButton => IsFrench ? "Annuler" : "Cancel";
+    public string ConfirmResetButton => IsFrench ? "Rétablir" : "Reset";
     public string CloseButton => IsFrench ? "Fermer" : "Close";
 
     // Tray Menu

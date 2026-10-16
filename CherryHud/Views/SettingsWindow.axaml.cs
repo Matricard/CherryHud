@@ -11,8 +11,8 @@ namespace CherryHud.Views;
 
 public partial class SettingsWindow : Window
 {
-    private static readonly IBrush ActiveBrush = Brush.Parse("#8006070E");
-    private static readonly IBrush InactiveBrush = Brush.Parse("#F2181A24");
+    private static readonly IBrush ActiveBrush = Brush.Parse("#9E030408");
+    private static readonly IBrush InactiveBrush = Brush.Parse("#F613141E");
 
     public SettingsWindow()
     {

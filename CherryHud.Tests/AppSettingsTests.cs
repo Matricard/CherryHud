@@ -40,6 +40,10 @@ public class AppSettingsTests
         Assert.Equal("CherryHud Settings", loc.WindowTitle);
         Assert.Equal("Display", loc.TabDisplay);
         Assert.Equal("Reset to Defaults", loc.ResetDefaultsButton);
+        Assert.Equal("Reset Settings?", loc.ResetConfirmTitle);
+        Assert.Equal("Cancel", loc.CancelButton);
+        Assert.Equal("Reset", loc.ConfirmResetButton);
+        Assert.Equal("Built with Avalonia UI & .NET 10", loc.BuiltWithAvaloniaText);
 
         loc.CurrentLanguage = AppLanguage.French;
         Assert.False(loc.IsEnglish);
@@ -47,6 +51,10 @@ public class AppSettingsTests
         Assert.Equal("Paramètres de CherryHud", loc.WindowTitle);
         Assert.Equal("Affichage", loc.TabDisplay);
         Assert.Equal("Rétablir par défaut", loc.ResetDefaultsButton);
+        Assert.Equal("Rétablir les paramètres ?", loc.ResetConfirmTitle);
+        Assert.Equal("Annuler", loc.CancelButton);
+        Assert.Equal("Rétablir", loc.ConfirmResetButton);
+        Assert.Equal("Construit avec Avalonia UI & .NET 10", loc.BuiltWithAvaloniaText);
 
         // Reset back to English
         loc.CurrentLanguage = AppLanguage.English;
