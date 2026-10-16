@@ -65,7 +65,7 @@ public class LocalizationService : ObservableObject
     public string MetricVram => IsFrench ? "Mémoire Graphique (VRAM)" : "Video Memory (VRAM)";
     public string MetricRam => IsFrench ? "Mémoire Vive Système" : "System RAM Memory";
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
-    public string MetricFps => IsFrench ? "Images par seconde & Frametime" : "Frames Per Second & Frametime";
+    public string MetricFps => IsFrench ? "Images par seconde" : "Frames Per Second";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
 
     // Advanced

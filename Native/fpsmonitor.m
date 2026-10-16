@@ -826,20 +826,24 @@ void FpsMonitor_SetApplicationIcon(const char *iconPathUtf8) {
     NSRect currentFrame = [self.window frame];
     NSRect vis = [screen visibleFrame];
     CGFloat maxH = vis.size.height;
-    CGFloat maxW = round(maxH * (470.0 / 680.0));
+    CGFloat maxW = round(maxH * (680.0 / 580.0));
+    if (maxW > vis.size.width) {
+        maxW = vis.size.width;
+        maxH = round(maxW * (580.0 / 680.0));
+    }
 
     // Si la fenêtre est déjà à la taille agrandie (ou marquée comme telle)
     if (self.isZoomed || fabs(currentFrame.size.height - maxH) < 8.0) {
         NSRect restoreFrame = self.preZoomFrame;
-        if (restoreFrame.size.width < 470.0 || restoreFrame.size.height < 680.0) {
-            restoreFrame = NSMakeRect(currentFrame.origin.x, currentFrame.origin.y, 470.0, 680.0);
+        if (restoreFrame.size.width < 680.0 || restoreFrame.size.height < 580.0) {
+            restoreFrame = NSMakeRect(currentFrame.origin.x, currentFrame.origin.y, 680.0, 580.0);
         }
         [self.window setFrame:restoreFrame display:YES animate:YES];
         self.isZoomed = NO;
     } else {
         self.preZoomFrame = currentFrame;
         CGFloat targetX = round(vis.origin.x + (vis.size.width - maxW) / 2.0);
-        CGFloat targetY = vis.origin.y;
+        CGFloat targetY = round(vis.origin.y + (vis.size.height - maxH) / 2.0);
         NSRect targetFrame = NSMakeRect(targetX, targetY, maxW, maxH);
         [self.window setFrame:targetFrame display:YES animate:YES];
         self.isZoomed = YES;
@@ -914,8 +918,8 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
             [win setLevel:NSNormalWindowLevel];
             [win setMovableByWindowBackground:YES];
 
-            // Maintien strict du ratio d'aspect (470 x 680) lors du redimensionnement et du zoom (agrandir)
-            NSSize baseRatio = NSMakeSize(470.0, 680.0);
+            // Maintien strict du ratio d'aspect (680 x 580) lors du redimensionnement et du zoom (agrandir)
+            NSSize baseRatio = NSMakeSize(680.0, 580.0);
             [win setMinSize:baseRatio];
             [win setContentMinSize:baseRatio];
             [win setAspectRatio:baseRatio];
