@@ -5,10 +5,11 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
-using MacTemp.ViewModels;
-using MacTemp.Views;
+using CherryHud.Services;
+using CherryHud.ViewModels;
+using CherryHud.Views;
 
-namespace MacTemp;
+namespace CherryHud;
 
 public partial class App : Application
 {
@@ -32,6 +33,12 @@ public partial class App : Application
             {
                 DataContext = vm,
             };
+
+            string iconPath = FpsService.EnsureIconPath();
+            if (!string.IsNullOrEmpty(iconPath))
+            {
+                FpsService.SetApplicationIcon(iconPath);
+            }
 
             SetupTrayMenu(vm);
         }
@@ -105,6 +112,57 @@ public partial class App : Application
             vm.ToggleAutoGameMode();
             UpdateAutoModeMenuItem(vm.IsAutoModeActive);
         }
+    }
+
+    private SettingsWindow? _settingsWindow;
+
+    private void Settings_OnClick(object? sender, EventArgs e)
+    {
+        if (_settingsWindow != null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+
+        string iconPath = FpsService.EnsureIconPath();
+        FpsService.ShowAboutWindow(IntPtr.Zero, iconPath);
+
+        MainWindowViewModel? mainVm = null;
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel vm)
+        {
+            mainVm = vm;
+        }
+
+        var settingsService = new SettingsService();
+        var fpsService = new FpsService();
+        var settingsVm = new SettingsViewModel(settingsService, mainVm, fpsService);
+
+        _settingsWindow = new SettingsWindow
+        {
+            DataContext = settingsVm
+        };
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
+        _settingsWindow.Activate();
+    }
+
+    private AboutWindow? _aboutWindow;
+
+    private void About_OnClick(object? sender, EventArgs e)
+    {
+        if (_aboutWindow != null)
+        {
+            _aboutWindow.Activate();
+            return;
+        }
+
+        string iconPath = FpsService.EnsureIconPath();
+        FpsService.ShowAboutWindow(IntPtr.Zero, iconPath);
+
+        _aboutWindow = new AboutWindow();
+        _aboutWindow.Closed += (_, _) => _aboutWindow = null;
+        _aboutWindow.Show();
+        _aboutWindow.Activate();
     }
 
     private void Quit_OnClick(object? sender, EventArgs e)

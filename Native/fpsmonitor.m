@@ -616,12 +616,26 @@ static BOOL ReturnNO(id self, SEL _cmd) {
     return NO;
 }
 
+static BOOL Swizzled_CanBecomeKeyWindow(NSWindow *self, SEL _cmd) {
+    if ([self level] == NSScreenSaverWindowLevel) {
+        return NO;
+    }
+    return YES;
+}
+
+static BOOL Swizzled_CanBecomeMainWindow(NSWindow *self, SEL _cmd) {
+    if ([self level] == NSScreenSaverWindowLevel) {
+        return NO;
+    }
+    return YES;
+}
+
 static void NoOp_Activate(id self, SEL _cmd) {
-    // Prevent application from activating over games
+    // Prevent overlay window from activating over games
 }
 
 static void NoOp_ActivateIgnoring(id self, SEL _cmd, BOOL flag) {
-    // Prevent application from activating over games
+    // Prevent overlay window from activating over games
 }
 
 static void Swizzled_MakeKeyAndOrderFront(NSWindow *self, SEL _cmd, id sender) {
@@ -629,7 +643,7 @@ static void Swizzled_MakeKeyAndOrderFront(NSWindow *self, SEL _cmd, id sender) {
 }
 
 static void Swizzled_MakeKeyWindow(NSWindow *self, SEL _cmd) {
-    // NO-OP
+    // NO-OP for overlay window
 }
 
 void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
@@ -641,9 +655,9 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
         class_replaceMethod([NSApplication class], @selector(activate), (IMP)NoOp_Activate, "v@:");
         class_replaceMethod([NSApplication class], @selector(activateIgnoringOtherApps:), (IMP)NoOp_ActivateIgnoring, "v@:c");
 
-        // 3. Swizzle NSWindow class methods
-        class_replaceMethod([NSWindow class], @selector(canBecomeKeyWindow), (IMP)ReturnNO, "c@:");
-        class_replaceMethod([NSWindow class], @selector(canBecomeMainWindow), (IMP)ReturnNO, "c@:");
+        // 3. Swizzle NSWindow class methods (guarded by window level)
+        class_replaceMethod([NSWindow class], @selector(canBecomeKeyWindow), (IMP)Swizzled_CanBecomeKeyWindow, "c@:");
+        class_replaceMethod([NSWindow class], @selector(canBecomeMainWindow), (IMP)Swizzled_CanBecomeMainWindow, "c@:");
         class_replaceMethod([NSWindow class], @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
         class_replaceMethod([NSWindow class], @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
 
@@ -733,4 +747,72 @@ void FpsMonitor_SetOverlayVisible(void *viewOrWindowPtr, bool visible) {
         }
     });
 }
+
+void FpsMonitor_SetApplicationIcon(const char *iconPathUtf8) {
+    if (!iconPathUtf8 || strlen(iconPathUtf8) == 0) return;
+    NSString *path = [NSString stringWithUTF8String:iconPathUtf8];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSImage *img = [[NSImage alloc] initWithContentsOfFile:path];
+        if (img) {
+            [NSApp setApplicationIconImage:img];
+            NSImageView *iv = [[NSImageView alloc] init];
+            [iv setImage:img];
+            [[NSApp dockTile] setContentView:iv];
+            [[NSApp dockTile] display];
+        }
+    });
+}
+
+void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
+    // Capture path synchronously to avoid dangling pointer across dispatch_async
+    NSString *path = (iconPathUtf8 && strlen(iconPathUtf8) > 0) ? [NSString stringWithUTF8String:iconPathUtf8] : nil;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 1. Show in Dock
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+
+        if (path) {
+            NSImage *img = [[NSImage alloc] initWithContentsOfFile:path];
+            if (img) {
+                [NSApp setApplicationIconImage:img];
+                NSImageView *iv = [[NSImageView alloc] init];
+                [iv setImage:img];
+                [[NSApp dockTile] setContentView:iv];
+                [[NSApp dockTile] display];
+            }
+        } else if ([NSApp applicationIconImage] != nil) {
+            [[NSApp dockTile] display];
+        }
+
+        NSWindow *win = nil;
+        if (windowPtr) {
+            id obj = (__bridge id)windowPtr;
+            if ([obj isKindOfClass:[NSWindow class]]) {
+                win = (NSWindow *)obj;
+            } else if ([obj isKindOfClass:[NSView class]]) {
+                win = [(NSView *)obj window];
+            }
+        }
+
+        if (win) {
+            // Above all other windows (Floating / ScreenSaver level)
+            [win setLevel:NSFloatingWindowLevel];
+            [win setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary];
+            [win setHidesOnDeactivate:NO];
+            [win orderFrontRegardless];
+            [win makeKeyAndOrderFront:nil];
+        }
+
+        // 2. Bring application forward over all other windows
+        [[NSRunningApplication currentApplication] activateWithOptions:0];
+    });
+}
+
+void FpsMonitor_HideAboutWindow(void) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // Return to accessory mode (hide from Dock)
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    });
+}
+
 

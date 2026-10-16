@@ -1,9 +1,9 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using MacTemp.ViewModels;
+using CherryHud.ViewModels;
 
-namespace MacTemp;
+namespace CherryHud;
 
 public class ViewLocator : IDataTemplate
 {

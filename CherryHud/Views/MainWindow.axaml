@@ -1,0 +1,270 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CherryHud.ViewModels"
+        xmlns:controls="using:CherryHud.Controls"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" 
+        Width="236"
+        SizeToContent="Height"
+        Opacity="{Binding OverlayOpacity}"
+        x:Class="CherryHud.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        TransparencyLevelHint="Transparent"
+        CanResize="False"
+        ExtendClientAreaChromeHints="NoChrome"
+        Background="Transparent"
+        Topmost="True"
+        ExtendClientAreaToDecorationsHint="True"
+        Title="CherryHud"
+        Icon="/Assets/logo.png"
+        SystemDecorations="None"
+        WindowStartupLocation="Manual">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Cmd+Q" Command="{Binding QuitCommand}" />
+    </Window.KeyBindings>
+
+    <!-- Carte HUD translucide sans contour ; extérieur 100% transparent -->
+    <Border CornerRadius="16"
+            Background="#8C13141C"
+            BorderThickness="0"
+            Padding="14,16,14,10">
+
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <!-- GPU Row (Coral) -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowGpu}">
+                <Border Grid.Column="0"
+                        Background="#26FF5E7E"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="GPU"
+                               Foreground="#FF5E7E"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding GpuUsageValue}"
+                                   Foreground="#FF8A80"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding GpuUsageUnit}"
+                                   Foreground="#FF8A80"
+                                   FontSize="10.5"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="1,1,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding GpuTempValue}"
+                                   Foreground="{Binding GpuStatusColor}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding GpuTempUnit}"
+                                   Foreground="{Binding GpuStatusColor}"
+                                   FontSize="10.5"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="1,1,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- CPU Row (Cyan) -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowCpu}">
+                <Border Grid.Column="0"
+                        Background="#2600E5FF"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="CPU"
+                               Foreground="#00E5FF"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CpuUsageValue}"
+                                   Foreground="#80D8FF"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding CpuUsageUnit}"
+                                   Foreground="#80D8FF"
+                                   FontSize="10.5"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="1,1,0,0" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding CpuTempValue}"
+                                   Foreground="{Binding CpuStatusColor}"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding CpuTempUnit}"
+                                   Foreground="{Binding CpuStatusColor}"
+                                   FontSize="10.5"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="1,1,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- VRAM Row (Purple) -->
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowVram}">
+                <Border Grid.Column="0"
+                        Background="#26BA68C8"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GpuMemoryLabel}"
+                               Foreground="#BA68C8"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding GpuVramValue}"
+                               Foreground="#CE93D8"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding GpuVramUnit}"
+                               Foreground="#CE93D8"
+                               FontSize="10.5"
+                               FontWeight="Heavy"
+                               VerticalAlignment="Top"
+                               Margin="1,1,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <!-- RAM Row (Blue) -->
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowRam}">
+                <Border Grid.Column="0"
+                        Background="#26448AFF"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="RAM"
+                               Foreground="#448AFF"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding RamValue}"
+                               Foreground="#E0E0E0"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding RamUnit}"
+                               Foreground="#E0E0E0"
+                               FontSize="10.5"
+                               FontWeight="Heavy"
+                               VerticalAlignment="Top"
+                               Margin="1,1,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <!-- BAT Row (Green) -->
+            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowBatteryRow}">
+                <Border Grid.Column="0"
+                        Background="#2681C784"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="BAT"
+                               Foreground="#81C784"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding BatteryIcon}"
+                               Foreground="#81C784"
+                               FontSize="13"
+                               VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding BatteryValue}"
+                                   Foreground="#A5D6A7"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding BatteryUnit}"
+                                   Foreground="#A5D6A7"
+                                   FontSize="10.5"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="1,1,0,0" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <!-- FPS Row (Lime Green) -->
+            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6" IsVisible="{Binding ShowFps}">
+                <Border Grid.Column="0"
+                        Background="#2600E676"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="FPS"
+                               Foreground="#00E676"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <Button Grid.Column="2"
+                        Command="{Binding RequestPermissionCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Cursor="Hand">
+                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding FpsValue}"
+                                       Foreground="{Binding FpsStatusColor}"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Bottom" />
+                            <TextBlock Text="{Binding FpsUnit}"
+                                       Foreground="{Binding FpsStatusColor}"
+                                       FontSize="10.5"
+                                       FontWeight="Heavy"
+                                       VerticalAlignment="Top"
+                                       Margin="1,1,0,0" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding FrametimeValue}"
+                                       Foreground="#A5D6A7"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Bottom" />
+                            <TextBlock Text="{Binding FrametimeUnit}"
+                                       Foreground="#A5D6A7"
+                                       FontSize="10.5"
+                                       FontWeight="Heavy"
+                                       VerticalAlignment="Top"
+                                       Margin="1,1,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Graphique Frametime Sparkline (ms par trame) -->
+            <controls:FpsGraphControl Grid.Row="6"
+                                      Height="34"
+                                      Frametimes="{Binding FrametimeHistory}"
+                                      TargetFrametimeMs="{Binding TargetFrametimeMs}"
+                                      IsVisible="{Binding ShowGraph}"
+                                      Margin="0,2,0,0" />
+        </Grid>
+    </Border>
+</Window>

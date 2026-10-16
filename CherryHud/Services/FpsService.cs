@@ -3,7 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace MacTemp.Services;
+namespace CherryHud.Services;
 
 public sealed class FpsService : IFpsService, IDisposable
 {
@@ -103,6 +103,93 @@ public sealed class FpsService : IFpsService, IDisposable
         catch
         {
         }
+    }
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetApplicationIcon([MarshalAs(UnmanagedType.LPUTF8Str)] string iconPath);
+
+    public static void SetApplicationIcon(string iconPath)
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(iconPath))
+            {
+                FpsMonitor_SetApplicationIcon(iconPath);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_ShowAboutWindow(IntPtr windowPtr, [MarshalAs(UnmanagedType.LPUTF8Str)] string iconPath);
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_HideAboutWindow();
+
+    public static void ShowAboutWindow(IntPtr windowPtr, string iconPath)
+    {
+        try
+        {
+            FpsMonitor_ShowAboutWindow(windowPtr, iconPath ?? string.Empty);
+        }
+        catch
+        {
+        }
+    }
+
+    public static void HideAboutWindow()
+    {
+        try
+        {
+            FpsMonitor_HideAboutWindow();
+        }
+        catch
+        {
+        }
+    }
+
+    public static string EnsureIconPath()
+    {
+        try
+        {
+            string baseDir = AppContext.BaseDirectory;
+            string[] candidates = [
+                Path.Combine(baseDir, "Assets", "CherryHud.icns"),
+                Path.Combine(baseDir, "Assets", "logo.png"),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "Assets", "CherryHud.icns")),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "Assets", "logo.png")),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "CherryHud", "Assets", "CherryHud.icns")),
+                Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "CherryHud", "Assets", "logo.png"))
+            ];
+
+            foreach (var path in candidates)
+            {
+                if (File.Exists(path))
+                {
+                    return path;
+                }
+            }
+
+            // Extract from Avalonia embedded resource to temp if not found on disk
+            string tempIcon = Path.Combine(Path.GetTempPath(), "cherryhud_app_logo.png");
+            if (File.Exists(tempIcon)) return tempIcon;
+
+            var uri = new Uri("avares://CherryHud/Assets/logo.png");
+            if (Avalonia.Platform.AssetLoader.Exists(uri))
+            {
+                using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+                using var fileStream = File.Create(tempIcon);
+                stream.CopyTo(fileStream);
+                return tempIcon;
+            }
+        }
+        catch
+        {
+        }
+
+        return string.Empty;
     }
 
     private bool _isStarted;

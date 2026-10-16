@@ -1,7 +1,7 @@
 using Avalonia;
 using System;
 
-namespace MacTemp;
+namespace CherryHud;
 
 sealed class Program
 {
