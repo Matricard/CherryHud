@@ -10,7 +10,7 @@ namespace MacTemp.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
-    private const int HistoryCapacity = 75; // 75 points * 100ms = 7.5 seconds of history (MangoHud speed)
+    private const int HistoryCapacity = 75; // 75 points * 100ms = 7.5 seconds of history (speed)
     private readonly ITemperatureService _temperatureService;
     private readonly IFpsService _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
@@ -18,7 +18,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly List<double> _frametimeHistoryBuffer = new(HistoryCapacity);
     private bool _isDisposed;
 
-    // Header info (MangoHud style)
+    // Header info (style)
     [ObservableProperty]
     private string _trackedAppName = "";
 
@@ -74,7 +74,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _fpsStatusColor = "#00E676";
 
-    // MangoHud frametime graph
+    // frametime graph
     [ObservableProperty]
     private IReadOnlyList<double> _frametimeHistory = Array.Empty<double>();
 
@@ -126,7 +126,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private async Task StartMonitoringLoopAsync(CancellationToken token)
     {
-        // 100ms periodic timer for smooth MangoHud graph scrolling (7.5 seconds of history)
+        // 100ms periodic timer for smooth graph scrolling (7.5 seconds of history)
         using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
         int tickCounter = 0;
 
@@ -137,7 +137,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
             {
                 tickCounter++;
-                // In MangoHud, 'fps_sampling_period' defaults to 500ms (half-second).
+                // In , 'fps_sampling_period' defaults to 500ms (half-second).
                 // All text values (FPS, ms, CPU %, GPU %, RAM, Temps) refresh every 500ms (every 5 ticks of 100ms)
                 // so they remain steady and readable without frantic jitter.
                 bool isTextTick = (tickCounter % 5 == 0);
@@ -192,9 +192,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 if (isTextTick)
                 {
                     FpsDisplay = $"{Math.Round(currentFps)} FPS";
-                    // MangoHud text header displays the steady-state frametime corresponding to the sampled FPS
+                    // text header displays the steady-state frametime corresponding to the sampled FPS
                     FrametimeDisplay = $"{1000.0 / currentFps:F1} ms";
-                    FpsStatusColor = "#00E676"; // MangoHud vibrant green
+                    FpsStatusColor = "#00E676"; // vibrant green
 
                     if (currentFps >= 100)
                     {
@@ -228,7 +228,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             }
         }
 
-        // 2. Text metrics (FPS, Frametime, CPU, GPU, RAM, Temps, Battery, Clock) update every 500ms (MangoHud default)
+        // 2. Text metrics (FPS, Frametime, CPU, GPU, RAM, Temps, Battery, Clock) update every 500ms (default)
         if (isTextTick)
         {
             CurrentTime = DateTime.Now.ToString("HH:mm");
