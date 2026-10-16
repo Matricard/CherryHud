@@ -4,7 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 
-namespace MacTemp.Controls;
+namespace CherryHud.Controls;
 
 public class FpsGraphControl : Control
 {
@@ -39,17 +39,6 @@ public class FpsGraphControl : Control
 
     private static readonly IBrush DotBrush = new SolidColorBrush(Color.FromRgb(0, 255, 127));
     private static readonly IBrush DotGlowBrush = new SolidColorBrush(Color.FromArgb(70, 0, 255, 127));
-
-    private static readonly IBrush AreaBrush = new LinearGradientBrush
-    {
-        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-        EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-        GradientStops =
-        {
-            new GradientStop(Color.FromArgb(45, 0, 230, 118), 0.0),
-            new GradientStop(Color.FromArgb(2, 0, 230, 118), 1.0)
-        }
-    };
 
     private double _currentMaxScaleMs = 33.33;
 
@@ -103,18 +92,12 @@ public class FpsGraphControl : Control
 
         double maxScaleMs = _currentMaxScaleMs;
         double stepX = (w - 6) / (count - 1);
-        double bottomY = h - 2;
 
         var lineGeometry = new StreamGeometry();
-        var fillGeometry = new StreamGeometry();
-
         Point lastPoint = default;
 
         using (var lineCtx = lineGeometry.Open())
-        using (var fillCtx = fillGeometry.Open())
         {
-            fillCtx.BeginFigure(new Point(3, bottomY), isFilled: true);
-
             for (int i = 0; i < count; i++)
             {
                 double val = frametimes[i];
@@ -127,12 +110,10 @@ public class FpsGraphControl : Control
                 if (i == 0)
                 {
                     lineCtx.BeginFigure(pt, isFilled: false);
-                    fillCtx.LineTo(pt);
                 }
                 else
                 {
                     lineCtx.LineTo(pt);
-                    fillCtx.LineTo(pt);
                 }
 
                 if (i == count - 1)
@@ -142,12 +123,7 @@ public class FpsGraphControl : Control
             }
 
             lineCtx.EndFigure(isClosed: false);
-            fillCtx.LineTo(new Point(lastPoint.X, bottomY));
-            fillCtx.EndFigure(isClosed: true);
         }
-
-        // Draw smooth gradient area under the curve
-        context.DrawGeometry(AreaBrush, null, fillGeometry);
 
         // Draw crisp antialiased green line
         context.DrawGeometry(null, GraphLinePen, lineGeometry);

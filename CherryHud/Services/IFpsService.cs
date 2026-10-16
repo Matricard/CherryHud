@@ -1,4 +1,4 @@
-namespace MacTemp.Services;
+namespace CherryHud.Services;
 
 public record FpsData(
     double Fps,

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MacTemp.Services;
+namespace CherryHud.Services;
 
 public sealed class SmcTemperatureService : ITemperatureService, IDisposable
 {

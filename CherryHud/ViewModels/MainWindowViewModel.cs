@@ -4,9 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using MacTemp.Services;
+using CherryHud.Services;
 
-namespace MacTemp.ViewModels;
+namespace CherryHud.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
@@ -31,6 +31,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _batteryDisplay = "";
 
     [ObservableProperty]
+    private string _batteryIcon = "🔋";
+
+    [ObservableProperty]
+    private string _batteryValue = "";
+
+    [ObservableProperty]
+    private string _batteryUnit = "%";
+
+    [ObservableProperty]
     private bool _hasBattery;
 
     // GPU metrics
@@ -38,10 +47,28 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _gpuTemp = "-- °C";
 
     [ObservableProperty]
+    private string _gpuTempValue = "--";
+
+    [ObservableProperty]
+    private string _gpuTempUnit = "°C";
+
+    [ObservableProperty]
     private string _gpuUsage = "--%";
 
     [ObservableProperty]
+    private string _gpuUsageValue = "--";
+
+    [ObservableProperty]
+    private string _gpuUsageUnit = "%";
+
+    [ObservableProperty]
     private string _gpuVram = "-- GB";
+
+    [ObservableProperty]
+    private string _gpuVramValue = "--";
+
+    [ObservableProperty]
+    private string _gpuVramUnit = "GB";
 
     [ObservableProperty]
     private string _gpuStatusColor = "#FF5E7E";
@@ -51,7 +78,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _cpuTemp = "-- °C";
 
     [ObservableProperty]
+    private string _cpuTempValue = "--";
+
+    [ObservableProperty]
+    private string _cpuTempUnit = "°C";
+
+    [ObservableProperty]
     private string _cpuUsage = "--%";
+
+    [ObservableProperty]
+    private string _cpuUsageValue = "--";
+
+    [ObservableProperty]
+    private string _cpuUsageUnit = "%";
 
     [ObservableProperty]
     private string _cpuStatusColor = "#00E5FF";
@@ -59,6 +98,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     // RAM metrics
     [ObservableProperty]
     private string _ramDisplay = "-- GB";
+
+    [ObservableProperty]
+    private string _ramValue = "--";
+
+    [ObservableProperty]
+    private string _ramUnit = "GB";
 
     [ObservableProperty]
     private string _ramPercent = "--%";
@@ -71,7 +116,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _fpsDisplay = "-- FPS";
 
     [ObservableProperty]
+    private string _fpsValue = "--";
+
+    [ObservableProperty]
+    private string _fpsUnit = "FPS";
+
+    [ObservableProperty]
     private string _frametimeDisplay = "-- ms";
+
+    [ObservableProperty]
+    private string _frametimeValue = "--";
+
+    [ObservableProperty]
+    private string _frametimeUnit = "ms";
 
     [ObservableProperty]
     private string _fpsStatusColor = "#00E676";
@@ -93,6 +150,44 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isAutoModeActive = true;
 
     private bool? _manualVisibilityOverride = true;
+
+    private readonly ISettingsService _settingsService;
+
+    [ObservableProperty]
+    private bool _showGpu = true;
+
+    [ObservableProperty]
+    private bool _showCpu = true;
+
+    [ObservableProperty]
+    private bool _showVram = true;
+
+    [ObservableProperty]
+    private bool _showRam = true;
+
+    [ObservableProperty]
+    private bool _showBattery = true;
+
+    [ObservableProperty]
+    private bool _showBatteryRow = true;
+
+    [ObservableProperty]
+    private bool _showFps = true;
+
+    [ObservableProperty]
+    private bool _showGraph = true;
+
+    [ObservableProperty]
+    private string _gpuMemoryLabel = "VRAM";
+
+    [ObservableProperty]
+    private double _overlayOpacity = 1.0;
+
+    [ObservableProperty]
+    private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
+
+    [ObservableProperty]
+    private int _graphFps = 60;
 
     public void ToggleVisibility()
     {
@@ -123,18 +218,30 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IsAutoModeActive = true;
     }
 
-    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService())
+    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService())
     {
     }
 
     public MainWindowViewModel(
         ITemperatureService temperatureService,
         IFpsService fpsService,
-        ISystemMetricsService systemMetricsService)
+        ISystemMetricsService systemMetricsService) : this(temperatureService, fpsService, systemMetricsService, new SettingsService())
+    {
+    }
+
+    public MainWindowViewModel(
+        ITemperatureService temperatureService,
+        IFpsService fpsService,
+        ISystemMetricsService systemMetricsService,
+        ISettingsService settingsService)
     {
         _temperatureService = temperatureService;
         _fpsService = fpsService;
         _systemMetricsService = systemMetricsService;
+        _settingsService = settingsService;
+
+        ApplySettings(_settingsService.Current);
+        _settingsService.SettingsChanged += (_, s) => ApplySettings(s);
 
         // Pre-fill history buffer with baseline for clean initial graph rendering
         for (int i = 0; i < HistoryCapacity; i++)
@@ -147,6 +254,23 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         _fpsService.Start();
         _ = StartMonitoringLoopAsync(_cts.Token);
+    }
+
+    public void ApplySettings(AppSettings s)
+    {
+        ShowGpu = s.ShowGpu;
+        ShowCpu = s.ShowCpu;
+        ShowVram = s.ShowVram;
+        ShowRam = s.ShowRam;
+        ShowBattery = s.ShowBattery;
+        ShowBatteryRow = s.ShowBattery && HasBattery;
+        ShowFps = s.ShowFps;
+        ShowGraph = s.ShowGraph;
+        GpuMemoryLabel = s.GpuMemoryLabel;
+        OverlayOpacity = s.Opacity;
+        OverlayPosition = s.Position;
+        GraphFps = s.GraphFps;
+        IsAutoModeActive = s.AutoGameMode;
     }
 
     [RelayCommand]
@@ -225,7 +349,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             // 1. Text metrics update every 500ms
             if (!fpsData.HasPermission)
             {
+                FpsValue = "Perm. requise";
+                FpsUnit = "";
                 FpsDisplay = "Perm. requise";
+
+                FrametimeValue = "Activer";
+                FrametimeUnit = "";
                 FrametimeDisplay = "Activer";
                 FpsStatusColor = "#FFB300"; // Amber
             }
@@ -235,8 +364,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
                 if (currentFps > 0.5)
                 {
-                    FpsDisplay = $"{Math.Round(currentFps)} FPS";
-                    FrametimeDisplay = $"{1000.0 / currentFps:F1} ms";
+                    FpsValue = $"{Math.Round(currentFps)}";
+                    FpsUnit = "FPS";
+                    FpsDisplay = $"{FpsValue} FPS";
+
+                    FrametimeValue = $"{1000.0 / currentFps:F1}";
+                    FrametimeUnit = "ms";
+                    FrametimeDisplay = $"{FrametimeValue} ms";
                     FpsStatusColor = "#00E676"; // vibrant green
 
                     if (currentFps >= 100)
@@ -254,7 +388,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 }
                 else
                 {
+                    FpsValue = "--";
+                    FpsUnit = "FPS";
                     FpsDisplay = "-- FPS";
+
+                    FrametimeValue = "--";
+                    FrametimeUnit = "ms";
                     FrametimeDisplay = "-- ms";
                     FpsStatusColor = "#8899A6";
                 }
@@ -269,6 +408,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             if (fpsData.BatteryPercent.HasValue)
             {
                 HasBattery = true;
+                BatteryIcon = fpsData.IsBatteryCharging ? "⚡" : "🔋";
+                BatteryValue = $"{fpsData.BatteryPercent.Value}";
+                BatteryUnit = "%";
                 BatteryDisplay = fpsData.IsBatteryCharging
                     ? $"⚡ {fpsData.BatteryPercent.Value}%"
                     : $"🔋 {fpsData.BatteryPercent.Value}%";
@@ -276,24 +418,36 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             else
             {
                 HasBattery = false;
+                BatteryValue = "";
+                BatteryUnit = "";
+                BatteryDisplay = "";
             }
+            ShowBatteryRow = ShowBattery && HasBattery;
 
             // GPU load & VRAM
             if (fpsData.GpuUsagePercent > 0.1)
             {
-                GpuUsage = $"{Math.Round(fpsData.GpuUsagePercent)}%";
+                GpuUsageValue = $"{Math.Round(fpsData.GpuUsagePercent)}";
+                GpuUsageUnit = "%";
+                GpuUsage = $"{GpuUsageValue}%";
             }
             else
             {
+                GpuUsageValue = "0";
+                GpuUsageUnit = "%";
                 GpuUsage = "0%";
             }
 
             if (fpsData.GpuVramGb > 0.05)
             {
-                GpuVram = $"{fpsData.GpuVramGb:F1} GB";
+                GpuVramValue = $"{fpsData.GpuVramGb:F1}";
+                GpuVramUnit = "GB";
+                GpuVram = $"{GpuVramValue} GB";
             }
             else
             {
+                GpuVramValue = "--";
+                GpuVramUnit = "GB";
                 GpuVram = "-- GB";
             }
 
@@ -302,30 +456,43 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             if (cpuTemp.HasValue)
             {
-                CpuTemp = $"{Math.Round(cpuTemp.Value)}°C";
+                CpuTempValue = $"{Math.Round(cpuTemp.Value)}";
+                CpuTempUnit = "°C";
+                CpuTemp = $"{CpuTempValue}°C";
                 CpuStatusColor = GetStatusColor(cpuTemp.Value, defaultColor: "#00E5FF");
             }
             else
             {
+                CpuTempValue = "N/A";
+                CpuTempUnit = "";
                 CpuTemp = "N/A";
                 CpuStatusColor = "#778899";
             }
 
             if (gpuTemp.HasValue)
             {
-                GpuTemp = $"{Math.Round(gpuTemp.Value)}°C";
+                GpuTempValue = $"{Math.Round(gpuTemp.Value)}";
+                GpuTempUnit = "°C";
+                GpuTemp = $"{GpuTempValue}°C";
                 GpuStatusColor = GetStatusColor(gpuTemp.Value, defaultColor: "#FF5E7E");
             }
             else
             {
+                GpuTempValue = "N/A";
+                GpuTempUnit = "";
                 GpuTemp = "N/A";
                 GpuStatusColor = "#778899";
             }
 
             // CPU Load & RAM usage (Mach host statistics)
             var res = _systemMetricsService.ReadResourceMetrics();
-            CpuUsage = $"{Math.Round(res.CpuUsagePercent)}%";
-            RamDisplay = $"{res.RamUsedGb:F1} GB";
+            CpuUsageValue = $"{Math.Round(res.CpuUsagePercent)}";
+            CpuUsageUnit = "%";
+            CpuUsage = $"{CpuUsageValue}%";
+
+            RamValue = $"{res.RamUsedGb:F1}";
+            RamUnit = "GB";
+            RamDisplay = $"{RamValue} GB";
             RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
 
             // Update graph on text tick

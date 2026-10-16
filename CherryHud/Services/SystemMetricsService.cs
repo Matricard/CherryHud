@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace MacTemp.Services;
+namespace CherryHud.Services;
 
 public sealed class SystemMetricsService : ISystemMetricsService
 {

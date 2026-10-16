@@ -7,6 +7,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>CherryHud</AssemblyName>
+    <RootNamespace>CherryHud</RootNamespace>
     <RollForward>Major</RollForward>
     <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
@@ -14,13 +16,16 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <Content Include="Assets\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="..\Native\libfpsmonitor.dylib" Condition="Exists('..\Native\libfpsmonitor.dylib')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
-  <Target Name="BuildNativeFpsLibrary" BeforeTargets="BeforeBuild">
-    <Exec Command="clang -dynamiclib -O2 -framework Foundation -framework AppKit -framework ScreenCaptureKit -framework CoreMedia -framework CoreGraphics -framework IOKit ../Native/fpsmonitor.m -o ../Native/libfpsmonitor.dylib" Condition="!Exists('../Native/libfpsmonitor.dylib')" />
+  <Target Name="BuildNativeFpsLibrary" BeforeTargets="BeforeBuild" Inputs="../Native/fpsmonitor.m" Outputs="../Native/libfpsmonitor.dylib">
+    <Exec Command="clang -dynamiclib -O2 -framework Foundation -framework AppKit -framework ScreenCaptureKit -framework CoreMedia -framework CoreGraphics -framework IOKit ../Native/fpsmonitor.m -o ../Native/libfpsmonitor.dylib" />
   </Target>
 
   <ItemGroup>

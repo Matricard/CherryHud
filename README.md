@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="MacTemp/Assets/logo.png" width="180" height="180" alt="CherryHud Logo" />
+  <img src="CherryHud/Assets/logo.png" width="180" height="180" alt="CherryHud Logo" />
   <h1>CherryHud 🍒⚡</h1>
   <p>
     <b>Le HUD de performance ultime pour macOS</b><br />
@@ -89,7 +89,7 @@ Pour que macOS autorise le widget à capturer les trames effectives de l'écran 
 
 ```bash
 # Compilation et lancement direct
-dotnet run --project MacTemp/MacTemp.csproj
+dotnet run --project CherryHud/CherryHud.csproj
 ```
 
 ---

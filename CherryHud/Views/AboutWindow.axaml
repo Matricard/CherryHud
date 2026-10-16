@@ -1,0 +1,113 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="CherryHud.Views.AboutWindow"
+        Title="À propos de CherryHud"
+        Icon="/Assets/logo.png"
+        Width="350" Height="440"
+        CanResize="False"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        Background="#161722">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding $parent[Window].Close}" />
+        <KeyBinding Gesture="Cmd+W" Command="{Binding $parent[Window].Close}" />
+    </Window.KeyBindings>
+
+    <Border Padding="24,20" Background="#161722">
+        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <!-- App Icon -->
+            <Border Width="76" Height="76"
+                    CornerRadius="18"
+                    ClipToBounds="True"
+                    HorizontalAlignment="Center"
+                    BoxShadow="0 6 20 0 #40000000"
+                    Margin="0,0,0,12">
+                <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
+            </Border>
+
+            <!-- Titre & Version -->
+            <TextBlock Text="CherryHud"
+                       Foreground="#FFFFFF"
+                       FontSize="22"
+                       FontWeight="Heavy"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Version 1.0.0 • .NET 10"
+                       Foreground="#00E676"
+                       FontSize="11"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,2,0,6" />
+
+            <TextBlock Text="Overlay de performance gaming natif pour macOS"
+                       Foreground="#9E9E9E"
+                       FontSize="11.5"
+                       FontWeight="Medium"
+                       TextAlignment="Center"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,16" />
+
+            <!-- Carte récapitulative des fonctionnalités -->
+            <Border Background="#202230"
+                    CornerRadius="10"
+                    Padding="14,10"
+                    Margin="0,0,0,16"
+                    HorizontalAlignment="Stretch">
+                <StackPanel Spacing="6">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="⚡" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="Superposition au-dessus des jeux plein écran"
+                                   Foreground="#DCDCDC"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="🎮" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="Détection automatique &amp; arrêt hors jeu"
+                                   Foreground="#DCDCDC"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="🍒" FontSize="12" VerticalAlignment="Center" />
+                        <TextBlock Text="Métriques matérielles IOKit &amp; AppleSMC"
+                                   Foreground="#DCDCDC"
+                                   FontSize="11"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Auteur & Licence -->
+            <TextBlock Text="Créé par Mathieu Ricard"
+                       Foreground="#7E8092"
+                       FontSize="11"
+                       FontWeight="Medium"
+                       HorizontalAlignment="Center" />
+
+            <TextBlock Text="Copyright © 2026 • Licence MIT"
+                       Foreground="#5E6070"
+                       FontSize="10"
+                       FontWeight="Normal"
+                       HorizontalAlignment="Center"
+                       Margin="0,2,0,16" />
+
+            <!-- Bouton Fermer -->
+            <Button Content="Fermer"
+                    Click="Close_OnClick"
+                    Background="#26FF2A55"
+                    Foreground="#FF2A55"
+                    FontWeight="Bold"
+                    FontSize="12"
+                    CornerRadius="8"
+                    Padding="26,7"
+                    HorizontalAlignment="Center"
+                    Cursor="Hand" />
+        </StackPanel>
+    </Border>
+</Window>
