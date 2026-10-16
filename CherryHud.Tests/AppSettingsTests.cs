@@ -10,6 +10,7 @@ public class AppSettingsTests
     {
         var settings = new AppSettings();
 
+        Assert.Equal(AppLanguage.English, settings.Language);
         Assert.True(settings.AutoGameMode);
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
         Assert.Equal(OverlayTheme.Classic, settings.Theme);
@@ -26,5 +27,28 @@ public class AppSettingsTests
         Assert.True(settings.KeepTemperaturesWhite);
         Assert.True(settings.AutoCheckUpdates);
         Assert.Equal("Matricard/CherryHud", settings.GitHubRepo);
+    }
+
+    [Fact]
+    public void LocalizationService_SwitchesLanguagesProperly()
+    {
+        var loc = LocalizationService.Instance;
+
+        loc.CurrentLanguage = AppLanguage.English;
+        Assert.True(loc.IsEnglish);
+        Assert.False(loc.IsFrench);
+        Assert.Equal("CherryHud Settings", loc.WindowTitle);
+        Assert.Equal("Display", loc.TabDisplay);
+        Assert.Equal("Reset to Defaults", loc.ResetDefaultsButton);
+
+        loc.CurrentLanguage = AppLanguage.French;
+        Assert.False(loc.IsEnglish);
+        Assert.True(loc.IsFrench);
+        Assert.Equal("Paramètres de CherryHud", loc.WindowTitle);
+        Assert.Equal("Affichage", loc.TabDisplay);
+        Assert.Equal("Rétablir par défaut", loc.ResetDefaultsButton);
+
+        // Reset back to English
+        loc.CurrentLanguage = AppLanguage.English;
     }
 }

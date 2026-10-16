@@ -427,6 +427,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         IsAutoModeActive = s.AutoGameMode;
         KeepTemperaturesWhite = s.KeepTemperaturesWhite;
         ApplyTheme(s.Theme);
+        LocalizationService.Instance.CurrentLanguage = s.Language;
     }
 
     [RelayCommand]

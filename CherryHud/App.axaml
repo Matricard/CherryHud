@@ -20,16 +20,16 @@
                     <NativeMenu>
                         <NativeMenuItem Header="CherryHud" IsEnabled="False" />
                         <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Afficher / Masquer" Click="ToggleVisibility_OnClick" />
-                        <NativeMenuItem Header="Mode Auto (En jeu uniquement)"
+                        <NativeMenuItem Header="Show / Hide" Click="ToggleVisibility_OnClick" />
+                        <NativeMenuItem Header="Auto Mode (In-Game Only)"
                                         ToggleType="CheckBox"
                                         IsChecked="True"
                                         Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Paramètres..." Click="Settings_OnClick" />
-                        <NativeMenuItem Header="Vérifier les mises à jour..." Click="CheckUpdates_OnClick" />
+                        <NativeMenuItem Header="Settings..." Click="Settings_OnClick" />
+                        <NativeMenuItem Header="Check for Updates..." Click="CheckUpdates_OnClick" />
                         <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Quitter CherryHud" Click="Quit_OnClick" />
+                        <NativeMenuItem Header="Quit CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>
                 </TrayIcon.Menu>
             </TrayIcon>

@@ -14,7 +14,11 @@ namespace CherryHud;
 
 public partial class App : Application
 {
+    private NativeMenuItem? _toggleVisibilityMenuItem;
     private NativeMenuItem? _autoModeMenuItem;
+    private NativeMenuItem? _settingsMenuItem;
+    private NativeMenuItem? _checkUpdatesMenuItem;
+    private NativeMenuItem? _quitMenuItem;
 
     public override void Initialize()
     {
@@ -63,19 +67,20 @@ public partial class App : Application
         var icons = TrayIcon.GetIcons(this);
         if (icons != null && icons.Count > 0 && icons[0].Menu is NativeMenu menu)
         {
-            foreach (var item in menu.Items)
+            if (menu.Items.Count >= 9)
             {
-                if (item is NativeMenuItem nativeItem && nativeItem.Header?.Contains("Mode Auto") == true)
-                {
-                    _autoModeMenuItem = nativeItem;
-                    break;
-                }
+                _toggleVisibilityMenuItem = menu.Items[2] as NativeMenuItem;
+                _autoModeMenuItem = menu.Items[3] as NativeMenuItem;
+                _settingsMenuItem = menu.Items[5] as NativeMenuItem;
+                _checkUpdatesMenuItem = menu.Items[6] as NativeMenuItem;
+                _quitMenuItem = menu.Items[8] as NativeMenuItem;
             }
 
             // Sync menu state right before menu opens on macOS
             menu.NeedsUpdate += (_, _) =>
             {
                 UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+                UpdateTrayMenuLanguage();
             };
         }
 
@@ -90,7 +95,23 @@ public partial class App : Application
             }
         };
 
+        LocalizationService.Instance.LanguageChanged += (_, _) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateTrayMenuLanguage);
+        };
+
         UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+        UpdateTrayMenuLanguage();
+    }
+
+    private void UpdateTrayMenuLanguage()
+    {
+        var loc = LocalizationService.Instance;
+        if (_toggleVisibilityMenuItem != null) _toggleVisibilityMenuItem.Header = loc.TrayToggleVisibility;
+        if (_autoModeMenuItem != null) _autoModeMenuItem.Header = loc.TrayAutoMode;
+        if (_settingsMenuItem != null) _settingsMenuItem.Header = loc.TraySettings;
+        if (_checkUpdatesMenuItem != null) _checkUpdatesMenuItem.Header = loc.TrayCheckUpdates;
+        if (_quitMenuItem != null) _quitMenuItem.Header = loc.TrayQuit;
     }
 
     private void UpdateAutoModeMenuItem(bool isAutoActive)
@@ -135,9 +156,6 @@ public partial class App : Application
             _settingsWindow.Activate();
             return;
         }
-
-        string iconPath = FpsService.EnsureIconPath();
-        FpsService.ShowAboutWindow(IntPtr.Zero, iconPath);
 
         MainWindowViewModel? mainVm = null;
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel vm)

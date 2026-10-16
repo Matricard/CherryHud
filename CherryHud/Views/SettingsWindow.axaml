@@ -3,21 +3,35 @@
         xmlns:vm="using:CherryHud.ViewModels"
         x:Class="CherryHud.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
-        Title="Paramètres de CherryHud"
+        Title="{Binding Loc.WindowTitle}"
         Icon="/Assets/logo.png"
-        Width="460" Height="580"
+        Width="470" Height="600"
         CanResize="False"
         Topmost="True"
         WindowStartupLocation="CenterScreen"
-        Background="#161722">
+        TransparencyLevelHint="Mica, AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="44"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        Background="Transparent">
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Escape" Command="{Binding $parent[Window].Close}" />
         <KeyBinding Gesture="Cmd+W" Command="{Binding $parent[Window].Close}" />
     </Window.KeyBindings>
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="22,18">
-        <!-- Header -->
+    <Panel>
+        <!-- Teinte d'arrière-plan : sombre obsidian transparent quand active, gris fumée foncé quand inactive -->
+        <Border x:Name="WindowBackgroundBorder" Background="#8006070E">
+            <Border.Transitions>
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Border.Transitions>
+        </Border>
+
+        <Grid RowDefinitions="Auto,*,Auto" Margin="22,46,22,18">
+        <!-- Header (positionné sous les boutons classiques macOS) -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
             <Border Grid.Column="0"
                     Width="40" Height="40"
@@ -28,11 +42,11 @@
                 <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
             </Border>
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="Paramètres CherryHud"
+                <TextBlock Text="{Binding Loc.HeaderTitle}"
                            Foreground="#FFFFFF"
                            FontSize="17"
                            FontWeight="Bold" />
-                <TextBlock Text="Personnalisez le comportement, les métriques et l'affichage"
+                <TextBlock Text="{Binding Loc.HeaderSubtitle}"
                            Foreground="#8A8D9F"
                            FontSize="11.5" />
             </StackPanel>
@@ -53,18 +67,40 @@
             </TabControl.Styles>
 
             <!-- Onglet 1 : Affichage -->
-            <TabItem Header="Affichage">
+            <TabItem Header="{Binding Loc.TabDisplay}">
                 <ScrollViewer Margin="0,12,0,0">
                     <StackPanel Spacing="14">
-                        <!-- Theme Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <!-- Language Card -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Thème visuel de l'overlay"
+                                    <TextBlock Text="{Binding Loc.LanguageCardTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Palette classique de CherryHud"
+                                    <TextBlock Text="{Binding Loc.LanguageCardSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11" />
+                                </StackPanel>
+                                <ComboBox Grid.Column="1"
+                                          SelectedIndex="{Binding SelectedLanguageIndex}"
+                                          Width="170"
+                                          FontSize="11.5">
+                                    <ComboBoxItem Content="English" />
+                                    <ComboBoxItem Content="Français" />
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Theme Card -->
+                        <Border Background="#4E1C1F2D" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding Loc.ThemeCardTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12.5"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.ThemeCardSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -72,20 +108,20 @@
                                           SelectedIndex="{Binding SelectedThemeIndex}"
                                           Width="170"
                                           FontSize="11.5">
-                                    <ComboBoxItem Content="Classique" />
+                                    <ComboBoxItem Content="{Binding Loc.ThemeClassic}" />
                                 </ComboBox>
                             </Grid>
                         </Border>
 
                         <!-- Températures en blanc Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Températures en blanc"
+                                    <TextBlock Text="{Binding Loc.WhiteTempTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Laisse les températures CPU et GPU en blanc fixe au lieu du dégradé thermique"
+                                    <TextBlock Text="{Binding Loc.WhiteTempSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -96,14 +132,14 @@
                         </Border>
 
                         <!-- Mode Automatique Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Mode Automatique (En jeu)"
+                                    <TextBlock Text="{Binding Loc.AutoModeTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Affiche le HUD uniquement lorsqu'un jeu 3D tourne"
+                                    <TextBlock Text="{Binding Loc.AutoModeSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -114,14 +150,14 @@
                         </Border>
 
                         <!-- Position Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Emplacement de l'overlay"
+                                    <TextBlock Text="{Binding Loc.PositionTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Coin de l'écran où ancrer le HUD"
+                                    <TextBlock Text="{Binding Loc.PositionSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -129,20 +165,20 @@
                                           SelectedIndex="{Binding SelectedPositionIndex}"
                                           Width="170"
                                           FontSize="11.5">
-                                    <ComboBoxItem Content="Haut Gauche" />
-                                    <ComboBoxItem Content="Haut Droite" />
-                                    <ComboBoxItem Content="Bas Gauche" />
-                                    <ComboBoxItem Content="Bas Droite" />
+                                    <ComboBoxItem Content="{Binding Loc.PositionTopLeft}" />
+                                    <ComboBoxItem Content="{Binding Loc.PositionTopRight}" />
+                                    <ComboBoxItem Content="{Binding Loc.PositionBottomLeft}" />
+                                    <ComboBoxItem Content="{Binding Loc.PositionBottomRight}" />
                                 </ComboBox>
                             </Grid>
                         </Border>
 
                         <!-- Opacité Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Grid.Column="0"
-                                               Text="Transparence de l'overlay"
+                                               Text="{Binding Loc.OpacityTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
@@ -163,9 +199,9 @@
             </TabItem>
 
             <!-- Onglet 2 : Métriques -->
-            <TabItem Header="Métriques">
+            <TabItem Header="{Binding Loc.TabMetrics}">
                 <ScrollViewer Margin="0,12,0,0">
-                    <Border Background="#202230" CornerRadius="10" Padding="14,10">
+                    <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,10">
                         <StackPanel Spacing="10">
                             <!-- GPU -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -173,7 +209,7 @@
                                     <Border Background="#26FF5E7E" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="GPU" Foreground="#FF5E7E" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Charge GPU &amp; Température" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricGpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGpu}" OnContent="" OffContent="" />
                             </Grid>
@@ -186,7 +222,7 @@
                                     <Border Background="#2600E5FF" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="CPU" Foreground="#00E5FF" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Charge CPU &amp; Température" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricCpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowCpu}" OnContent="" OffContent="" />
                             </Grid>
@@ -199,7 +235,7 @@
                                     <Border Background="#26BA68C8" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="VRAM" Foreground="#BA68C8" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Mémoire Graphique (VRAM)" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricVram}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowVram}" OnContent="" OffContent="" />
                             </Grid>
@@ -212,7 +248,7 @@
                                     <Border Background="#26448AFF" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="RAM" Foreground="#448AFF" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Mémoire Vive Système" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricRam}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowRam}" OnContent="" OffContent="" />
                             </Grid>
@@ -225,7 +261,7 @@
                                     <Border Background="#2681C784" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="BAT" Foreground="#81C784" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Batterie &amp; État de charge" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricBattery}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBattery}" OnContent="" OffContent="" />
                             </Grid>
@@ -238,7 +274,7 @@
                                     <Border Background="#2600E676" CornerRadius="4" Padding="5,1">
                                         <TextBlock Text="FPS" Foreground="#00E676" FontSize="10" FontWeight="Heavy" />
                                     </Border>
-                                    <TextBlock Text="Images par seconde &amp; Frametime" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
                             </Grid>
@@ -249,7 +285,7 @@
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="📈" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="Graphique Sparkline de Frametime" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricGraph}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGraph}" OnContent="" OffContent="" />
                             </Grid>
@@ -259,18 +295,18 @@
             </TabItem>
 
             <!-- Onglet 3 : Système & Rendu -->
-            <TabItem Header="Avancé">
+            <TabItem Header="{Binding Loc.TabAdvanced}">
                 <ScrollViewer Margin="0,12,0,0">
                     <StackPanel Spacing="14">
                         <!-- Libellé Mémoire GPU -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Libellé mémoire vidéo"
+                                    <TextBlock Text="{Binding Loc.GpuMemLabelTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="VRAM (Gaming) ou GPU MEM (Technique)"
+                                    <TextBlock Text="{Binding Loc.GpuMemLabelSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -285,14 +321,14 @@
                         </Border>
 
                         <!-- Rafraîchissement Graphique -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Fréquence du graphique"
+                                    <TextBlock Text="{Binding Loc.GraphFpsTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Taux d'animation de la courbe sparkline"
+                                    <TextBlock Text="{Binding Loc.GraphFpsSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -308,13 +344,13 @@
                         </Border>
 
                         <!-- Screen Recording Permission Card -->
-                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="Autorisation macOS ScreenCaptureKit"
+                                <TextBlock Text="{Binding Loc.ScreenCaptureTitle}"
                                            Foreground="#FFFFFF"
                                            FontSize="12.5"
                                            FontWeight="SemiBold" />
-                                <TextBlock Text="Requise par macOS pour mesurer les trames des jeux."
+                                <TextBlock Text="{Binding Loc.ScreenCaptureSubtitle}"
                                            Foreground="#8A8D9F"
                                            FontSize="11" />
                                 <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
@@ -325,7 +361,7 @@
                                                FontWeight="Bold"
                                                VerticalAlignment="Center" />
                                     <Button Grid.Column="1"
-                                            Content="Ouvrir Réglages"
+                                            Content="{Binding Loc.OpenSystemSettingsButton}"
                                             Command="{Binding OpenSystemSettingsCommand}"
                                             Background="#2600E5FF"
                                             Foreground="#00E5FF"
@@ -342,7 +378,7 @@
             </TabItem>
 
             <!-- Onglet 4 : À propos -->
-            <TabItem Header="À propos">
+            <TabItem Header="{Binding Loc.TabAbout}">
                 <ScrollViewer Margin="0,12,0,0">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0">
                         <!-- App Icon -->
@@ -357,29 +393,29 @@
 
                         <!-- Titre & Version -->
                         <TextBlock Text="CherryHud"
-                                   Foreground="#FFFFFF"
-                                   FontSize="20"
-                                   FontWeight="Heavy"
-                                   HorizontalAlignment="Center" />
+                                    Foreground="#FFFFFF"
+                                    FontSize="20"
+                                    FontWeight="Heavy"
+                                    HorizontalAlignment="Center" />
 
                         <TextBlock Text="Version 0.9.0 • .NET 10"
-                                   Foreground="#D41630"
-                                   FontSize="11"
-                                   FontWeight="Bold"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,2,0,4" />
+                                    Foreground="#D41630"
+                                    FontSize="11"
+                                    FontWeight="Bold"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,2,0,4" />
 
-                        <TextBlock Text="Overlay de performance gaming natif pour macOS"
-                                   Foreground="#9E9E9E"
-                                   FontSize="11"
-                                   FontWeight="Medium"
-                                   TextAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   HorizontalAlignment="Center"
-                                   Margin="0,0,0,14" />
+                        <TextBlock Text="{Binding Loc.AboutDesc}"
+                                    Foreground="#9E9E9E"
+                                    FontSize="11"
+                                    FontWeight="Medium"
+                                    TextAlignment="Center"
+                                    TextWrapping="Wrap"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,0,0,14" />
 
                         <!-- Carte récapitulative des fonctionnalités -->
-                        <Border Background="#202230"
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1"
                                 CornerRadius="10"
                                 Padding="14,10"
                                 Margin="0,0,0,14"
@@ -387,7 +423,7 @@
                             <StackPanel Spacing="6">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="⚡" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="Superposition au-dessus des jeux plein écran"
+                                    <TextBlock Text="{Binding Loc.AboutFeat1}"
                                                Foreground="#DCDCDC"
                                                FontSize="11"
                                                FontWeight="SemiBold"
@@ -395,7 +431,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="🎮" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="Détection automatique &amp; arrêt hors jeu"
+                                    <TextBlock Text="{Binding Loc.AboutFeat2}"
                                                Foreground="#DCDCDC"
                                                FontSize="11"
                                                FontWeight="SemiBold"
@@ -403,7 +439,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBlock Text="🍒" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="Métriques matérielles IOKit &amp; AppleSMC"
+                                    <TextBlock Text="{Binding Loc.AboutFeat3}"
                                                Foreground="#DCDCDC"
                                                FontSize="11"
                                                FontWeight="SemiBold"
@@ -413,23 +449,23 @@
                         </Border>
 
                         <!-- Carte Mises à jour -->
-                        <Border Background="#202230"
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1"
                                 CornerRadius="10"
                                 Padding="14,10"
                                 Margin="0,0,0,12"
                                 Width="380">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="Mises à jour du logiciel"
+                                    <TextBlock Text="{Binding Loc.SoftwareUpdatesTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Rechercher une nouvelle version ou un artéfact"
+                                    <TextBlock Text="{Binding Loc.SoftwareUpdatesSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="10.5" />
                                 </StackPanel>
                                 <Button Grid.Column="1"
-                                        Content="Vérifier..."
+                                        Content="{Binding Loc.CheckButton}"
                                         Command="{Binding CheckForUpdatesCommand}"
                                         Background="#267ED884"
                                         Foreground="#7ED884"
@@ -442,13 +478,13 @@
                         </Border>
 
                         <!-- Auteur & Licence -->
-                        <TextBlock Text="Créé par Mathieu Ricard"
+                        <TextBlock Text="{Binding Loc.AuthorText}"
                                    Foreground="#7E8092"
                                    FontSize="11"
                                    FontWeight="Medium"
                                    HorizontalAlignment="Center" />
 
-                        <TextBlock Text="Copyright © 2026 • Licence MIT"
+                        <TextBlock Text="{Binding Loc.LicenseText}"
                                    Foreground="#5E6070"
                                    FontSize="10"
                                    FontWeight="Normal"
@@ -462,7 +498,7 @@
         <!-- Footer -->
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
             <Button Grid.Column="0"
-                    Content="Rétablir par défaut"
+                    Content="{Binding Loc.ResetDefaultsButton}"
                     Command="{Binding ResetDefaultsCommand}"
                     Background="Transparent"
                     Foreground="#8A8D9F"
@@ -472,7 +508,7 @@
                     Cursor="Hand" />
 
             <Button Grid.Column="2"
-                    Content="Fermer"
+                    Content="{Binding Loc.CloseButton}"
                     Click="Close_OnClick"
                     Background="#2600E676"
                     Foreground="#00E676"
@@ -483,4 +519,5 @@
                     Cursor="Hand" />
         </Grid>
     </Grid>
+</Panel>
 </Window>

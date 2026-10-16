@@ -12,6 +12,11 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly MainWindowViewModel? _mainViewModel;
     private readonly IFpsService _fpsService;
 
+    public LocalizationService Loc => LocalizationService.Instance;
+
+    [ObservableProperty]
+    private int _selectedLanguageIndex;
+
     [ObservableProperty]
     private bool _autoGameMode;
 
@@ -87,6 +92,9 @@ public partial class SettingsViewModel : ViewModelBase
     {
         var s = _settingsService.Current;
 
+        _selectedLanguageIndex = (int)s.Language;
+        LocalizationService.Instance.CurrentLanguage = s.Language;
+
         _autoGameMode = s.AutoGameMode;
         _selectedPositionIndex = (int)s.Position;
         _selectedThemeIndex = (int)s.Theme;
@@ -119,14 +127,23 @@ public partial class SettingsViewModel : ViewModelBase
         HasScreenCapturePermission = data.HasPermission;
         if (HasScreenCapturePermission)
         {
-            PermissionStatusText = "✓ Autorisation accordée";
+            PermissionStatusText = Loc.PermGranted;
             PermissionStatusColor = "#00E676"; // Green
         }
         else
         {
-            PermissionStatusText = "⚠️ Enregistrement d'écran requis";
+            PermissionStatusText = Loc.PermRequired;
             PermissionStatusColor = "#FFB300"; // Amber
         }
+    }
+
+    partial void OnSelectedLanguageIndexChanged(int value)
+    {
+        var lang = (AppLanguage)Math.Clamp(value, 0, 1);
+        _settingsService.Current.Language = lang;
+        _settingsService.Save();
+        LocalizationService.Instance.CurrentLanguage = lang;
+        CheckPermissionStatus();
     }
 
     partial void OnAutoGameModeChanged(bool value)
@@ -301,6 +318,7 @@ public partial class SettingsViewModel : ViewModelBase
     [RelayCommand]
     public void ResetDefaults()
     {
+        SelectedLanguageIndex = (int)AppLanguage.English;
         AutoGameMode = true;
         SelectedPositionIndex = 0;
         SelectedThemeIndex = 0;
