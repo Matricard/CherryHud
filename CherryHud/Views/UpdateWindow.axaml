@@ -1,0 +1,216 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:CherryHud.ViewModels"
+        x:Class="CherryHud.Views.UpdateWindow"
+        x:DataType="vm:UpdateViewModel"
+        Title="Mise à jour de CherryHud"
+        Icon="/Assets/logo.png"
+        Width="440" Height="420"
+        CanResize="False"
+        Topmost="True"
+        WindowStartupLocation="CenterScreen"
+        Background="#161722">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
+        <KeyBinding Gesture="Cmd+W" Command="{Binding CloseCommand}" />
+    </Window.KeyBindings>
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="22,20">
+        <!-- En-tête -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
+            <Border Grid.Column="0"
+                    Width="44" Height="44"
+                    CornerRadius="11"
+                    ClipToBounds="True"
+                    BoxShadow="0 4 12 0 #33000000"
+                    Margin="0,0,14,0">
+                <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                <TextBlock Text="{Binding StatusTitle}"
+                           Foreground="#FFFFFF"
+                           FontSize="16"
+                           FontWeight="Bold" />
+                <TextBlock Text="{Binding StatusMessage}"
+                           Foreground="#8A8D9F"
+                           FontSize="11.5"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Corps / Contenu dynamique selon l'état -->
+        <Border Grid.Row="1"
+                Background="#202230"
+                CornerRadius="10"
+                Padding="16,14">
+            <Grid>
+                <!-- État 1 : Chargement -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="14"
+                            IsVisible="{Binding IsLoading}">
+                    <ProgressBar IsIndeterminate="True"
+                                 Width="180" Height="4"
+                                 Foreground="#FF2A6D" />
+                    <TextBlock Text="Interrogation de GitHub Releases..."
+                               Foreground="#8A8D9F"
+                               FontSize="11.5"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- État 2 : Mise à jour disponible -->
+                <Grid RowDefinitions="Auto,*,Auto" IsVisible="{Binding HasUpdate}">
+                    <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding ReleaseTitle}"
+                                       Foreground="#FF2A6D"
+                                       FontSize="13.5"
+                                       FontWeight="Bold" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding LatestVersionText}"
+                                       Foreground="#7ED884"
+                                       FontSize="11.5"
+                                       FontWeight="SemiBold" />
+                        </Grid>
+                        <TextBlock Text="{Binding AssetInfoText, StringFormat='Fichier disponible : {0}'}"
+                                   Foreground="#9E9E9E"
+                                   FontSize="11"
+                                   IsVisible="{Binding AssetInfoText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    </StackPanel>
+
+                    <!-- Changelog / Notes de version -->
+                    <Border Grid.Row="1"
+                            Background="#161722"
+                            CornerRadius="8"
+                            Padding="12,10"
+                            Margin="0,0,0,6">
+                        <ScrollViewer>
+                            <TextBlock Text="{Binding Changelog}"
+                                       Foreground="#D0D2DE"
+                                       FontSize="11.5"
+                                       TextWrapping="Wrap"
+                                       FontFamily="Monospace" />
+                        </ScrollViewer>
+                    </Border>
+                    
+                    <TextBlock Grid.Row="2"
+                               Text="{Binding CurrentVersionText}"
+                               Foreground="#6E7182"
+                               FontSize="10.5"
+                               Margin="2,4,0,0" />
+                </Grid>
+
+                <!-- État 3 : Logiciel à jour -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="12"
+                            IsVisible="{Binding IsUpToDate}">
+                    <Border Width="48" Height="48"
+                            CornerRadius="24"
+                            Background="#267ED884"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="✓"
+                                   Foreground="#7ED884"
+                                   FontSize="24"
+                                   FontWeight="Heavy"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="Aucune nouvelle version requise."
+                               Foreground="#FFFFFF"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding CurrentVersionText}"
+                               Foreground="#8A8D9F"
+                               FontSize="11.5"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- État 4 : Erreur -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="10"
+                            IsVisible="{Binding HasError}">
+                    <Border Width="44" Height="44"
+                            CornerRadius="22"
+                            Background="#26FF2A6D"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="!"
+                                   Foreground="#FF2A6D"
+                                   FontSize="22"
+                                   FontWeight="Heavy"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="Vérification impossible"
+                               Foreground="#FFFFFF"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Foreground="#8A8D9F"
+                               FontSize="11"
+                               TextWrapping="Wrap"
+                               TextAlignment="Center"
+                               MaxWidth="300"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Barre d'action inférieure -->
+        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
+            <!-- Bouton secondaire (Voir GitHub ou Réessayer) -->
+            <Button Grid.Column="0"
+                    Content="Voir sur GitHub"
+                    Command="{Binding OpenReleaseCommand}"
+                    Background="Transparent"
+                    Foreground="#80DEEA"
+                    FontSize="11.5"
+                    FontWeight="SemiBold"
+                    Padding="0"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    IsVisible="{Binding HasUpdate}" />
+
+            <Button Grid.Column="0"
+                    Content="Réessayer"
+                    Command="{Binding CheckUpdatesCommand}"
+                    Background="Transparent"
+                    Foreground="#80DEEA"
+                    FontSize="11.5"
+                    FontWeight="SemiBold"
+                    Padding="0"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    IsVisible="{Binding HasError}" />
+
+            <!-- Boutons principaux -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
+                <Button Content="Fermer"
+                        Command="{Binding CloseCommand}"
+                        Background="#26FFFFFF"
+                        Foreground="#CCCCCC"
+                        FontSize="11.5"
+                        FontWeight="SemiBold"
+                        CornerRadius="8"
+                        Padding="16,7"
+                        Cursor="Hand" />
+
+                <Button Content="Télécharger l'artéfact"
+                        Command="{Binding DownloadOrOpenCommand}"
+                        Background="#267ED884"
+                        Foreground="#7ED884"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        CornerRadius="8"
+                        Padding="18,7"
+                        Cursor="Hand"
+                        IsVisible="{Binding HasUpdate}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

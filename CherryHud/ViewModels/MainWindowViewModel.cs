@@ -275,10 +275,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _ramValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _batBadgeBg = "#26FFE082";
+    private string _batBadgeBg = "#26D4A254";
 
     [ObservableProperty]
-    private string _batBadgeFg = "#FFE082";
+    private string _batBadgeFg = "#D4A254";
 
     [ObservableProperty]
     private string _batValueColor = "#FFFFFF";
@@ -307,12 +307,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         CardBorderThickness = new Thickness(0);
         CardBoxShadow = default;
 
-        // GPU: Soft pastel coral cherry
+        // GPU: Soft pastel coral
         GpuBadgeBg = "#26F28B82";
         GpuBadgeFg = "#F28B82";
         GpuValueColor = "#FFFFFF";
 
-        // CPU: Soft pastel aqua / ice
+        // CPU: Soft pastel aqua
         CpuBadgeBg = "#2680DEEA";
         CpuBadgeFg = "#80DEEA";
         CpuValueColor = "#FFFFFF";
@@ -327,9 +327,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         RamBadgeFg = "#9FA8DA";
         RamValueColor = "#FFFFFF";
 
-        // BAT: Soft pastel amber / gold
-        BatBadgeBg = "#26FFE082";
-        BatBadgeFg = "#FFE082";
+        // BAT: Darker warm pastel amber-yellow (replaces old washed-out yellow)
+        BatBadgeBg = "#26D4A254";
+        BatBadgeFg = "#D4A254";
         BatValueColor = "#FFFFFF";
 
         // FPS: Soft pastel mint green

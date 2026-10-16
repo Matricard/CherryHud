@@ -12,6 +12,11 @@
     <a href="#-compilation--running"><img src="https://img.shields.io/badge/.NET-10.0-512BD4?style=flat-square" alt=".NET 10" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License MIT" /></a>
   </p>
+
+  <br />
+  <p align="center">
+    <img src="CherryHud/Assets/preview.png" width="340" alt="CherryHud In-Game Overlay Preview" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.6);" />
+  </p>
 </div>
 
 ---
@@ -22,7 +27,7 @@
 
 - **True Full-Screen Game Overlay**: Floats seamlessly over full-screen Metal games (*World of Warcraft*, *Baldur's Gate 3*, *Final Fantasy XIV*, *Cyberpunk 2077*, emulators, etc.) utilizing `NSScreenSaverWindowLevel` and `NSWindowCollectionBehaviorFullScreenAuxiliary`.
 - **Zero Input Interference**: Native AppKit isolation prevents the overlay from ever stealing keyboard or mouse focus, and suppresses unwanted Dock or menu bar popups during frantic gaming sessions.
-- **Clean 100% Transparent Rendering**: Translucent dark card with no border clutter, bold 16px high-contrast typography, and superscript units for effortless at-a-glance readability in the heat of action.
+- **Clean Translucent Rendering**: Translucent dark card with no border clutter, crisp white typography for all numbers and units, and distinctive category badges for effortless at-a-glance readability in the heat of action.
 
 ---
 
@@ -41,15 +46,15 @@
 - **VRAM / GPU Memory**: Active VRAM consumption in GB (customizable label: *VRAM* or *GPU MEM*).
 - **RAM**: Real-time system physical memory consumption in GB.
 
-### 🟢 Battery (Green)
+### 🟡 Battery (Amber)
 - **Battery Percentage & Status**: Current charge percentage and charging state indicator (`🔋` / `⚡`). Automatically hidden on desktop Macs without battery.
 
-### 🟢 FPS & Frametime (Lime Green)
+### 🟢 FPS & Frametime (Mint Green)
 - **Hardware-Accurate FPS Counter**: Powered by Apple's `ScreenCaptureKit`, strictly filtered on completed frame presentations (`SCFrameStatusComplete`).
-- **Frametime (Frame Pacing)**: Instantaneous frame delivery time measured down to the millisecond (e.g., `16.6 ms` at 60 FPS, `8.3 ms` at 120 FPS).
-- **Neon Frametime Sparkline Graph**:
+- **Dedicated Frametime Row**: Instantaneous frame delivery time measured down to the millisecond (`ms`), positioned right above the graph.
+- **Frametime Sparkline Graph**:
   - Live rolling buffer capturing frame delivery regularity.
-  - Pure neon green line (`#00E676`) with glowing leading spark to instantly spot stutter, frame spikes, or pacing inconsistencies.
+  - Stem green line sampled from the logo (`#70D078`) with a glowing ruby cherry dot (`#D41630`) at the leading edge to instantly spot stutter, frame spikes, or pacing inconsistencies.
 
 ---
 

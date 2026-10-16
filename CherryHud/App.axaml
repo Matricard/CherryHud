@@ -27,6 +27,7 @@
                                         Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Paramètres..." Click="Settings_OnClick" />
+                        <NativeMenuItem Header="Vérifier les mises à jour..." Click="CheckUpdates_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Quitter CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>

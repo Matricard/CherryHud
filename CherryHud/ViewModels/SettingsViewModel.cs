@@ -63,6 +63,15 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string _permissionStatusColor = "";
 
+    [ObservableProperty]
+    private bool _autoCheckUpdates = true;
+
+    [ObservableProperty]
+    private string _currentVersionText = $"Version {UpdateService.GetCurrentVersion()}";
+
+    [ObservableProperty]
+    private string _gitHubRepo = "Matricard/CherryHud";
+
     public SettingsViewModel(ISettingsService settingsService, MainWindowViewModel? mainViewModel, IFpsService fpsService)
     {
         _settingsService = settingsService;
@@ -99,6 +108,8 @@ public partial class SettingsViewModel : ViewModelBase
             30 => 2,
             _ => 0
         };
+        _autoCheckUpdates = s.AutoCheckUpdates;
+        _gitHubRepo = s.GitHubRepo;
     }
 #pragma warning restore MVVMTK0034
 
@@ -269,6 +280,24 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnAutoCheckUpdatesChanged(bool value)
+    {
+        _settingsService.Current.AutoCheckUpdates = value;
+        _settingsService.Save();
+    }
+
+    partial void OnGitHubRepoChanged(string value)
+    {
+        _settingsService.Current.GitHubRepo = value;
+        _settingsService.Save();
+    }
+
+    [RelayCommand]
+    public void CheckForUpdates()
+    {
+        (Avalonia.Application.Current as App)?.ShowUpdateWindow(autoCheckOnlyIfUpdate: false);
+    }
+
     [RelayCommand]
     public void ResetDefaults()
     {
@@ -277,6 +306,8 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedThemeIndex = 0;
         OpacityPercent = 100;
         KeepTemperaturesWhite = true;
+        AutoCheckUpdates = true;
+        GitHubRepo = "Matricard/CherryHud";
         ShowGpu = true;
         ShowCpu = true;
         ShowVram = true;

@@ -104,7 +104,7 @@ public partial class MainWindow : Window
         int screenY = screen.Bounds.Y;
         int screenW = screen.Bounds.Width;
         int screenH = screen.Bounds.Height;
-        int winW = (int)(Bounds.Width > 0 ? Bounds.Width : (double.IsNaN(Width) ? 236 : Width));
+        int winW = (int)(Bounds.Width > 0 ? Bounds.Width : (double.IsNaN(Width) ? 188 : Width));
         int winH = (int)(Bounds.Height > 0 ? Bounds.Height : (double.IsNaN(Height) ? 210 : Height));
 
         int x = corner switch
