@@ -23,19 +23,14 @@
         <KeyBinding Gesture="Cmd+Q" Command="{Binding QuitCommand}" />
     </Window.KeyBindings>
 
-    <!-- Carte HUD MangoHud translucide sans contour ; extérieur 100% transparent -->
+    <!-- Carte HUD translucide sans contour ; extérieur 100% transparent -->
     <Border CornerRadius="16"
             Background="#8C13141C"
             BorderThickness="0"
             Padding="14,10">
-        <Border.ContextMenu>
-            <ContextMenu>
-                <MenuItem Header="Quitter CherryHud" Command="{Binding QuitCommand}" />
-            </ContextMenu>
-        </Border.ContextMenu>
 
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
-            <!-- Header : Nom du jeu / App + Batterie + Heure + Bouton Fermer -->
+            <!-- Header : Nom du jeu / App + Batterie + Heure -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
                 <TextBlock Grid.Column="0"
                            Text="{Binding TrackedAppName}"
@@ -55,25 +50,13 @@
                                Foreground="#757575"
                                FontSize="11"
                                FontWeight="SemiBold" />
-                    <Button Command="{Binding QuitCommand}"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Padding="3,0"
-                            Margin="2,0,0,0"
-                            Cursor="Hand"
-                            ToolTip.Tip="Fermer CherryHud">
-                        <TextBlock Text="✕"
-                                   Foreground="#616161"
-                                   FontSize="10"
-                                   FontWeight="Bold" />
-                    </Button>
                 </StackPanel>
             </Grid>
 
             <!-- Ligne de séparation fine -->
             <Rectangle Grid.Row="1" Height="1" Fill="#1AFFFFFF" Margin="0,0,0,6" />
 
-            <!-- GPU Row (MangoHud Coral) -->
+            <!-- GPU Row (Coral) -->
             <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
                 <Border Grid.Column="0"
                         Background="#26FF5E7E"
@@ -100,7 +83,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- CPU Row (MangoHud Cyan) -->
+            <!-- CPU Row (Cyan) -->
             <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
                 <Border Grid.Column="0"
                         Background="#2600E5FF"
@@ -127,7 +110,7 @@
                 </StackPanel>
             </Grid>
 
-            <!-- VRAM Row (MangoHud Purple) -->
+            <!-- VRAM Row (Purple) -->
             <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
                 <Border Grid.Column="0"
                         Background="#26BA68C8"
@@ -148,7 +131,7 @@
                            VerticalAlignment="Center" />
             </Grid>
 
-            <!-- RAM Row (MangoHud Blue) -->
+            <!-- RAM Row (Blue) -->
             <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
                 <Border Grid.Column="0"
                         Background="#26448AFF"
@@ -169,7 +152,7 @@
                            VerticalAlignment="Center" />
             </Grid>
 
-            <!-- FPS Row (MangoHud Lime Green) -->
+            <!-- FPS Row (Lime Green) -->
             <Grid Grid.Row="6" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
                 <Border Grid.Column="0"
                         Background="#2600E676"
@@ -202,7 +185,7 @@
                 </Button>
             </Grid>
 
-            <!-- Graphique Frametime Sparkline MangoHud (ms par trame) -->
+            <!-- Graphique Frametime Sparkline (ms par trame) -->
             <controls:FpsGraphControl Grid.Row="7"
                                       Height="34"
                                       Frametimes="{Binding FrametimeHistory}"

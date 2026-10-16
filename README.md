@@ -3,11 +3,11 @@
   <h1>CherryHud 🍒⚡</h1>
   <p>
     <b>Le HUD de performance ultime pour macOS</b><br />
-    <i>L'équivalent macOS de <b>MangoHud</b>, propulsé par Avalonia UI, .NET 8 et les APIs système natives Apple (IOKit, ScreenCaptureKit, AppleSMC).</i>
+    <i>Propulsé par Avalonia UI, .NET 8 et les APIs système natives Apple (IOKit, ScreenCaptureKit, AppleSMC).</i>
   </p>
 
   <p>
-    <a href="#-fonctionnalités-mangohud"><img src="https://img.shields.io/badge/Overlay-Full%20Screen%20Gaming-FF2A55?style=flat-square" alt="Gaming HUD" /></a>
+    <a href="#-métriques--fonctionnalités"><img src="https://img.shields.io/badge/Overlay-Full%20Screen%20Gaming-FF2A55?style=flat-square" alt="Gaming HUD" /></a>
     <a href="#-compilation--lancement"><img src="https://img.shields.io/badge/Platform-macOS%20Apple%20Silicon%20%26%20Intel-00E676?style=flat-square" alt="macOS" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License MIT" /></a>
   </p>
@@ -17,11 +17,11 @@
 
 ## 🎮 Présentation
 
-**CherryHud** est un overlay de performances en jeu léger, transparent et fluide conçu spécifiquement pour **macOS**. Inspiré de la disposition emblématique de **MangoHud** sous Linux, il affiche les métriques vitales de votre Mac en temps réel sans jamais perturber votre session de jeu :
+**CherryHud** est un overlay de performances en jeu léger, transparent et fluide conçu spécifiquement pour **macOS**. Il affiche les métriques vitales de votre Mac en temps réel sans jamais perturber votre session de jeu :
 
 - **Superposition au-dessus des jeux plein écran** (World of Warcraft, Baldur's Gate 3, Final Fantasy XIV, émulateurs, etc.) grâce au niveau de fenêtre `NSScreenSaverWindowLevel` et au comportement `NSWindowCollectionBehaviorFullScreenAuxiliary`.
 - **Zéro interruption de jeu** : isolation native (`NSApplication` swizzling) pour ne jamais voler le focus clavier/souris ni invoquer intempestivement le Dock ou la barre des menus lors des clics.
-- **Rendu graphique 100% transparent** : carte sombre translucide sans bordure carrée parasite, avec texte net et contrasté en police 16px bold pour une lisibilité parfaite en pleine action.
+- **Rendu graphique 100% transparent** : carte sombre translucide sans bordure parasite, avec texte net et contrasté en police 16px bold pour une lisibilité parfaite en pleine action.
 
 ---
 
@@ -31,21 +31,20 @@
 - **Application / Jeu actif** : Détection automatique du nom du jeu au premier plan.
 - **Batterie** : Pourcentage et statut de charge (`🔋 85%` ou `⚡ 85%`).
 - **Horloge système** : Heure en temps réel (`HH:mm:ss`).
-- **Bouton Fermer subtil (✕)** : Quittez en un clic ou masquez le HUD.
 
-### 🔴 GPU (MangoHud Coral)
+### 🔴 GPU (Coral)
 - **Charge GPU (%)** : Taux d'utilisation effectif du processeur graphique via `IOAccelerator`.
 - **Température GPU** en temps réel lue directement dans les registres SMC matériels (`AppleSMC`).
 - **VRAM Allouée** : Quantité de mémoire vidéo active (en Go).
 
-### 🔵 CPU (MangoHud Cyan)
+### 🔵 CPU (Cyan)
 - **Charge CPU (%)** : Utilisation globale des cœurs processeur via l'API Mach du noyau macOS.
 - **Température CPU** en temps réel via `AppleSMC` natif.
 
-### 🟣 RAM (MangoHud Royal Blue)
+### 🟣 RAM (Royal Blue)
 - **Consommation Mémoire** : Mémoire vive utilisée (en Go).
 
-### 🟢 FPS & Frametime (MangoHud Lime Green)
+### 🟢 FPS & Frametime (Lime Green)
 - **Compteur de FPS réel** (`ScreenCaptureKit`) filtré sur les trames effectives (`SCFrameStatusComplete`).
 - **Temps de trame (*Frametime*)** mesuré trame par trame en millisecondes (ex. `16.6 ms` à 60 FPS, `8.3 ms` à 120 FPS).
 - **Graphique Frametime épuré (Sparkline néon)** :
@@ -58,11 +57,10 @@
 
 - **Déplacement libre** : Glissez-déposez la fenêtre n'importe où sur votre écran.
 - **Icône dans la barre des menus (TrayIcon)** :
-  - **Afficher / Masquer** : Permet de cacher temporairement le HUD d'un clic.
-  - **Quitter CherryHud**.
+  - **Afficher / Masquer** : Permet de cacher ou réafficher le HUD d'un simple clic.
+  - **Quitter CherryHud** : L'unique menu dédié pour fermer l'application.
 - **Raccourcis clavier** :
   - <kbd>Cmd</kbd> + <kbd>Q</kbd> : Ferme proprement l'application.
-- **Menu contextuel** : Clic droit sur le HUD pour accéder directement à « Quitter CherryHud ».
 
 ---
 
