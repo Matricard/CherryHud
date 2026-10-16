@@ -38,11 +38,11 @@
 - **GPU Temperature**: Hardware temperatures read directly from native `AppleSMC` registers.
 - **Dedicated VRAM**: Active allocated video memory (in GB).
 
-### 🔵 CPU (Cyan)
+### 🔵 CPU (Sky Blue)
 - **CPU Load (%)**: Overall processor core utilization queried via macOS Mach kernel APIs.
 - **CPU Temperature**: Instantaneous processor die temperature via native `AppleSMC`.
 
-### 🟣 VRAM / Memory (Purple & Royal Blue)
+### 🟣 VRAM & RAM (Lavender & Periwinkle)
 - **VRAM / GPU Memory**: Active VRAM consumption in GB (customizable label: *VRAM* or *GPU MEM*).
 - **RAM**: Real-time system physical memory consumption in GB.
 
