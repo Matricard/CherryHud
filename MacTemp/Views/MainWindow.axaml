@@ -3,28 +3,67 @@
         xmlns:vm="using:MacTemp.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" Width="200" Height="100"
+        mc:Ignorable="d" 
+        Width="210" Height="106"
         x:Class="MacTemp.Views.MainWindow"
-        TransparencyLevelHint="Transparent"
+        x:DataType="vm:MainWindowViewModel"
+        TransparencyLevelHint="Mica, AcrylicBlur, Transparent"
         CanResize="False"
         ExtendClientAreaChromeHints="NoChrome"
         Background="Transparent"
         Topmost="True"
         ExtendClientAreaToDecorationsHint="True"
-        SystemDecorations="BorderOnly"
-        IsHitTestVisible="False"
-        x:DataType="vm:MainWindowViewModel">
+        SystemDecorations="None"
+        WindowStartupLocation="CenterScreen">
 
-    <StackPanel IsHitTestVisible="False" Background="#D0000000">
-         <TextBlock  Margin="40,15,0,0"
-            Text="{Binding CpuTemp}" 
-            Foreground="Cyan"
-            FontSize="24" 
-            FontWeight="Bold" />
-         <TextBlock Margin="40,5,0,0"
-            Foreground="DarkRed"
-            Text="{Binding GpuTemp}" 
-            FontSize="24" 
-            FontWeight="Bold" />
-    </StackPanel>
+    <Border Margin="5"
+            CornerRadius="16"
+            Background="#D916171F"
+            BorderBrush="#33FFFFFF"
+            BorderThickness="1"
+            BoxShadow="0 8 24 0 #60000000">
+        <Grid RowDefinitions="*,*" Margin="14,10">
+            <!-- CPU Row -->
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                <Border Grid.Column="0"
+                        Background="#2600E5FF"
+                        CornerRadius="6"
+                        Padding="7,3"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="CPU"
+                               Foreground="#00E5FF"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding CpuTemp}"
+                           Foreground="{Binding CpuStatusColor}"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- GPU Row -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                <Border Grid.Column="0"
+                        Background="#26FF5376"
+                        CornerRadius="6"
+                        Padding="7,3"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="GPU"
+                               Foreground="#FF5376"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding GpuTemp}"
+                           Foreground="{Binding GpuStatusColor}"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+            </Grid>
+        </Grid>
+    </Border>
 </Window>
