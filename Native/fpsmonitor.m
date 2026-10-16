@@ -638,7 +638,6 @@ void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
 
 void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 1. Set app as accessory overlay so clicking it never summons the Dock or steals active app focus
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
         NSWindow *win = nil;
@@ -651,13 +650,19 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
             }
         }
 
+        if (!win) {
+            for (NSWindow *w in [NSApp windows]) {
+                if (w) {
+                    win = w;
+                    break;
+                }
+            }
+        }
+
         if (!win) return;
 
         // Elevate window above normal windows and over fullscreen games
         [win setLevel:NSScreenSaverWindowLevel];
-
-        // Non-activating style mask: prevents mouse clicks on overlay from stealing focus from games
-        win.styleMask = win.styleMask | NSWindowStyleMaskNonactivatingPanel;
 
         // Auxiliary fullscreen collection behavior:
         // Allows the floating HUD to stay visible on top of full-screen games
@@ -684,6 +689,15 @@ void FpsMonitor_SetOverlayVisible(void *viewOrWindowPtr, bool visible) {
                 win = (NSWindow *)obj;
             } else if ([obj isKindOfClass:[NSView class]]) {
                 win = [(NSView *)obj window];
+            }
+        }
+
+        if (!win) {
+            for (NSWindow *w in [NSApp windows]) {
+                if (w) {
+                    win = w;
+                    break;
+                }
             }
         }
 

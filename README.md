@@ -26,7 +26,7 @@
 **CherryHud** is a lightweight, translucent, and fluid in-game performance overlay designed specifically for **macOS**. It displays vital hardware metrics for your Mac in real time without ever disrupting your gameplay:
 
 - **True Full-Screen Game Overlay**: Floats seamlessly over full-screen Metal games (*World of Warcraft*, *Baldur's Gate 3*, *Final Fantasy XIV*, *Cyberpunk 2077*, emulators, etc.) utilizing `NSScreenSaverWindowLevel` and `NSWindowCollectionBehaviorFullScreenAuxiliary`.
-- **Zero Input Interference**: Native AppKit isolation prevents the overlay from ever stealing keyboard or mouse focus, and suppresses unwanted Dock or menu bar popups during frantic gaming sessions.
+- **Zero Input Interference**: Floats unobtrusively without interfering with your controls during frantic gaming sessions.
 - **Clean Translucent Rendering**: Translucent dark card with no border clutter, crisp white typography for all numbers and units, and distinctive category badges for effortless at-a-glance readability in the heat of action.
 
 ---
