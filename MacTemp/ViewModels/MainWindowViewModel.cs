@@ -10,11 +10,12 @@ namespace MacTemp.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
+    private const int HistoryCapacity = 75; // 75 points * 100ms = 7.5 seconds of history (MangoHud speed)
     private readonly ITemperatureService _temperatureService;
     private readonly IFpsService _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
     private readonly CancellationTokenSource _cts = new();
-    private readonly List<double> _fpsHistoryBuffer = new(35);
+    private readonly List<double> _frametimeHistoryBuffer = new(HistoryCapacity);
     private bool _isDisposed;
 
     // Header info (MangoHud style)
@@ -55,7 +56,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     // RAM metrics
     [ObservableProperty]
-    private string _ramDisplay = "-- / -- GB";
+    private string _ramDisplay = "-- GB";
 
     [ObservableProperty]
     private string _ramPercent = "--%";
@@ -73,12 +74,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _fpsStatusColor = "#00E676";
 
-    // MangoHud graph
+    // MangoHud frametime graph
     [ObservableProperty]
-    private IReadOnlyList<double> _fpsHistory = Array.Empty<double>();
+    private IReadOnlyList<double> _frametimeHistory = Array.Empty<double>();
 
     [ObservableProperty]
-    private double _targetFps = 60.0;
+    private double _targetFrametimeMs = 16.67; // 60 FPS = 16.67ms target
 
     public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService())
     {
@@ -94,11 +95,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _systemMetricsService = systemMetricsService;
 
         // Pre-fill history buffer with baseline for clean initial graph rendering
-        for (int i = 0; i < 35; i++)
+        for (int i = 0; i < HistoryCapacity; i++)
         {
-            _fpsHistoryBuffer.Add(60.0);
+            _frametimeHistoryBuffer.Add(16.67);
         }
-        _fpsHistory = _fpsHistoryBuffer.ToArray();
+        _frametimeHistory = _frametimeHistoryBuffer.ToArray();
 
         _fpsService.Start();
         _ = StartMonitoringLoopAsync(_cts.Token);
@@ -112,20 +113,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private async Task StartMonitoringLoopAsync(CancellationToken token)
     {
-        // 250ms periodic timer for smooth MangoHud updates (4 times per second)
-        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+        // 100ms periodic timer for smooth MangoHud graph scrolling (7.5 seconds of history)
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
         int tickCounter = 0;
 
-        UpdateMetrics(isFullTick: true);
+        UpdateMetrics(isTextTick: true);
 
         try
         {
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
             {
                 tickCounter++;
-                // Full metrics update once a second (temperatures and system metrics)
-                bool isFullTick = (tickCounter % 4 == 0);
-                UpdateMetrics(isFullTick);
+                // In MangoHud, 'fps_sampling_period' defaults to 500ms (half-second).
+                // All text values (FPS, ms, CPU %, GPU %, RAM, Temps) refresh every 500ms (every 5 ticks of 100ms)
+                // so they remain steady and readable without frantic jitter.
+                bool isTextTick = (tickCounter % 5 == 0);
+                UpdateMetrics(isTextTick);
             }
         }
         catch (OperationCanceledException)
@@ -134,36 +137,26 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void UpdateMetrics(bool isFullTick)
+    private void UpdateMetrics(bool isTextTick)
     {
-        // 1. Clock
-        CurrentTime = DateTime.Now.ToString("HH:mm");
-
-        // 2. FPS & GPU/Battery from ScreenCaptureKit
         var fpsData = _fpsService.GetFpsData();
 
-        TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
-            ? fpsData.AppName
-            : "";
-
-        if (fpsData.BatteryPercent.HasValue)
-        {
-            HasBattery = true;
-            BatteryDisplay = fpsData.IsBatteryCharging
-                ? $"⚡ {fpsData.BatteryPercent.Value}%"
-                : $"🔋 {fpsData.BatteryPercent.Value}%";
-        }
-        else
-        {
-            HasBattery = false;
-        }
-
+        // 1. Frametime Graph: updates every 100ms for smooth curve animation
         if (!fpsData.HasPermission)
         {
-            FpsDisplay = "Perm. requise";
-            FrametimeDisplay = "Activer";
-            FpsStatusColor = "#FFB300"; // Amber
-            _fpsHistoryBuffer.Add(0.0);
+            if (isTextTick)
+            {
+                FpsDisplay = "Perm. requise";
+                FrametimeDisplay = "Activer";
+                FpsStatusColor = "#FFB300"; // Amber
+            }
+
+            _frametimeHistoryBuffer.Add(TargetFrametimeMs);
+            if (_frametimeHistoryBuffer.Count > HistoryCapacity)
+            {
+                _frametimeHistoryBuffer.RemoveAt(0);
+            }
+            FrametimeHistory = _frametimeHistoryBuffer.ToArray();
         }
         else
         {
@@ -171,53 +164,98 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
             if (currentFps > 0.5)
             {
-                FpsDisplay = $"{Math.Round(currentFps)} FPS";
-                double ft = 1000.0 / currentFps;
-                FrametimeDisplay = $"{ft:F1} ms";
-                FpsStatusColor = "#00E676"; // MangoHud vibrant green
-                if (currentFps >= 100)
+                double currentFt = fpsData.CurrentFrametimeMs > 0.1 ? fpsData.CurrentFrametimeMs : (1000.0 / currentFps);
+
+                // Sample the peak frametime in this 100ms interval to catch any micro-stutters on the graph
+                double sampleFt = fpsData.PeakFrametimeMs > 0.1 ? fpsData.PeakFrametimeMs : currentFt;
+
+                _frametimeHistoryBuffer.Add(sampleFt);
+                if (_frametimeHistoryBuffer.Count > HistoryCapacity)
                 {
-                    TargetFps = 120.0;
+                    _frametimeHistoryBuffer.RemoveAt(0);
                 }
-                _fpsHistoryBuffer.Add(currentFps);
+                FrametimeHistory = _frametimeHistoryBuffer.ToArray();
+
+                if (isTextTick)
+                {
+                    FpsDisplay = $"{Math.Round(currentFps)} FPS";
+                    // MangoHud text header displays the steady-state frametime corresponding to the sampled FPS
+                    FrametimeDisplay = $"{1000.0 / currentFps:F1} ms";
+                    FpsStatusColor = "#00E676"; // MangoHud vibrant green
+
+                    if (currentFps >= 100)
+                    {
+                        TargetFrametimeMs = 8.33; // 120 FPS
+                    }
+                    else if (currentFps >= 50)
+                    {
+                        TargetFrametimeMs = 16.67; // 60 FPS
+                    }
+                    else
+                    {
+                        TargetFrametimeMs = 33.33; // 30 FPS
+                    }
+                }
             }
             else
             {
-                FpsDisplay = "-- FPS";
-                FrametimeDisplay = "-- ms";
-                FpsStatusColor = "#8899A6";
-                _fpsHistoryBuffer.Add(0.0);
+                _frametimeHistoryBuffer.Add(TargetFrametimeMs);
+                if (_frametimeHistoryBuffer.Count > HistoryCapacity)
+                {
+                    _frametimeHistoryBuffer.RemoveAt(0);
+                }
+                FrametimeHistory = _frametimeHistoryBuffer.ToArray();
+
+                if (isTextTick)
+                {
+                    FpsDisplay = "-- FPS";
+                    FrametimeDisplay = "-- ms";
+                    FpsStatusColor = "#8899A6";
+                }
             }
         }
 
-        if (_fpsHistoryBuffer.Count > 35)
+        // 2. Text metrics (FPS, Frametime, CPU, GPU, RAM, Temps, Battery, Clock) update every 500ms (MangoHud default)
+        if (isTextTick)
         {
-            _fpsHistoryBuffer.RemoveAt(0);
-        }
-        FpsHistory = _fpsHistoryBuffer.ToArray();
+            CurrentTime = DateTime.Now.ToString("HH:mm");
 
-        // GPU load & VRAM from FPS service
-        if (fpsData.GpuUsagePercent > 0.1)
-        {
-            GpuUsage = $"{Math.Round(fpsData.GpuUsagePercent)}%";
-        }
-        else
-        {
-            GpuUsage = "0%";
-        }
+            TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
+                ? fpsData.AppName
+                : "";
 
-        if (fpsData.GpuVramGb > 0.05)
-        {
-            GpuVram = $"{fpsData.GpuVramGb:F1} GB";
-        }
-        else
-        {
-            GpuVram = "-- GB";
-        }
+            if (fpsData.BatteryPercent.HasValue)
+            {
+                HasBattery = true;
+                BatteryDisplay = fpsData.IsBatteryCharging
+                    ? $"⚡ {fpsData.BatteryPercent.Value}%"
+                    : $"🔋 {fpsData.BatteryPercent.Value}%";
+            }
+            else
+            {
+                HasBattery = false;
+            }
 
-        // 3. Temperatures & System Resources (every second)
-        if (isFullTick)
-        {
+            // GPU load & VRAM
+            if (fpsData.GpuUsagePercent > 0.1)
+            {
+                GpuUsage = $"{Math.Round(fpsData.GpuUsagePercent)}%";
+            }
+            else
+            {
+                GpuUsage = "0%";
+            }
+
+            if (fpsData.GpuVramGb > 0.05)
+            {
+                GpuVram = $"{fpsData.GpuVramGb:F1} GB";
+            }
+            else
+            {
+                GpuVram = "-- GB";
+            }
+
+            // Temperatures (AppleSMC)
             var (cpuTemp, gpuTemp) = _temperatureService.ReadTemperatures();
 
             if (cpuTemp.HasValue)
@@ -242,9 +280,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 GpuStatusColor = "#778899";
             }
 
+            // CPU Load & RAM usage (Mach host statistics)
             var res = _systemMetricsService.ReadResourceMetrics();
             CpuUsage = $"{Math.Round(res.CpuUsagePercent)}%";
-            RamDisplay = $"{res.RamUsedGb:F1} / {res.RamTotalGb:F0} GB";
+            RamDisplay = $"{res.RamUsedGb:F1} GB";
             RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
         }
     }

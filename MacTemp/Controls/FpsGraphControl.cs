@@ -8,33 +8,30 @@ namespace MacTemp.Controls;
 
 public class FpsGraphControl : Control
 {
-    public static readonly StyledProperty<IReadOnlyList<double>?> HistoryProperty =
-        AvaloniaProperty.Register<FpsGraphControl, IReadOnlyList<double>?>(nameof(History));
+    public static readonly StyledProperty<IReadOnlyList<double>?> FrametimesProperty =
+        AvaloniaProperty.Register<FpsGraphControl, IReadOnlyList<double>?>(nameof(Frametimes));
 
-    public static readonly StyledProperty<double> TargetFpsProperty =
-        AvaloniaProperty.Register<FpsGraphControl, double>(nameof(TargetFps), defaultValue: 60.0);
+    public static readonly StyledProperty<double> TargetFrametimeMsProperty =
+        AvaloniaProperty.Register<FpsGraphControl, double>(nameof(TargetFrametimeMs), defaultValue: 16.67);
 
-    public IReadOnlyList<double>? History
+    public IReadOnlyList<double>? Frametimes
     {
-        get => GetValue(HistoryProperty);
-        set => SetValue(HistoryProperty, value);
+        get => GetValue(FrametimesProperty);
+        set => SetValue(FrametimesProperty, value);
     }
 
-    public double TargetFps
+    public double TargetFrametimeMs
     {
-        get => GetValue(TargetFpsProperty);
-        set => SetValue(TargetFpsProperty, value);
+        get => GetValue(TargetFrametimeMsProperty);
+        set => SetValue(TargetFrametimeMsProperty, value);
     }
 
     static FpsGraphControl()
     {
-        AffectsRender<FpsGraphControl>(HistoryProperty, TargetFpsProperty);
+        AffectsRender<FpsGraphControl>(FrametimesProperty, TargetFrametimeMsProperty);
     }
 
-    private static readonly IBrush SlotBackground = new SolidColorBrush(Color.FromArgb(90, 10, 12, 18));
-    private static readonly IPen SlotBorder = new Pen(new SolidColorBrush(Color.FromArgb(30, 255, 255, 255)), 1);
-    private static readonly IPen TargetLinePen = new Pen(new SolidColorBrush(Color.FromArgb(40, 255, 255, 255)), 1, DashStyle.Dash);
-    private static readonly IPen LinePen = new Pen(new SolidColorBrush(Color.FromRgb(0, 230, 118)), 1.5);
+    private static readonly IPen GraphLinePen = new Pen(new SolidColorBrush(Color.FromRgb(0, 230, 118)), 1.5);
     private static readonly IBrush DotBrush = new SolidColorBrush(Color.FromRgb(0, 255, 127));
 
     public override void Render(DrawingContext context)
@@ -43,79 +40,39 @@ public class FpsGraphControl : Control
 
         double w = Bounds.Width;
         double h = Bounds.Height;
-        if (w <= 4 || h <= 4)
+        if (w <= 4 || h <= 4 || Frametimes == null || Frametimes.Count < 2)
         {
             return;
         }
 
-        var rect = new Rect(0, 0, w, h);
-        var rrect = new RoundedRect(rect, 4);
+        // Dynamic scale based on frametimes
+        double targetMs = TargetFrametimeMs > 0 ? TargetFrametimeMs : 16.67;
+        double maxScaleMs = Math.Max(targetMs * 2.2, 33.33);
 
-        // 1. Draw Slot Background & Border
-        context.DrawRectangle(SlotBackground, SlotBorder, rrect);
-
-        // 2. Draw Target FPS line (e.g. 60 or 120 FPS)
-        double maxDisplayFps = Math.Max(TargetFps, 60.0);
-        if (History != null)
+        foreach (var ft in Frametimes)
         {
-            foreach (var val in History)
+            if (ft > maxScaleMs && ft <= 200.0)
             {
-                if (val > maxDisplayFps) maxDisplayFps = val;
+                maxScaleMs = ft;
             }
         }
-        maxDisplayFps = Math.Ceiling(maxDisplayFps / 30.0) * 30.0; // round up to multiple of 30
+        maxScaleMs = Math.Min(maxScaleMs, 100.0); // cap max scale to 100ms
 
-        double targetY = h - (Math.Clamp(TargetFps / maxDisplayFps, 0, 1) * (h - 6)) - 3;
-        context.DrawLine(TargetLinePen, new Point(3, targetY), new Point(w - 3, targetY));
-
-        if (History == null || History.Count < 2)
-        {
-            return;
-        }
-
-        int count = History.Count;
+        int count = Frametimes.Count;
         double stepX = (w - 6) / (count - 1);
 
         var points = new Point[count];
         for (int i = 0; i < count; i++)
         {
-            double val = History[i];
-            double clampedVal = Math.Clamp(val, 0, maxDisplayFps);
-            double y = h - ((clampedVal / maxDisplayFps) * (h - 8)) - 4;
+            double val = Frametimes[i];
+            double clampedVal = Math.Clamp(val, 0, maxScaleMs);
+            // 0 ms at bottom, high ms at top
+            double y = h - ((clampedVal / maxScaleMs) * (h - 8)) - 4;
             double x = 3 + (i * stepX);
             points[i] = new Point(x, y);
         }
 
-        // 3. Draw Gradient Fill under line (MangoHud style)
-        var fillGeometry = new StreamGeometry();
-        using (var fillCtx = fillGeometry.Open())
-        {
-            fillCtx.BeginFigure(new Point(points[0].X, h - 2), isFilled: true);
-            fillCtx.LineTo(points[0]);
-
-            for (int i = 1; i < count; i++)
-            {
-                fillCtx.LineTo(points[i]);
-            }
-
-            fillCtx.LineTo(new Point(points[count - 1].X, h - 2));
-            fillCtx.EndFigure(isClosed: true);
-        }
-
-        var fillBrush = new LinearGradientBrush
-        {
-            StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-            EndPoint = new RelativePoint(0, 1, RelativeUnit.Relative),
-            GradientStops =
-            {
-                new GradientStop(Color.FromArgb(70, 0, 230, 118), 0.0),
-                new GradientStop(Color.FromArgb(5, 0, 230, 118), 1.0)
-            }
-        };
-
-        context.DrawGeometry(fillBrush, null, fillGeometry);
-
-        // 4. Draw Graph Line
+        // Draw Frametime Graph as a clean pure green line
         var lineGeometry = new StreamGeometry();
         using (var lineCtx = lineGeometry.Open())
         {
@@ -126,11 +83,10 @@ public class FpsGraphControl : Control
             }
             lineCtx.EndFigure(isClosed: false);
         }
+        context.DrawGeometry(null, GraphLinePen, lineGeometry);
 
-        context.DrawGeometry(null, LinePen, lineGeometry);
-
-        // 5. Draw glowing dot on the latest value (far right)
+        // Draw glowing green dot on the latest frametime (far right)
         Point lastPoint = points[count - 1];
-        context.DrawEllipse(DotBrush, null, lastPoint, 2.0, 2.0);
+        context.DrawEllipse(DotBrush, null, lastPoint, 2.2, 2.2);
     }
 }

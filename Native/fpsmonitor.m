@@ -13,10 +13,12 @@
 
 @interface FpsMonitor : NSObject <SCStreamOutput, SCStreamDelegate>
 @property (atomic) double currentFps;
+@property (atomic) double currentFrametime;
 @property (nonatomic, copy) NSString *trackedAppName;
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
+- (double)consumePeakFrametime;
 @end
 
 @implementation FpsMonitor {
@@ -30,6 +32,9 @@
     int _tsHead;
     int _tsCount;
     NSTimeInterval _lastFrameTime;
+    NSTimeInterval _prevFrameTime;
+    double _intervalPeakFrametime;
+
     BOOL _isRunning;
 }
 
@@ -40,9 +45,12 @@
         _lock = OS_UNFAIR_LOCK_INIT;
         _trackedAppName = @"";
         _currentFps = 0.0;
+        _currentFrametime = 0.0;
+        _intervalPeakFrametime = 0.0;
         _currentPid = 0;
         _tsHead = 0;
         _tsCount = 0;
+        _prevFrameTime = 0;
     }
     return self;
 }
@@ -52,6 +60,8 @@
         if (_isRunning) return;
         _isRunning = YES;
         _lastFrameTime = [NSDate timeIntervalSinceReferenceDate];
+        _prevFrameTime = 0;
+        _intervalPeakFrametime = 0;
         _tsHead = 0;
         _tsCount = 0;
 
@@ -82,7 +92,10 @@
         }
         _currentPid = 0;
         self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        _intervalPeakFrametime = 0;
         _tsCount = 0;
+        _prevFrameTime = 0;
     }
 }
 
@@ -93,6 +106,8 @@
     os_unfair_lock_lock(&_lock);
     if (now - _lastFrameTime > 1.0 && self.currentFps > 0) {
         self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        _intervalPeakFrametime = 0.0;
         _tsCount = 0;
     }
     os_unfair_lock_unlock(&_lock);
@@ -175,9 +190,22 @@
 
     os_unfair_lock_lock(&_lock);
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+
+    // Measure exact frametime in milliseconds between consecutive completed frames
+    if (_prevFrameTime > 0) {
+        NSTimeInterval delta = now - _prevFrameTime;
+        double ftMs = delta * 1000.0;
+        if (ftMs >= 0.2 && ftMs <= 500.0) {
+            if (ftMs > _intervalPeakFrametime) {
+                _intervalPeakFrametime = ftMs;
+            }
+            self.currentFrametime = ftMs;
+        }
+    }
+    _prevFrameTime = now;
     _lastFrameTime = now;
 
-    // 2. Sliding 1.0-second window of real completed frames
+    // 2. Sliding 1.0-second window of real completed frames for FPS
     _timestamps[_tsHead] = now;
     _tsHead = (_tsHead + 1) % MAX_TIMESTAMPS;
     if (_tsCount < MAX_TIMESTAMPS) {
@@ -196,11 +224,22 @@
     os_unfair_lock_unlock(&_lock);
 }
 
+- (double)consumePeakFrametime {
+    os_unfair_lock_lock(&_lock);
+    double peak = _intervalPeakFrametime;
+    _intervalPeakFrametime = self.currentFrametime;
+    os_unfair_lock_unlock(&_lock);
+    return peak > 0.1 ? peak : self.currentFrametime;
+}
+
 - (void)stream:(SCStream *)stream didStopWithError:(NSError *)error {
     @synchronized (self) {
         _stream = nil;
         self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        _intervalPeakFrametime = 0.0;
         _tsCount = 0;
+        _prevFrameTime = 0;
     }
 }
 
@@ -234,6 +273,16 @@ void FpsMonitor_Stop(void) {
 double FpsMonitor_GetFps(void) {
     if (!s_monitor) return 0.0;
     return s_monitor.currentFps;
+}
+
+double FpsMonitor_GetCurrentFrametime(void) {
+    if (!s_monitor) return 0.0;
+    return s_monitor.currentFrametime;
+}
+
+double FpsMonitor_GetPeakFrametime(void) {
+    if (!s_monitor) return 0.0;
+    return [s_monitor consumePeakFrametime];
 }
 
 const char* FpsMonitor_GetTrackedAppName(void) {

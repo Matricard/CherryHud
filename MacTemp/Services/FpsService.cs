@@ -58,6 +58,12 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern double FpsMonitor_GetFps();
 
     [DllImport(LibraryName)]
+    private static extern double FpsMonitor_GetCurrentFrametime();
+
+    [DllImport(LibraryName)]
+    private static extern double FpsMonitor_GetPeakFrametime();
+
+    [DllImport(LibraryName)]
     private static extern IntPtr FpsMonitor_GetTrackedAppName();
 
     [DllImport(LibraryName)]
@@ -115,6 +121,9 @@ public sealed class FpsService : IFpsService, IDisposable
         {
             bool hasPerm = FpsMonitor_HasPermission();
             double fps = FpsMonitor_GetFps();
+            double currentFt = FpsMonitor_GetCurrentFrametime();
+            double peakFt = FpsMonitor_GetPeakFrametime();
+
             IntPtr ptr = FpsMonitor_GetTrackedAppName();
             string appName = ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) ?? "" : "";
 
@@ -124,11 +133,11 @@ public sealed class FpsService : IFpsService, IDisposable
             double vramGb = vramBytes / (1024.0 * 1024.0 * 1024.0);
             int? battery = batPercent >= 0 ? batPercent : null;
 
-            return new FpsData(fps, appName, hasPerm, gpuUsage, vramGb, battery, isCharging);
+            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging);
         }
         catch
         {
-            return new FpsData(0.0, "", false, 0.0, 0.0, null, false);
+            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false);
         }
     }
 

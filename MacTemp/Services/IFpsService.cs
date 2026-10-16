@@ -2,6 +2,8 @@ namespace MacTemp.Services;
 
 public record FpsData(
     double Fps,
+    double CurrentFrametimeMs,
+    double PeakFrametimeMs,
     string AppName,
     bool HasPermission,
     double GpuUsagePercent,
