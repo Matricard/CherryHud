@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -41,6 +42,17 @@ public partial class App : Application
             }
 
             SetupTrayMenu(vm);
+
+            if (vm.SettingsService.Current.AutoCheckUpdates)
+            {
+                Task.Delay(5000).ContinueWith(_ =>
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        ShowUpdateWindow(autoCheckOnlyIfUpdate: true);
+                    });
+                });
+            }
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -144,6 +156,62 @@ public partial class App : Application
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
         _settingsWindow.Activate();
+    }
+
+    private UpdateWindow? _updateWindow;
+
+    public void ShowUpdateWindow(bool autoCheckOnlyIfUpdate = false)
+    {
+        if (_updateWindow != null)
+        {
+            _updateWindow.Activate();
+            return;
+        }
+
+        MainWindowViewModel? mainVm = null;
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow?.DataContext is MainWindowViewModel vm)
+        {
+            mainVm = vm;
+        }
+
+        var settingsService = mainVm?.SettingsService ?? new SettingsService();
+        var updateVm = new UpdateViewModel(new UpdateService(), settingsService);
+
+        if (autoCheckOnlyIfUpdate)
+        {
+            // Background check: only show window if an update is available!
+            _ = Task.Run(async () =>
+            {
+                var updateService = new UpdateService();
+                var info = await updateService.CheckForUpdatesAsync(settingsService.Current.GitHubRepo);
+                if (info.IsUpdateAvailable)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        if (_updateWindow == null)
+                        {
+                            _updateWindow = new UpdateWindow(updateVm);
+                            _updateWindow.Closed += (_, _) => _updateWindow = null;
+                        }
+                        _updateWindow.Show();
+                        _updateWindow.Activate();
+                        _ = updateVm.CheckUpdatesCommand.ExecuteAsync(null);
+                    });
+                }
+            });
+            return;
+        }
+
+        _updateWindow = new UpdateWindow(updateVm);
+        _updateWindow.Closed += (_, _) => _updateWindow = null;
+        _updateWindow.Show();
+        _updateWindow.Activate();
+        _ = updateVm.CheckUpdatesCommand.ExecuteAsync(null);
+    }
+
+    private void CheckUpdates_OnClick(object? sender, EventArgs e)
+    {
+        ShowUpdateWindow(autoCheckOnlyIfUpdate: false);
     }
 
     private void Quit_OnClick(object? sender, EventArgs e)

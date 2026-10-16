@@ -34,4 +34,6 @@ public class AppSettings
     public string GpuMemoryLabel { get; set; } = "VRAM";
     public int GraphFps { get; set; } = 60;
     public bool KeepTemperaturesWhite { get; set; } = true;
+    public bool AutoCheckUpdates { get; set; } = true;
+    public string GitHubRepo { get; set; } = "Matricard/CherryHud";
 }

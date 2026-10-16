@@ -362,8 +362,8 @@
                                    FontWeight="Heavy"
                                    HorizontalAlignment="Center" />
 
-                        <TextBlock Text="Version 1.0.0 • .NET 10"
-                                   Foreground="#FF2A6D"
+                        <TextBlock Text="Version 0.9.0 • .NET 10"
+                                   Foreground="#D41630"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    HorizontalAlignment="Center"
@@ -410,6 +410,35 @@
                                                VerticalAlignment="Center" />
                                 </StackPanel>
                             </StackPanel>
+                        </Border>
+
+                        <!-- Carte Mises à jour -->
+                        <Border Background="#202230"
+                                CornerRadius="10"
+                                Padding="14,10"
+                                Margin="0,0,0,12"
+                                Width="380">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="Mises à jour du logiciel"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="Rechercher une nouvelle version ou un artéfact"
+                                               Foreground="#8A8D9F"
+                                               FontSize="10.5" />
+                                </StackPanel>
+                                <Button Grid.Column="1"
+                                        Content="Vérifier..."
+                                        Command="{Binding CheckForUpdatesCommand}"
+                                        Background="#267ED884"
+                                        Foreground="#7ED884"
+                                        FontSize="11"
+                                        FontWeight="Bold"
+                                        CornerRadius="6"
+                                        Padding="12,5"
+                                        Cursor="Hand" />
+                            </Grid>
                         </Border>
 
                         <!-- Auteur & Licence -->
