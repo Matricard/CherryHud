@@ -1,80 +1,121 @@
-﻿using System.Diagnostics;
-using System.Globalization;
+using System;
+using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using MacTemp.Services;
 
 namespace MacTemp.ViewModels;
 
-public partial class MainWindowViewModel : ViewModelBase
+public partial class MainWindowViewModel : ViewModelBase, IDisposable
 {
-    private string _gpuTemp = "";
+    private readonly ITemperatureService _temperatureService;
+    private readonly CancellationTokenSource _cts = new();
+    private bool _isDisposed;
 
-    public string GpuTemp
+    [ObservableProperty]
+    private string _cpuTemp = "-- °C";
+
+    [ObservableProperty]
+    private string _gpuTemp = "-- °C";
+
+    [ObservableProperty]
+    private double _cpuValue;
+
+    [ObservableProperty]
+    private double _gpuValue;
+
+    [ObservableProperty]
+    private string _cpuStatusColor = "#00D2FF"; // Modern bright cyan
+
+    [ObservableProperty]
+    private string _gpuStatusColor = "#FF5E7E"; // Modern vibrant coral
+
+    public MainWindowViewModel() : this(new SmcTemperatureService())
     {
-        get => _gpuTemp;
-        set => SetProperty(ref _gpuTemp, value);
     }
-    private string _cpuTemp = "";
 
-    public string CpuTemp
+    public MainWindowViewModel(ITemperatureService temperatureService)
     {
-        get => _cpuTemp;
-        set => SetProperty(ref _cpuTemp, value);
+        _temperatureService = temperatureService;
+        _ = StartMonitoringLoopAsync(_cts.Token);
     }
 
-    public MainWindowViewModel()
+    private async Task StartMonitoringLoopAsync(CancellationToken token)
     {
-        Task.Run(async () =>
+        // Periodic timer every 1 second
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        
+        // Initial update right away
+        UpdateTemperatures();
+
+        try
         {
-            while (true)
+            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
             {
-                CpuTemp = $"CPU: {GetCpuTemp()}°C";
-                GpuTemp = $"GPU: {GetGpuTemp()}°C";
-                await Task.Delay(1000);
+                UpdateTemperatures();
             }
-        });
-    }
-    static int GetCpuTemp()
-    {
-        string command = "smctemp";
-        string arguments = "-c";
-        // Initialisation du processus
-        ProcessStartInfo processInfo = new ProcessStartInfo
+        }
+        catch (OperationCanceledException)
         {
-            FileName = command,
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        // Démarrage du processus
-        using (Process process = Process.Start(processInfo))
-        {
-            // Lecture de la sortie du processus
-            string result = process.StandardOutput.ReadToEnd();
-            return (int)float.Parse(result, NumberStyles.Float, CultureInfo.InvariantCulture);
+            // Graceful shutdown
         }
     }
-    static int GetGpuTemp()
-    {
-        string command = "smctemp";
-        string arguments = "-g";
-        // Initialisation du processus
-        ProcessStartInfo processInfo = new ProcessStartInfo
-        {
-            FileName = command,
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
 
-        // Démarrage du processus
-        using (Process process = Process.Start(processInfo))
+    private void UpdateTemperatures()
+    {
+        var (cpu, gpu) = _temperatureService.ReadTemperatures();
+
+        if (cpu.HasValue)
         {
-            // Lecture de la sortie du processus
-            string result = process.StandardOutput.ReadToEnd();
-            return (int)float.Parse(result, NumberStyles.Float, CultureInfo.InvariantCulture);
+            CpuValue = Math.Round(cpu.Value, 1);
+            CpuTemp = $"{Math.Round(cpu.Value)}°C";
+            CpuStatusColor = GetStatusColor(cpu.Value, defaultColor: "#00E5FF");
         }
+        else
+        {
+            CpuTemp = "N/A";
+            CpuStatusColor = "#778899";
+        }
+
+        if (gpu.HasValue)
+        {
+            GpuValue = Math.Round(gpu.Value, 1);
+            GpuTemp = $"{Math.Round(gpu.Value)}°C";
+            GpuStatusColor = GetStatusColor(gpu.Value, defaultColor: "#FF5376");
+        }
+        else
+        {
+            GpuTemp = "N/A";
+            GpuStatusColor = "#778899";
+        }
+    }
+
+    private static string GetStatusColor(double temperature, string defaultColor)
+    {
+        return temperature switch
+        {
+            >= 85.0 => "#FF3B30", // macOS Red
+            >= 70.0 => "#FF9500", // macOS Orange
+            _ => defaultColor
+        };
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        _cts.Cancel();
+        _cts.Dispose();
+
+        if (_temperatureService is IDisposable disposableService)
+        {
+            disposableService.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
     }
 }
