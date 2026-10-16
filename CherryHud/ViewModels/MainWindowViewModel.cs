@@ -239,52 +239,52 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private BoxShadows _cardBoxShadow = default;
 
     [ObservableProperty]
-    private string _gpuBadgeBg = "#26B8001C";
+    private string _gpuBadgeBg = "#26F28B82";
 
     [ObservableProperty]
-    private string _gpuBadgeFg = "#E02038";
+    private string _gpuBadgeFg = "#F28B82";
 
     [ObservableProperty]
     private string _gpuValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _cpuBadgeBg = "#2600E5FF";
+    private string _cpuBadgeBg = "#2680DEEA";
 
     [ObservableProperty]
-    private string _cpuBadgeFg = "#00E5FF";
+    private string _cpuBadgeFg = "#80DEEA";
 
     [ObservableProperty]
     private string _cpuValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _vramBadgeBg = "#26BA68C8";
+    private string _vramBadgeBg = "#26CE93D8";
 
     [ObservableProperty]
-    private string _vramBadgeFg = "#BA68C8";
+    private string _vramBadgeFg = "#CE93D8";
 
     [ObservableProperty]
     private string _vramValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _ramBadgeBg = "#26448AFF";
+    private string _ramBadgeBg = "#269FA8DA";
 
     [ObservableProperty]
-    private string _ramBadgeFg = "#448AFF";
+    private string _ramBadgeFg = "#9FA8DA";
 
     [ObservableProperty]
     private string _ramValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _batBadgeBg = "#2670D078";
+    private string _batBadgeBg = "#26FFE082";
 
     [ObservableProperty]
-    private string _batBadgeFg = "#7ED884";
+    private string _batBadgeFg = "#FFE082";
 
     [ObservableProperty]
     private string _batValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _fpsBadgeBg = "#2670D078";
+    private string _fpsBadgeBg = "#267ED884";
 
     [ObservableProperty]
     private string _fpsBadgeFg = "#7ED884";
@@ -307,33 +307,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         CardBorderThickness = new Thickness(0);
         CardBoxShadow = default;
 
-        // GPU: Deep ruby cherry from logo
-        GpuBadgeBg = "#26B8001C";
-        GpuBadgeFg = "#E02038";
+        // GPU: Soft pastel coral cherry
+        GpuBadgeBg = "#26F28B82";
+        GpuBadgeFg = "#F28B82";
         GpuValueColor = "#FFFFFF";
 
-        // CPU: Cyan (Classic)
-        CpuBadgeBg = "#2600E5FF";
-        CpuBadgeFg = "#00E5FF";
+        // CPU: Soft pastel aqua / ice
+        CpuBadgeBg = "#2680DEEA";
+        CpuBadgeFg = "#80DEEA";
         CpuValueColor = "#FFFFFF";
 
-        // VRAM: Purple (Classic)
-        VramBadgeBg = "#26BA68C8";
-        VramBadgeFg = "#BA68C8";
+        // VRAM: Soft pastel lavender
+        VramBadgeBg = "#26CE93D8";
+        VramBadgeFg = "#CE93D8";
         VramValueColor = "#FFFFFF";
 
-        // RAM: Royal Blue (Classic)
-        RamBadgeBg = "#26448AFF";
-        RamBadgeFg = "#448AFF";
+        // RAM: Soft pastel periwinkle
+        RamBadgeBg = "#269FA8DA";
+        RamBadgeFg = "#9FA8DA";
         RamValueColor = "#FFFFFF";
 
-        // BAT: Luminous stem green from logo
-        BatBadgeBg = "#2670D078";
-        BatBadgeFg = "#7ED884";
+        // BAT: Soft pastel amber / gold
+        BatBadgeBg = "#26FFE082";
+        BatBadgeFg = "#FFE082";
         BatValueColor = "#FFFFFF";
 
-        // FPS: Luminous stem green from logo
-        FpsBadgeBg = "#2670D078";
+        // FPS: Soft pastel mint green
+        FpsBadgeBg = "#267ED884";
         FpsBadgeFg = "#7ED884";
         FrametimeValueColor = "#FFFFFF";
         FpsStatusColor = "#FFFFFF";

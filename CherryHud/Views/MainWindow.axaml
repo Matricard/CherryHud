@@ -36,16 +36,12 @@
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <!-- GPU Row -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowGpu}">
-                <Border Grid.Column="0"
-                        Background="{Binding GpuBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="GPU"
-                               Foreground="{Binding GpuBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="GPU"
+                           Foreground="{Binding GpuBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -79,16 +75,12 @@
 
             <!-- CPU Row -->
             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowCpu}">
-                <Border Grid.Column="0"
-                        Background="{Binding CpuBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="CPU"
-                               Foreground="{Binding CpuBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="CPU"
+                           Foreground="{Binding CpuBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -122,16 +114,12 @@
 
             <!-- VRAM Row -->
             <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowVram}">
-                <Border Grid.Column="0"
-                        Background="{Binding VramBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GpuMemoryLabel}"
-                               Foreground="{Binding VramBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="{Binding GpuMemoryLabel}"
+                           Foreground="{Binding VramBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding GpuVramValue}"
@@ -150,16 +138,12 @@
 
             <!-- RAM Row -->
             <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowRam}">
-                <Border Grid.Column="0"
-                        Background="{Binding RamBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="RAM"
-                               Foreground="{Binding RamBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="RAM"
+                           Foreground="{Binding RamBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding RamValue}"
@@ -178,16 +162,12 @@
 
             <!-- BAT Row -->
             <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowBatteryRow}">
-                <Border Grid.Column="0"
-                        Background="{Binding BatBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="BAT"
-                               Foreground="{Binding BatBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="BAT"
+                           Foreground="{Binding BatBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                     <!-- Batterie vectorielle libre de droits & haute précision (Licence MIT) -->
@@ -237,16 +217,12 @@
 
             <!-- FPS Row -->
             <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6" IsVisible="{Binding ShowFps}">
-                <Border Grid.Column="0"
-                        Background="{Binding FpsBadgeBg}"
-                        CornerRadius="5"
-                        Padding="6,2"
-                        VerticalAlignment="Center">
-                    <TextBlock Text="FPS"
-                               Foreground="{Binding FpsBadgeFg}"
-                               FontSize="11"
-                               FontWeight="Heavy" />
-                </Border>
+                <TextBlock Grid.Column="0"
+                           Text="FPS"
+                           Foreground="{Binding FpsBadgeFg}"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
 
                 <Button Grid.Column="2"
                         Command="{Binding RequestPermissionCommand}"
