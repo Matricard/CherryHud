@@ -21,8 +21,8 @@
     </Window.KeyBindings>
 
     <Panel>
-        <!-- Teinte d'arrière-plan : sombre obsidian transparent quand active, gris fumée foncé quand inactive -->
-        <Border x:Name="WindowBackgroundBorder" Background="#8006070E">
+        <!-- Teinte d'arrière-plan : sombre obsidian transparent (~62%) quand active, gris fumée foncé quand inactive -->
+        <Border x:Name="WindowBackgroundBorder" Background="#9E030408">
             <Border.Transitions>
                 <Transitions>
                     <BrushTransition Property="Background" Duration="0:0:0.18" />
@@ -30,30 +30,9 @@
             </Border.Transitions>
         </Border>
 
-        <Grid RowDefinitions="Auto,*,Auto" Margin="22,46,22,18">
-        <!-- Header (positionné sous les boutons classiques macOS) -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
-            <Border Grid.Column="0"
-                    Width="40" Height="40"
-                    CornerRadius="10"
-                    ClipToBounds="True"
-                    BoxShadow="0 4 12 0 #33000000"
-                    Margin="0,0,12,0">
-                <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
-            </Border>
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Loc.HeaderTitle}"
-                           Foreground="#FFFFFF"
-                           FontSize="17"
-                           FontWeight="Bold" />
-                <TextBlock Text="{Binding Loc.HeaderSubtitle}"
-                           Foreground="#8A8D9F"
-                           FontSize="11.5" />
-            </StackPanel>
-        </Grid>
-
+        <Grid RowDefinitions="*,Auto" Margin="22,40,22,18">
         <!-- Body / Tabs -->
-        <TabControl Grid.Row="1">
+        <TabControl Grid.Row="0">
             <TabControl.Styles>
                 <Style Selector="TabItem">
                     <Setter Property="FontSize" Value="12" />
@@ -68,23 +47,24 @@
 
             <!-- Onglet 1 : Affichage -->
             <TabItem Header="{Binding Loc.TabDisplay}">
-                <ScrollViewer Margin="0,12,0,0">
-                    <StackPanel Spacing="14">
+                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
+                    <StackPanel Spacing="9">
                         <!-- Language Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.LanguageCardTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.LanguageCardSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
                                           SelectedIndex="{Binding SelectedLanguageIndex}"
-                                          Width="170"
+                                          Width="145"
                                           FontSize="11.5">
                                     <ComboBoxItem Content="English" />
                                     <ComboBoxItem Content="Français" />
@@ -93,20 +73,21 @@
                         </Border>
 
                         <!-- Theme Card -->
-                        <Border Background="#4E1C1F2D" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#4E1C1F2D" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.ThemeCardTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.ThemeCardSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
                                           SelectedIndex="{Binding SelectedThemeIndex}"
-                                          Width="170"
+                                          Width="145"
                                           FontSize="11.5">
                                     <ComboBoxItem Content="{Binding Loc.ThemeClassic}" />
                                 </ComboBox>
@@ -114,16 +95,17 @@
                         </Border>
 
                         <!-- Températures en blanc Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.WhiteTempTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.WhiteTempSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1"
                                               IsChecked="{Binding KeepTemperaturesWhite}"
@@ -132,16 +114,17 @@
                         </Border>
 
                         <!-- Mode Automatique Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.AutoModeTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.AutoModeSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1"
                                               IsChecked="{Binding AutoGameMode}"
@@ -150,20 +133,21 @@
                         </Border>
 
                         <!-- Position Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.PositionTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.PositionSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
                                           SelectedIndex="{Binding SelectedPositionIndex}"
-                                          Width="170"
+                                          Width="145"
                                           FontSize="11.5">
                                     <ComboBoxItem Content="{Binding Loc.PositionTopLeft}" />
                                     <ComboBoxItem Content="{Binding Loc.PositionTopRight}" />
@@ -174,13 +158,13 @@
                         </Border>
 
                         <!-- Opacité Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
-                            <StackPanel Spacing="8">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
+                            <StackPanel Spacing="6">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding Loc.OpacityTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding OpacityPercent, StringFormat='{}{0}%'}"
@@ -200,16 +184,16 @@
 
             <!-- Onglet 2 : Métriques -->
             <TabItem Header="{Binding Loc.TabMetrics}">
-                <ScrollViewer Margin="0,12,0,0">
-                    <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,10">
-                        <StackPanel Spacing="10">
+                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
+                    <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,8">
+                        <StackPanel Spacing="8">
                             <!-- GPU -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#26FF5E7E" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="GPU" Foreground="#FF5E7E" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#661422" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="GPU" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricGpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricGpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGpu}" OnContent="" OffContent="" />
                             </Grid>
@@ -218,11 +202,11 @@
 
                             <!-- CPU -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#2600E5FF" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="CPU" Foreground="#00E5FF" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#0E3D4F" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="CPU" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricCpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricCpu}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowCpu}" OnContent="" OffContent="" />
                             </Grid>
@@ -231,11 +215,11 @@
 
                             <!-- VRAM -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#26BA68C8" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="VRAM" Foreground="#BA68C8" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#4E1A5B" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="VRAM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricVram}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricVram}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowVram}" OnContent="" OffContent="" />
                             </Grid>
@@ -244,11 +228,11 @@
 
                             <!-- RAM -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#26448AFF" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="RAM" Foreground="#448AFF" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#172F5E" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="RAM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricRam}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricRam}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowRam}" OnContent="" OffContent="" />
                             </Grid>
@@ -257,11 +241,11 @@
 
                             <!-- BAT -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#2681C784" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="BAT" Foreground="#81C784" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#523C0F" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="BAT" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricBattery}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricBattery}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBattery}" OnContent="" OffContent="" />
                             </Grid>
@@ -270,11 +254,11 @@
 
                             <!-- FPS -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <Border Background="#2600E676" CornerRadius="4" Padding="5,1">
-                                        <TextBlock Text="FPS" Foreground="#00E676" FontSize="10" FontWeight="Heavy" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="FPS" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
-                                    <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
                             </Grid>
@@ -283,9 +267,11 @@
 
                             <!-- Graphique -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="📈" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Loc.MetricGraph}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#272A38" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="📈" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricGraph}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGraph}" OnContent="" OffContent="" />
                             </Grid>
@@ -296,19 +282,20 @@
 
             <!-- Onglet 3 : Système & Rendu -->
             <TabItem Header="{Binding Loc.TabAdvanced}">
-                <ScrollViewer Margin="0,12,0,0">
-                    <StackPanel Spacing="14">
+                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
+                    <StackPanel Spacing="9">
                         <!-- Libellé Mémoire GPU -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.GpuMemLabelTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.GpuMemLabelSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
                                           SelectedIndex="{Binding SelectedGpuMemoryLabelIndex}"
@@ -321,16 +308,17 @@
                         </Border>
 
                         <!-- Rafraîchissement Graphique -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.GraphFpsTitle}"
                                                Foreground="#FFFFFF"
-                                               FontSize="12.5"
+                                               FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.GraphFpsSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="11" />
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
                                           SelectedIndex="{Binding SelectedGraphFpsIndex}"
@@ -344,22 +332,25 @@
                         </Border>
 
                         <!-- Screen Recording Permission Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <StackPanel Spacing="8">
                                 <TextBlock Text="{Binding Loc.ScreenCaptureTitle}"
                                            Foreground="#FFFFFF"
-                                           FontSize="12.5"
+                                           FontSize="12"
                                            FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding Loc.ScreenCaptureSubtitle}"
                                            Foreground="#8A8D9F"
-                                           FontSize="11" />
+                                           FontSize="11"
+                                           TextWrapping="Wrap" />
                                 <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding PermissionStatusText}"
                                                Foreground="{Binding PermissionStatusColor}"
                                                FontSize="11.5"
                                                FontWeight="Bold"
-                                               VerticalAlignment="Center" />
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0"
+                                               TextWrapping="Wrap" />
                                     <Button Grid.Column="1"
                                             Content="{Binding Loc.OpenSystemSettingsButton}"
                                             Command="{Binding OpenSystemSettingsCommand}"
@@ -379,7 +370,7 @@
 
             <!-- Onglet 4 : À propos -->
             <TabItem Header="{Binding Loc.TabAbout}">
-                <ScrollViewer Margin="0,12,0,0">
+                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
                     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0">
                         <!-- App Icon -->
                         <Border Width="72" Height="72"
@@ -455,14 +446,15 @@
                                 Margin="0,0,0,12"
                                 Width="380">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
                                     <TextBlock Text="{Binding Loc.SoftwareUpdatesTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
                                     <TextBlock Text="{Binding Loc.SoftwareUpdatesSubtitle}"
                                                Foreground="#8A8D9F"
-                                               FontSize="10.5" />
+                                               FontSize="10.5"
+                                               TextWrapping="Wrap" />
                                 </StackPanel>
                                 <Button Grid.Column="1"
                                         Content="{Binding Loc.CheckButton}"
@@ -477,12 +469,19 @@
                             </Grid>
                         </Border>
 
-                        <!-- Auteur & Licence -->
+                        <!-- Auteur, Technologie & Licence -->
                         <TextBlock Text="{Binding Loc.AuthorText}"
                                    Foreground="#7E8092"
                                    FontSize="11"
                                    FontWeight="Medium"
                                    HorizontalAlignment="Center" />
+
+                        <TextBlock Text="{Binding Loc.BuiltWithAvaloniaText}"
+                                   Foreground="#6B6E82"
+                                   FontSize="10.5"
+                                   FontWeight="Normal"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,2,0,0" />
 
                         <TextBlock Text="{Binding Loc.LicenseText}"
                                    Foreground="#5E6070"
@@ -496,10 +495,10 @@
         </TabControl>
 
         <!-- Footer -->
-        <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
             <Button Grid.Column="0"
                     Content="{Binding Loc.ResetDefaultsButton}"
-                    Command="{Binding ResetDefaultsCommand}"
+                    Command="{Binding RequestResetDefaultsCommand}"
                     Background="Transparent"
                     Foreground="#8A8D9F"
                     FontSize="11.5"
@@ -519,5 +518,67 @@
                     Cursor="Hand" />
         </Grid>
     </Grid>
+
+    <!-- Modal de confirmation de réinitialisation -->
+    <Border IsVisible="{Binding IsResetConfirmationVisible}"
+            Background="#C007080F">
+        <Border HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Width="380"
+                Background="#24141724"
+                BorderBrush="#2AFFFFFF"
+                BorderThickness="1"
+                CornerRadius="14"
+                Padding="24,20"
+                BoxShadow="0 10 30 0 #80000000">
+            <StackPanel Spacing="14">
+                <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+                    <TextBlock Text="⚠️" FontSize="18" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding Loc.ResetConfirmTitle}"
+                               Foreground="#FFFFFF"
+                               FontSize="15"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Text="{Binding Loc.ResetConfirmMessage}"
+                           Foreground="#B0B3C5"
+                           FontSize="12"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           LineHeight="17" />
+
+                <Grid ColumnDefinitions="*,*" Margin="0,6,0,0">
+                    <Button Grid.Column="0"
+                            Content="{Binding Loc.CancelButton}"
+                            Command="{Binding CancelResetDefaultsCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Background="#1AFFFFFF"
+                            Foreground="#D0D0D0"
+                            FontSize="12"
+                            FontWeight="SemiBold"
+                            CornerRadius="8"
+                            Padding="0,8"
+                            Margin="0,0,6,0"
+                            Cursor="Hand" />
+
+                    <Button Grid.Column="1"
+                            Content="{Binding Loc.ConfirmResetButton}"
+                            Command="{Binding ConfirmResetDefaultsCommand}"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Background="#D41630"
+                            Foreground="#FFFFFF"
+                            FontSize="12"
+                            FontWeight="Bold"
+                            CornerRadius="8"
+                            Padding="0,8"
+                            Margin="6,0,0,0"
+                            Cursor="Hand" />
+                </Grid>
+            </StackPanel>
+        </Border>
+    </Border>
 </Panel>
 </Window>
