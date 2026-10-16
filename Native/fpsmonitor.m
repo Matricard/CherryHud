@@ -8,6 +8,7 @@
 #import <IOKit/ps/IOPowerSources.h>
 #import <IOKit/ps/IOPSKeys.h>
 #import <os/lock.h>
+#import <objc/runtime.h>
 
 #define MAX_TIMESTAMPS 360
 
@@ -353,3 +354,84 @@ void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
     }
     CFRelease(blob);
 }
+
+static BOOL ReturnNO(id self, SEL _cmd) {
+    return NO;
+}
+
+static void NoOp_Activate(id self, SEL _cmd) {
+    // Prevent application from activating over games
+}
+
+static void NoOp_ActivateIgnoring(id self, SEL _cmd, BOOL flag) {
+    // Prevent application from activating over games
+}
+
+static void Swizzled_MakeKeyAndOrderFront(NSWindow *self, SEL _cmd, id sender) {
+    [self orderFront:sender];
+}
+
+static void Swizzled_MakeKeyWindow(NSWindow *self, SEL _cmd) {
+    // NO-OP
+}
+
+void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 1. Set app as accessory overlay so clicking it never summons the Dock or Menu Bar
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+
+        // 2. Swizzle NSApplication activation methods
+        class_replaceMethod([NSApplication class], @selector(activate), (IMP)NoOp_Activate, "v@:");
+        class_replaceMethod([NSApplication class], @selector(activateIgnoringOtherApps:), (IMP)NoOp_ActivateIgnoring, "v@:c");
+
+        // 3. Swizzle NSWindow class methods
+        class_replaceMethod([NSWindow class], @selector(canBecomeKeyWindow), (IMP)ReturnNO, "c@:");
+        class_replaceMethod([NSWindow class], @selector(canBecomeMainWindow), (IMP)ReturnNO, "c@:");
+        class_replaceMethod([NSWindow class], @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
+        class_replaceMethod([NSWindow class], @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
+
+        NSWindow *win = nil;
+        if (viewOrWindowPtr) {
+            id obj = (__bridge id)viewOrWindowPtr;
+            if ([obj isKindOfClass:[NSWindow class]]) {
+                win = (NSWindow *)obj;
+            } else if ([obj isKindOfClass:[NSView class]]) {
+                win = [(NSView *)obj window];
+            }
+        }
+
+        NSMutableArray<NSWindow *> *targets = [NSMutableArray array];
+        if (win) [targets addObject:win];
+        for (NSWindow *w in [NSApp windows]) {
+            if (![targets containsObject:w]) [targets addObject:w];
+        }
+
+        for (NSWindow *w in targets) {
+            // Elevate window above macOS menu bar and over fullscreen games
+            [w setLevel:NSScreenSaverWindowLevel];
+
+            // Non-activating style mask: prevents mouse clicks from activating the app
+            w.styleMask = w.styleMask | NSWindowStyleMaskNonactivatingPanel;
+
+            // Auxiliary fullscreen collection behavior:
+            // Allows the floating HUD to stay visible on top of full-screen games!
+            NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                                 NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                                 NSWindowCollectionBehaviorStationary |
+                                                 NSWindowCollectionBehaviorIgnoresCycle;
+            [w setCollectionBehavior:behavior];
+
+            // Do not hide when switching away from the widget
+            [w setHidesOnDeactivate:NO];
+
+            Class winClass = [w class];
+            if (winClass != [NSWindow class]) {
+                class_replaceMethod(winClass, @selector(canBecomeKeyWindow), (IMP)ReturnNO, "c@:");
+                class_replaceMethod(winClass, @selector(canBecomeMainWindow), (IMP)ReturnNO, "c@:");
+                class_replaceMethod(winClass, @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
+                class_replaceMethod(winClass, @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
+            }
+        }
+    });
+}
+
