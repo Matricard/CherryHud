@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using System;
 
 namespace MacTemp;
@@ -16,6 +16,10 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
+            .With(new MacOSPlatformOptions
+            {
+                ShowInDock = false
+            })
             .WithInterFont()
             .LogToTrace();
 }

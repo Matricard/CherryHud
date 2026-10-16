@@ -72,6 +72,21 @@ public sealed class FpsService : IFpsService, IDisposable
     [DllImport(LibraryName)]
     private static extern void FpsMonitor_GetBatteryStats(out int outPercent, [MarshalAs(UnmanagedType.I1)] out bool outIsCharging);
 
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_ConfigureOverlayWindow(IntPtr viewOrWindowPtr);
+
+    public static void ConfigureOverlayWindow(IntPtr viewOrWindowPtr)
+    {
+        try
+        {
+            FpsMonitor_ConfigureOverlayWindow(viewOrWindowPtr);
+        }
+        catch
+        {
+            // Fallback gracefully if native method unavailable
+        }
+    }
+
     private bool _isStarted;
     private bool _isDisposed;
 

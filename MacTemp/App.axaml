@@ -12,4 +12,20 @@
     <Application.Styles>
         <FluentTheme />
     </Application.Styles>
+
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon Icon="/Assets/tray-icon.png" ToolTipText="CherryHud">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="CherryHud" IsEnabled="False" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Afficher / Masquer" Click="ToggleVisibility_OnClick" />
+                        <NativeMenuItemSeparator />
+                        <NativeMenuItem Header="Quitter CherryHud" Click="Quit_OnClick" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
 </Application>

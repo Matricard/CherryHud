@@ -14,16 +14,28 @@
         Background="Transparent"
         Topmost="True"
         ExtendClientAreaToDecorationsHint="True"
+        Title="CherryHud"
+        Icon="/Assets/logo.png"
         SystemDecorations="None"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="Manual">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Cmd+Q" Command="{Binding QuitCommand}" />
+    </Window.KeyBindings>
 
     <!-- Carte HUD MangoHud translucide sans contour ; extérieur 100% transparent -->
     <Border CornerRadius="16"
             Background="#8C13141C"
             BorderThickness="0"
             Padding="14,10">
+        <Border.ContextMenu>
+            <ContextMenu>
+                <MenuItem Header="Quitter CherryHud" Command="{Binding QuitCommand}" />
+            </ContextMenu>
+        </Border.ContextMenu>
+
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
-            <!-- Header : Nom du jeu / App + Batterie + Heure -->
+            <!-- Header : Nom du jeu / App + Batterie + Heure + Bouton Fermer -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
                 <TextBlock Grid.Column="0"
                            Text="{Binding TrackedAppName}"
@@ -43,6 +55,18 @@
                                Foreground="#757575"
                                FontSize="11"
                                FontWeight="SemiBold" />
+                    <Button Command="{Binding QuitCommand}"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="3,0"
+                            Margin="2,0,0,0"
+                            Cursor="Hand"
+                            ToolTip.Tip="Fermer CherryHud">
+                        <TextBlock Text="✕"
+                                   Foreground="#616161"
+                                   FontSize="10"
+                                   FontWeight="Bold" />
+                    </Button>
                 </StackPanel>
             </Grid>
 

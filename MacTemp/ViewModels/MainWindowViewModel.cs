@@ -111,6 +111,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _fpsService.RequestPermission();
     }
 
+    [RelayCommand]
+    public void Quit()
+    {
+        if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Shutdown();
+        }
+        else
+        {
+            Environment.Exit(0);
+        }
+    }
+
     private async Task StartMonitoringLoopAsync(CancellationToken token)
     {
         // 100ms periodic timer for smooth MangoHud graph scrolling (7.5 seconds of history)
