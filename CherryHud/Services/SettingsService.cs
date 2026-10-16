@@ -52,7 +52,12 @@ public class SettingsService : ISettingsService
             // Fallback to defaults
         }
 
-        return new AppSettings();
+        var defaultSettings = new AppSettings();
+        if (!FpsService.IsLaptop())
+        {
+            defaultSettings.ShowBattery = false;
+        }
+        return defaultSettings;
     }
 
     public void Save()

@@ -164,29 +164,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public ISettingsService SettingsService => _settingsService;
 
     [ObservableProperty]
-    private bool _keepTemperaturesWhite = true;
-
-    partial void OnKeepTemperaturesWhiteChanged(bool value)
-    {
-        if (value)
-        {
-            CpuStatusColor = "#FFFFFF";
-            GpuStatusColor = "#FFFFFF";
-        }
-        else
-        {
-            if (double.TryParse(CpuTempValue, out double cpuT))
-            {
-                CpuStatusColor = GetStatusColor(cpuT);
-            }
-            if (double.TryParse(GpuTempValue, out double gpuT))
-            {
-                GpuStatusColor = GetStatusColor(gpuT);
-            }
-        }
-    }
-
-    [ObservableProperty]
     private bool _showGpu = true;
 
     [ObservableProperty]
@@ -211,20 +188,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _showGraph = true;
 
     [ObservableProperty]
-    private string _gpuMemoryLabel = "VRAM";
-
-    [ObservableProperty]
-    private double _overlayOpacity = 1.0;
-
-    [ObservableProperty]
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
 
-    [ObservableProperty]
-    private int _graphFps = 60;
-
     // Theme properties
-    [ObservableProperty]
-    private OverlayTheme _currentTheme = OverlayTheme.Classic;
 
     [ObservableProperty]
     private IBrush _cardBackground = Brush.Parse("#8C13141C");
@@ -298,9 +264,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private Color _graphDotColor = Color.FromRgb(212, 22, 48);
 
-    public void ApplyTheme(OverlayTheme theme)
+    public void ApplyClassicTheme()
     {
-        CurrentTheme = theme;
         // Classic theme updated with exact colors from the official CherryHud logo
         CardBackground = Brush.Parse("#8C13141C");
         CardBorderBrush = Brushes.Transparent;
@@ -420,13 +385,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ShowBatteryRow = s.ShowBattery && HasBattery;
         ShowFps = s.ShowFps;
         ShowGraph = s.ShowGraph;
-        GpuMemoryLabel = s.GpuMemoryLabel;
-        OverlayOpacity = s.Opacity;
         OverlayPosition = s.Position;
-        GraphFps = s.GraphFps;
         IsAutoModeActive = s.AutoGameMode;
-        KeepTemperaturesWhite = s.KeepTemperaturesWhite;
-        ApplyTheme(s.Theme);
+        ApplyClassicTheme();
         LocalizationService.Instance.CurrentLanguage = s.Language;
     }
 
@@ -569,7 +530,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     }
                 }
 
-                if (fpsData.BatteryPercent.HasValue)
+                if (fpsData.BatteryPercent.HasValue && FpsService.IsLaptop())
                 {
                     HasBattery = true;
                     IsBatteryCharging = fpsData.IsBatteryCharging;
@@ -622,7 +583,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     CpuTempValue = $"{Math.Round(cpuTemp.Value)}";
                     CpuTempUnit = "°C";
                     CpuTemp = $"{CpuTempValue}°C";
-                    CpuStatusColor = KeepTemperaturesWhite ? "#FFFFFF" : GetStatusColor(cpuTemp.Value);
+                    CpuStatusColor = "#FFFFFF";
                 }
                 else
                 {
@@ -637,7 +598,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     GpuTempValue = $"{Math.Round(gpuTemp.Value)}";
                     GpuTempUnit = "°C";
                     GpuTemp = $"{GpuTempValue}°C";
-                    GpuStatusColor = KeepTemperaturesWhite ? "#FFFFFF" : GetStatusColor(gpuTemp.Value);
+                    GpuStatusColor = "#FFFFFF";
                 }
                 else
                 {

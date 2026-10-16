@@ -59,6 +59,10 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern bool FpsMonitor_IsGameActive();
 
     [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsLaptop();
+
+    [DllImport(LibraryName)]
     private static extern double FpsMonitor_GetFps();
 
     [DllImport(LibraryName)]
@@ -126,6 +130,9 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern void FpsMonitor_ShowAboutWindow(IntPtr windowPtr, [MarshalAs(UnmanagedType.LPUTF8Str)] string iconPath);
 
     [DllImport(LibraryName)]
+    private static extern void FpsMonitor_MinimizeWindow(IntPtr windowPtr);
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_HideAboutWindow();
 
     public static void ShowAboutWindow(IntPtr windowPtr, string iconPath)
@@ -133,6 +140,17 @@ public sealed class FpsService : IFpsService, IDisposable
         try
         {
             FpsMonitor_ShowAboutWindow(windowPtr, iconPath ?? string.Empty);
+        }
+        catch
+        {
+        }
+    }
+
+    public static void MinimizeWindow(IntPtr windowPtr)
+    {
+        try
+        {
+            FpsMonitor_MinimizeWindow(windowPtr);
         }
         catch
         {
@@ -266,6 +284,21 @@ public sealed class FpsService : IFpsService, IDisposable
             }
         }
     }
+
+    public static bool IsLaptop()
+    {
+        try
+        {
+            return FpsMonitor_IsLaptop();
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public bool IsLaptopHardware => IsLaptop();
+    bool IFpsService.IsLaptop => IsLaptop();
 
     public FpsData GetFpsData()
     {

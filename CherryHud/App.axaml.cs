@@ -17,8 +17,9 @@ public partial class App : Application
     private NativeMenuItem? _toggleVisibilityMenuItem;
     private NativeMenuItem? _autoModeMenuItem;
     private NativeMenuItem? _settingsMenuItem;
-    private NativeMenuItem? _checkUpdatesMenuItem;
+    private NativeMenuItem? _updateMenuItem;
     private NativeMenuItem? _quitMenuItem;
+    private MainWindowViewModel? _mainViewModel;
 
     public override void Initialize()
     {
@@ -47,14 +48,24 @@ public partial class App : Application
 
             SetupTrayMenu(vm);
 
+            if (desktop.Args != null && Array.Exists(desktop.Args, a => a == "--settings"))
+            {
+                Settings_OnClick(null, EventArgs.Empty);
+            }
+
             if (vm.SettingsService.Current.AutoCheckUpdates)
             {
-                Task.Delay(5000).ContinueWith(_ =>
+                Task.Delay(3000).ContinueWith(async _ =>
                 {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    try
                     {
-                        ShowUpdateWindow(autoCheckOnlyIfUpdate: true);
-                    });
+                        var updateService = new UpdateService();
+                        await updateService.CheckForUpdatesAsync(vm.SettingsService.Current.GitHubRepo).ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        // Silent check ignores network issues
+                    }
                 });
             }
         }
@@ -64,23 +75,26 @@ public partial class App : Application
 
     private void SetupTrayMenu(MainWindowViewModel vm)
     {
+        _mainViewModel = vm;
         var icons = TrayIcon.GetIcons(this);
         if (icons != null && icons.Count > 0 && icons[0].Menu is NativeMenu menu)
         {
-            if (menu.Items.Count >= 9)
+            if (menu.Items.Count >= 7)
             {
-                _toggleVisibilityMenuItem = menu.Items[2] as NativeMenuItem;
-                _autoModeMenuItem = menu.Items[3] as NativeMenuItem;
-                _settingsMenuItem = menu.Items[5] as NativeMenuItem;
-                _checkUpdatesMenuItem = menu.Items[6] as NativeMenuItem;
-                _quitMenuItem = menu.Items[8] as NativeMenuItem;
+                _toggleVisibilityMenuItem = menu.Items[0] as NativeMenuItem;
+                _autoModeMenuItem = menu.Items[1] as NativeMenuItem;
+                _settingsMenuItem = menu.Items[3] as NativeMenuItem;
+                _updateMenuItem = menu.Items[4] as NativeMenuItem;
+                _quitMenuItem = menu.Items[6] as NativeMenuItem;
             }
 
             // Sync menu state right before menu opens on macOS
             menu.NeedsUpdate += (_, _) =>
             {
                 UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+                UpdateVisibilityMenuItem(vm.IsOverlayVisible);
                 UpdateTrayMenuLanguage();
+                UpdateTrayUpdateItem();
             };
         }
 
@@ -93,25 +107,65 @@ public partial class App : Application
                     UpdateAutoModeMenuItem(vm.IsAutoModeActive);
                 });
             }
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible))
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    UpdateVisibilityMenuItem(vm.IsOverlayVisible);
+                });
+            }
         };
 
         LocalizationService.Instance.LanguageChanged += (_, _) =>
         {
-            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateTrayMenuLanguage);
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                UpdateTrayMenuLanguage();
+                UpdateTrayUpdateItem();
+            });
+        };
+
+        UpdateService.UpdateAvailabilityChanged += _ =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(UpdateTrayUpdateItem);
         };
 
         UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+        UpdateVisibilityMenuItem(vm.IsOverlayVisible);
         UpdateTrayMenuLanguage();
+        UpdateTrayUpdateItem();
+    }
+
+    private void UpdateVisibilityMenuItem(bool isVisible)
+    {
+        if (_toggleVisibilityMenuItem != null)
+        {
+            var loc = LocalizationService.Instance;
+            _toggleVisibilityMenuItem.Header = isVisible ? loc.TrayHide : loc.TrayShow;
+        }
     }
 
     private void UpdateTrayMenuLanguage()
     {
         var loc = LocalizationService.Instance;
-        if (_toggleVisibilityMenuItem != null) _toggleVisibilityMenuItem.Header = loc.TrayToggleVisibility;
+        if (_toggleVisibilityMenuItem != null)
+        {
+            bool isVisible = _mainViewModel?.IsOverlayVisible ?? true;
+            _toggleVisibilityMenuItem.Header = isVisible ? loc.TrayHide : loc.TrayShow;
+        }
         if (_autoModeMenuItem != null) _autoModeMenuItem.Header = loc.TrayAutoMode;
         if (_settingsMenuItem != null) _settingsMenuItem.Header = loc.TraySettings;
-        if (_checkUpdatesMenuItem != null) _checkUpdatesMenuItem.Header = loc.TrayCheckUpdates;
+        if (_updateMenuItem != null) _updateMenuItem.Header = loc.TrayUpdate;
         if (_quitMenuItem != null) _quitMenuItem.Header = loc.TrayQuit;
+    }
+
+    private void UpdateTrayUpdateItem()
+    {
+        if (_updateMenuItem != null)
+        {
+            _updateMenuItem.IsVisible = UpdateService.IsUpdateAvailable;
+            _updateMenuItem.Header = LocalizationService.Instance.TrayUpdate;
+        }
     }
 
     private void UpdateAutoModeMenuItem(bool isAutoActive)
@@ -130,6 +184,7 @@ public partial class App : Application
             {
                 vm.ToggleVisibility();
                 UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+                UpdateVisibilityMenuItem(vm.IsOverlayVisible);
             }
             else
             {
@@ -144,6 +199,7 @@ public partial class App : Application
         {
             vm.ToggleAutoGameMode();
             UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+            UpdateVisibilityMenuItem(vm.IsOverlayVisible);
         }
     }
 
@@ -225,6 +281,11 @@ public partial class App : Application
         _updateWindow.Show();
         _updateWindow.Activate();
         _ = updateVm.CheckUpdatesCommand.ExecuteAsync(null);
+    }
+
+    private void Update_OnClick(object? sender, EventArgs e)
+    {
+        ShowUpdateWindow(autoCheckOnlyIfUpdate: false);
     }
 
     private void CheckUpdates_OnClick(object? sender, EventArgs e)

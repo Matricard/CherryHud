@@ -1,5 +1,7 @@
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CherryHud.Services;
@@ -14,6 +16,42 @@ public partial class SettingsViewModel : ViewModelBase
 
     public LocalizationService Loc => LocalizationService.Instance;
 
+    public ObservableCollection<string> PositionOptions { get; } = new();
+
+    public void UpdatePositionOptions()
+    {
+        int prev = SelectedPositionIndex;
+        PositionOptions.Clear();
+        PositionOptions.Add(Loc.PositionTopLeft);
+        PositionOptions.Add(Loc.PositionTopRight);
+        PositionOptions.Add(Loc.PositionBottomLeft);
+        PositionOptions.Add(Loc.PositionBottomRight);
+        SelectedPositionIndex = -1;
+        SelectedPositionIndex = prev >= 0 ? prev : 0;
+    }
+
+    public void RefreshUpdateCardText()
+    {
+        if (IsUpdateAvailable)
+        {
+            UpdateCardTitle = Loc.IsFrench
+                ? $"Version {LatestVersion} disponible"
+                : $"Version {LatestVersion} available";
+            UpdateCardSubtitle = Loc.IsFrench
+                ? "Une mise à jour est prête à être installée."
+                : "An update is ready to be installed.";
+        }
+        else
+        {
+            UpdateCardTitle = Loc.IsFrench
+                ? "CherryHud est à jour"
+                : "CherryHud is up to date";
+            UpdateCardSubtitle = Loc.IsFrench
+                ? $"Vous disposez de la version la plus récente ({UpdateService.GetCurrentVersion()})."
+                : $"You have the latest version installed ({UpdateService.GetCurrentVersion()}).";
+        }
+    }
+
     [ObservableProperty]
     private int _selectedLanguageIndex;
 
@@ -22,15 +60,6 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _selectedPositionIndex;
-
-    [ObservableProperty]
-    private int _selectedThemeIndex;
-
-    [ObservableProperty]
-    private double _opacityPercent;
-
-    [ObservableProperty]
-    private bool _keepTemperaturesWhite = true;
 
     [ObservableProperty]
     private bool _showGpu;
@@ -48,16 +77,13 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showBattery;
 
     [ObservableProperty]
+    private bool _isLaptop;
+
+    [ObservableProperty]
     private bool _showFps;
 
     [ObservableProperty]
     private bool _showGraph;
-
-    [ObservableProperty]
-    private int _selectedGpuMemoryLabelIndex;
-
-    [ObservableProperty]
-    private int _selectedGraphFpsIndex;
 
     [ObservableProperty]
     private bool _hasScreenCapturePermission;
@@ -77,14 +103,41 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string _gitHubRepo = "Matricard/CherryHud";
 
+    [ObservableProperty]
+    private bool _isUpdateAvailable;
+
+    [ObservableProperty]
+    private string _latestVersion = "";
+
+    [ObservableProperty]
+    private string _updateCardTitle = "";
+
+    [ObservableProperty]
+    private string _updateCardSubtitle = "";
+
     public SettingsViewModel(ISettingsService settingsService, MainWindowViewModel? mainViewModel, IFpsService fpsService)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
         _fpsService = fpsService;
 
+        UpdateCardTitle = Loc.IsFrench ? "Mises à jour" : "Software Updates";
+        UpdateCardSubtitle = Loc.IsFrench ? "Vérification en arrière-plan..." : "Checking in background...";
+
         LoadFromSettings();
         CheckPermissionStatus();
+        _ = CheckUpdateSilentlyAsync();
+
+        LocalizationService.Instance.LanguageChanged += (_, _) =>
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                UpdatePositionOptions();
+                CheckPermissionStatus();
+                RefreshUpdateCardText();
+                OnPropertyChanged(nameof(Loc));
+            });
+        };
     }
 
 #pragma warning disable MVVMTK0034
@@ -97,25 +150,17 @@ public partial class SettingsViewModel : ViewModelBase
 
         _autoGameMode = s.AutoGameMode;
         _selectedPositionIndex = (int)s.Position;
-        _selectedThemeIndex = (int)s.Theme;
-        _opacityPercent = Math.Round(s.Opacity * 100.0);
-        _keepTemperaturesWhite = s.KeepTemperaturesWhite;
+        UpdatePositionOptions();
 
         _showGpu = s.ShowGpu;
         _showCpu = s.ShowCpu;
         _showVram = s.ShowVram;
         _showRam = s.ShowRam;
         _showBattery = s.ShowBattery;
+        _isLaptop = _fpsService.IsLaptop;
         _showFps = s.ShowFps;
         _showGraph = s.ShowGraph;
 
-        _selectedGpuMemoryLabelIndex = s.GpuMemoryLabel == "GPU MEM" ? 1 : 0;
-        _selectedGraphFpsIndex = s.GraphFps switch
-        {
-            120 => 1,
-            30 => 2,
-            _ => 0
-        };
         _autoCheckUpdates = s.AutoCheckUpdates;
         _gitHubRepo = s.GitHubRepo;
     }
@@ -128,7 +173,7 @@ public partial class SettingsViewModel : ViewModelBase
         if (HasScreenCapturePermission)
         {
             PermissionStatusText = Loc.PermGranted;
-            PermissionStatusColor = "#00E676"; // Green
+            PermissionStatusColor = "#7ED884"; // Pastel green
         }
         else
         {
@@ -143,7 +188,10 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Current.Language = lang;
         _settingsService.Save();
         LocalizationService.Instance.CurrentLanguage = lang;
+        UpdatePositionOptions();
         CheckPermissionStatus();
+        RefreshUpdateCardText();
+        OnPropertyChanged(nameof(Loc));
     }
 
     partial void OnAutoGameModeChanged(bool value)
@@ -165,44 +213,13 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnSelectedPositionIndexChanged(int value)
     {
+        if (value < 0) return;
         var corner = (OverlayCorner)Math.Clamp(value, 0, 3);
         _settingsService.Current.Position = corner;
         _settingsService.Save();
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayPosition = corner;
-        }
-    }
-
-    partial void OnSelectedThemeIndexChanged(int value)
-    {
-        var theme = (OverlayTheme)Math.Clamp(value, 0, 1);
-        _settingsService.Current.Theme = theme;
-        _settingsService.Save();
-        if (_mainViewModel != null)
-        {
-            _mainViewModel.ApplyTheme(theme);
-        }
-    }
-
-    partial void OnOpacityPercentChanged(double value)
-    {
-        double normalized = Math.Clamp(value / 100.0, 0.4, 1.0);
-        _settingsService.Current.Opacity = normalized;
-        _settingsService.Save();
-        if (_mainViewModel != null)
-        {
-            _mainViewModel.OverlayOpacity = normalized;
-        }
-    }
-
-    partial void OnKeepTemperaturesWhiteChanged(bool value)
-    {
-        _settingsService.Current.KeepTemperaturesWhite = value;
-        _settingsService.Save();
-        if (_mainViewModel != null)
-        {
-            _mainViewModel.KeepTemperaturesWhite = value;
         }
     }
 
@@ -254,28 +271,6 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowGraph = value;
     }
-
-    partial void OnSelectedGpuMemoryLabelIndexChanged(int value)
-    {
-        string label = value == 1 ? "GPU MEM" : "VRAM";
-        _settingsService.Current.GpuMemoryLabel = label;
-        _settingsService.Save();
-        if (_mainViewModel != null) _mainViewModel.GpuMemoryLabel = label;
-    }
-
-    partial void OnSelectedGraphFpsIndexChanged(int value)
-    {
-        int fps = value switch
-        {
-            1 => 120,
-            2 => 30,
-            _ => 60
-        };
-        _settingsService.Current.GraphFps = fps;
-        _settingsService.Save();
-        if (_mainViewModel != null) _mainViewModel.GraphFps = fps;
-    }
-
     [RelayCommand]
     public void RequestPermission()
     {
@@ -312,6 +307,91 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isResetConfirmationVisible;
 
+    public async Task CheckUpdateSilentlyAsync()
+    {
+        try
+        {
+            var updateService = new UpdateService();
+            var info = await updateService.CheckForUpdatesAsync(_settingsService.Current.GitHubRepo).ConfigureAwait(false);
+
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                if (info.IsUpdateAvailable)
+                {
+                    IsUpdateAvailable = true;
+                    LatestVersion = info.LatestVersion;
+                    UpdateCardTitle = Loc.IsFrench
+                        ? $"Version {info.LatestVersion} disponible"
+                        : $"Version {info.LatestVersion} available";
+                    UpdateCardSubtitle = Loc.IsFrench
+                        ? "Une mise à jour est prête à être installée."
+                        : "An update is ready to be installed.";
+                }
+                else
+                {
+                    IsUpdateAvailable = false;
+                    UpdateCardTitle = Loc.IsFrench
+                        ? "CherryHud est à jour"
+                        : "CherryHud is up to date";
+                    UpdateCardSubtitle = Loc.IsFrench
+                        ? $"Vous disposez de la version la plus récente ({UpdateService.GetCurrentVersion()})."
+                        : $"You have the latest version installed ({UpdateService.GetCurrentVersion()}).";
+                }
+            });
+        }
+        catch
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                IsUpdateAvailable = false;
+                UpdateCardTitle = Loc.IsFrench ? "CherryHud" : "CherryHud";
+                UpdateCardSubtitle = Loc.IsFrench
+                    ? $"Version {UpdateService.GetCurrentVersion()}"
+                    : $"Version {UpdateService.GetCurrentVersion()}";
+            });
+        }
+    }
+
+    [RelayCommand]
+    public void OpenUpdateWindow()
+    {
+        (Avalonia.Application.Current as App)?.ShowUpdateWindow(autoCheckOnlyIfUpdate: false);
+    }
+
+    [RelayCommand]
+    public void OpenGitHubRepo()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://github.com/Matricard/CherryHud/",
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            Process.Start("open", "https://github.com/Matricard/CherryHud/");
+        }
+    }
+
+    [RelayCommand]
+    public void OpenLicense()
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = "https://github.com/Matricard/CherryHud/blob/main/LICENSE",
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            Process.Start("open", "https://github.com/Matricard/CherryHud/blob/main/LICENSE");
+        }
+    }
+
     [RelayCommand]
     public void CheckForUpdates()
     {
@@ -342,19 +422,18 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedLanguageIndex = (int)AppLanguage.English;
         AutoGameMode = true;
         SelectedPositionIndex = 0;
-        SelectedThemeIndex = 0;
-        OpacityPercent = 100;
-        KeepTemperaturesWhite = true;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";
         ShowGpu = true;
         ShowCpu = true;
         ShowVram = true;
         ShowRam = true;
-        ShowBattery = true;
+        ShowBattery = _fpsService.IsLaptop;
         ShowFps = true;
         ShowGraph = true;
-        SelectedGpuMemoryLabelIndex = 0;
-        SelectedGraphFpsIndex = 0;
+        UpdatePositionOptions();
+        CheckPermissionStatus();
+        RefreshUpdateCardText();
+        OnPropertyChanged(nameof(Loc));
     }
 }
