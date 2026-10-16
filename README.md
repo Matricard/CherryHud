@@ -2,7 +2,7 @@
 
 Le HUD de performance ultime pour macOS, inspiré de **MangoHud** et développé avec **Avalonia UI** et **.NET 8+**.
 
-Affichez en temps réel un overlay flottant ultra-complet pour vos jeux et applications : **GPU, CPU, RAM, VRAM, FPS, Frametime, Batterie, Horloge et Graphique d'historique**.
+Affichez en temps réel un overlay flottant ultra-complet pour vos jeux et applications : **GPU, CPU, RAM, VRAM, FPS, Frametime, Batterie, Horloge et Graphique d'historique de Frametime (ms)**.
 
 ---
 
@@ -15,7 +15,7 @@ Affichez en temps réel un overlay flottant ultra-complet pour vos jeux et appli
 
 ### 🔴 GPU (Coral)
 - **Température GPU** en temps réel via `AppleSMC` natif.
-- **Charge GPU (%)** : Taux d'utilisation du processeur graphique via `IOAccelerator`.
+- **Charge GPU (%)** : Taux d'utilisation effectif du processeur graphique via `IOAccelerator`.
 - **VRAM Allouée** : Quantité de mémoire vidéo utilisée (en Go).
 
 ### 🔵 CPU (Cyan)
@@ -28,11 +28,12 @@ Affichez en temps réel un overlay flottant ultra-complet pour vos jeux et appli
 
 ### 🟢 FPS & Frametime (Lime Green)
 - **Compteur de FPS réel** (`ScreenCaptureKit`) filtré sur les trames effectives du jeu (`SCFrameStatusComplete`).
-- **Temps de trame (*Frametime*)** en millisecondes (ex. `16.6 ms` à 60 FPS).
-- **Graphique Sparkline dynamique** :
-  - Défilement en temps réel (4 mises à jour par seconde).
-  - Ligne de repère cible (60 / 120 FPS).
-  - Dégradé vert néon sous la courbe et point lumineux sur la trame active.
+- **Temps de trame (*Frametime*)** mesuré trame par trame en millisecondes (ex. `16.6 ms` à 60 FPS, `8.3 ms` à 120 FPS).
+- **Véritable Graphique Frametime style MangoHud (`frame_timing`)** :
+  - Affiche la durée exacte de rendu de chaque trame en millisecondes.
+  - Ligne de repère pointillée indiquant la cible (16.6 ms pour 60 FPS, 8.3 ms pour 120 FPS).
+  - Détection visuelle immédiate des micro-saccades (*stutters*) : la courbe reste verte quand le frame pacing est parfait, et affiche des pics rouges/oranges instantanés en cas de saccade.
+  - Dégradé vert néon sous la courbe et point lumineux sur la dernière trame.
 
 ### 🎨 Design & Ergonomie
 - **Extérieur 100% transparent** : Aucune bordure parasite, aucune ombre carrée.
@@ -43,7 +44,7 @@ Affichez en temps réel un overlay flottant ultra-complet pour vos jeux et appli
 
 ## 🔒 Autorisation macOS (Enregistrement de l'écran)
 
-Pour que macOS autorise le widget à calculer les FPS exacts du jeu sans bridage système :
+Pour que macOS autorise le widget à calculer les FPS et frametimes exacts du jeu sans bridage système :
 1. Lancez l'application.
 2. Si `Perm. requise` apparaît sur la ligne FPS, cliquez dessus ou accédez à :  
    **Réglages Système > Confidentialité et sécurité > Enregistrement de l'écran**.

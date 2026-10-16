@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" 
-        Width="236" Height="216"
+        Width="236" Height="255"
         x:Class="MacTemp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         TransparencyLevelHint="Transparent"
@@ -17,12 +17,12 @@
         SystemDecorations="None"
         WindowStartupLocation="CenterScreen">
 
-    <!-- Carte HUD MangoHud complète ; extérieur 100% transparent -->
+    <!-- Carte HUD MangoHud translucide sans contour ; extérieur 100% transparent -->
     <Border CornerRadius="16"
-            Background="#E613141C"
+            Background="#8C13141C"
             BorderThickness="0"
             Padding="14,10">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
             <!-- Header : Nom du jeu / App + Batterie + Heure -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,6">
                 <TextBlock Grid.Column="0"
@@ -63,18 +63,15 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding GpuTemp}"
-                               Foreground="{Binding GpuStatusColor}"
-                               FontSize="15"
-                               FontWeight="Bold" />
                     <TextBlock Text="{Binding GpuUsage}"
                                Foreground="#FF8A80"
-                               FontSize="13"
-                               FontWeight="SemiBold"
+                               FontSize="16"
+                               FontWeight="Bold"
                                VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding GpuVram}"
-                               Foreground="#B0BEC5"
-                               FontSize="11"
+                    <TextBlock Text="{Binding GpuTemp}"
+                               Foreground="{Binding GpuStatusColor}"
+                               FontSize="16"
+                               FontWeight="Bold"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
@@ -93,20 +90,42 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding CpuTemp}"
-                               Foreground="{Binding CpuStatusColor}"
-                               FontSize="15"
-                               FontWeight="Bold" />
                     <TextBlock Text="{Binding CpuUsage}"
                                Foreground="#80D8FF"
-                               FontSize="13"
-                               FontWeight="SemiBold"
+                               FontSize="16"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding CpuTemp}"
+                               Foreground="{Binding CpuStatusColor}"
+                               FontSize="16"
+                               FontWeight="Bold"
                                VerticalAlignment="Center" />
                 </StackPanel>
             </Grid>
 
-            <!-- RAM Row (MangoHud Blue) -->
+            <!-- VRAM Row (MangoHud Purple) -->
             <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
+                <Border Grid.Column="0"
+                        Background="#26BA68C8"
+                        CornerRadius="5"
+                        Padding="6,2"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="VRAM"
+                               Foreground="#BA68C8"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding GpuVram}"
+                           Foreground="#CE93D8"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- RAM Row (MangoHud Blue) -->
+            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5">
                 <Border Grid.Column="0"
                         Background="#26448AFF"
                         CornerRadius="5"
@@ -118,22 +137,16 @@
                                FontWeight="Heavy" />
                 </Border>
 
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding RamDisplay}"
-                               Foreground="#E0E0E0"
-                               FontSize="13"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding RamPercent}"
-                               Foreground="#82B1FF"
-                               FontSize="12"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                </StackPanel>
+                <TextBlock Grid.Column="2"
+                           Text="{Binding RamDisplay}"
+                           Foreground="#E0E0E0"
+                           FontSize="16"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
             </Grid>
 
             <!-- FPS Row (MangoHud Lime Green) -->
-            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
+            <Grid Grid.Row="6" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
                 <Border Grid.Column="0"
                         Background="#2600E676"
                         CornerRadius="5"
@@ -158,19 +171,19 @@
                                    FontWeight="Bold" />
                         <TextBlock Text="{Binding FrametimeDisplay}"
                                    Foreground="#A5D6A7"
-                                   FontSize="12"
+                                   FontSize="16"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </Grid>
 
-            <!-- Graphique Framerate / Frametime Sparkline MangoHud -->
-            <controls:FpsGraphControl Grid.Row="6"
-                                     Height="34"
-                                     History="{Binding FpsHistory}"
-                                     TargetFps="{Binding TargetFps}"
-                                     Margin="0,2,0,0" />
+            <!-- Graphique Frametime Sparkline MangoHud (ms par trame) -->
+            <controls:FpsGraphControl Grid.Row="7"
+                                      Height="34"
+                                      Frametimes="{Binding FrametimeHistory}"
+                                      TargetFrametimeMs="{Binding TargetFrametimeMs}"
+                                      Margin="0,2,0,0" />
         </Grid>
     </Border>
 </Window>
