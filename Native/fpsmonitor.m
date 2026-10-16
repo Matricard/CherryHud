@@ -4,6 +4,9 @@
 #import <ScreenCaptureKit/ScreenCaptureKit.h>
 #import <CoreMedia/CoreMedia.h>
 #import <CoreGraphics/CoreGraphics.h>
+#import <IOKit/IOKitLib.h>
+#import <IOKit/ps/IOPowerSources.h>
+#import <IOKit/ps/IOPSKeys.h>
 #import <os/lock.h>
 
 #define MAX_TIMESTAMPS 360
@@ -35,7 +38,7 @@
     if (self) {
         _queue = dispatch_queue_create("com.mactemp.fpsmonitor", DISPATCH_QUEUE_SERIAL);
         _lock = OS_UNFAIR_LOCK_INIT;
-        _trackedAppName = @"None";
+        _trackedAppName = @"";
         _currentFps = 0.0;
         _currentPid = 0;
         _tsHead = 0;
@@ -104,7 +107,7 @@
     }
 
     _currentPid = frontApp.processIdentifier;
-    NSString *appName = frontApp.localizedName ?: @"App";
+    NSString *appName = frontApp.localizedName ?: @"";
     @synchronized (self) {
         self.trackedAppName = appName;
     }
@@ -160,8 +163,7 @@
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeScreen) return;
 
-    // 1. CRITICAL: Only count new completed frames!
-    // Ignore duplicate/idle frames (SCFrameStatusIdle), blank frames, or cursor-only updates.
+    // 1. Only count new completed frames!
     CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, false);
     if (!attachments || CFArrayGetCount(attachments) == 0) return;
 
@@ -235,8 +237,70 @@ double FpsMonitor_GetFps(void) {
 }
 
 const char* FpsMonitor_GetTrackedAppName(void) {
-    if (!s_monitor) return "None";
-    NSString *name = s_monitor.trackedAppName ?: @"None";
+    if (!s_monitor) return "";
+    NSString *name = s_monitor.trackedAppName ?: @"";
     [name getCString:s_appNameBuffer maxLength:sizeof(s_appNameBuffer) encoding:NSUTF8StringEncoding];
     return s_appNameBuffer;
+}
+
+void FpsMonitor_GetGpuStats(double *outUtilization, double *outVramBytes) {
+    if (outUtilization) *outUtilization = 0.0;
+    if (outVramBytes) *outVramBytes = 0.0;
+
+    CFMutableDictionaryRef match = IOServiceMatching("IOAccelerator");
+    io_iterator_t it;
+    if (IOServiceGetMatchingServices(kIOMainPortDefault, match, &it) == kIOReturnSuccess) {
+        io_service_t serv;
+        while ((serv = IOIteratorNext(it))) {
+            CFMutableDictionaryRef props = NULL;
+            if (IORegistryEntryCreateCFProperties(serv, &props, kCFAllocatorDefault, 0) == kIOReturnSuccess && props) {
+                NSDictionary *dict = (__bridge NSDictionary *)props;
+                NSDictionary *perf = dict[@"PerformanceStatistics"];
+                if (perf) {
+                    NSNumber *util = perf[@"Device Utilization %"];
+                    NSNumber *vram = perf[@"In use system memory"] ?: perf[@"Alloc system memory"];
+                    if (util && outUtilization) {
+                        *outUtilization = [util doubleValue];
+                    }
+                    if (vram && outVramBytes) {
+                        *outVramBytes = [vram doubleValue];
+                    }
+                }
+                CFRelease(props);
+            }
+            IOObjectRelease(serv);
+            break;
+        }
+        IOObjectRelease(it);
+    }
+}
+
+void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
+    if (outPercent) *outPercent = -1;
+    if (outIsCharging) *outIsCharging = false;
+
+    CFTypeRef blob = IOPSCopyPowerSourcesInfo();
+    if (!blob) return;
+
+    CFArrayRef list = IOPSCopyPowerSourcesList(blob);
+    if (list) {
+        if (CFArrayGetCount(list) > 0) {
+            CFDictionaryRef desc = IOPSGetPowerSourceDescription(blob, CFArrayGetValueAtIndex(list, 0));
+            if (desc) {
+                NSNumber *cur = (__bridge NSNumber *)CFDictionaryGetValue(desc, CFSTR(kIOPSCurrentCapacityKey));
+                NSNumber *max = (__bridge NSNumber *)CFDictionaryGetValue(desc, CFSTR(kIOPSMaxCapacityKey));
+                NSString *state = (__bridge NSString *)CFDictionaryGetValue(desc, CFSTR(kIOPSPowerSourceStateKey));
+                NSNumber *charging = (__bridge NSNumber *)CFDictionaryGetValue(desc, CFSTR(kIOPSIsChargingKey));
+
+                if (cur && max && [max intValue] > 0 && outPercent) {
+                    *outPercent = (int)(([cur doubleValue] / [max doubleValue]) * 100.0);
+                }
+                if (outIsCharging) {
+                    *outIsCharging = (charging && [charging boolValue]) || [state isEqualToString:(__bridge NSString *)CFSTR(kIOPSACPowerValue)];
+                }
+            }
+        }
+        CFRelease(list);
+    }
+    CFRelease(blob);
 }
