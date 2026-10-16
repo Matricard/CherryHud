@@ -2,7 +2,9 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CherryHud.Services;
 using CherryHud.ViewModels;
 
@@ -49,13 +51,19 @@ public partial class MainWindow : Window
             }
         };
 
-        PointerPressed += (_, e) =>
+        // Déplacement standard de la fenêtre au clic-glisser
+        AddHandler(PointerPressedEvent, (sender, e) =>
         {
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
+                if (e.Source is Button || (e.Source as Visual)?.FindAncestorOfType<Button>() != null)
+                {
+                    return;
+                }
+
                 BeginMoveDrag(e);
             }
-        };
+        }, RoutingStrategies.Bubble);
 
         DataContextChanged += (_, _) =>
         {
