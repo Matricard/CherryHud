@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CherryHud.Services;
@@ -71,7 +73,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _gpuVramUnit = "GB";
 
     [ObservableProperty]
-    private string _gpuStatusColor = "#FF5E7E";
+    private string _gpuStatusColor = "#FFFFFF";
 
     // CPU metrics
     [ObservableProperty]
@@ -93,7 +95,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _cpuUsageUnit = "%";
 
     [ObservableProperty]
-    private string _cpuStatusColor = "#00E5FF";
+    private string _cpuStatusColor = "#FFFFFF";
 
     // RAM metrics
     [ObservableProperty]
@@ -109,7 +111,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _ramPercent = "--%";
 
     [ObservableProperty]
-    private string _ramStatusColor = "#448AFF";
+    private string _ramStatusColor = "#FFFFFF";
 
     // FPS & Frametime metrics
     [ObservableProperty]
@@ -131,7 +133,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _frametimeUnit = "ms";
 
     [ObservableProperty]
-    private string _fpsStatusColor = "#00E676";
+    private string _fpsStatusColor = "#FFFFFF";
 
     // frametime graph
     [ObservableProperty]
@@ -188,6 +190,127 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private int _graphFps = 60;
+
+    // Theme properties
+    [ObservableProperty]
+    private OverlayTheme _currentTheme = OverlayTheme.Classic;
+
+    [ObservableProperty]
+    private IBrush _cardBackground = Brush.Parse("#8C13141C");
+
+    [ObservableProperty]
+    private IBrush _cardBorderBrush = Brushes.Transparent;
+
+    [ObservableProperty]
+    private Thickness _cardBorderThickness = new Thickness(0);
+
+    [ObservableProperty]
+    private BoxShadows _cardBoxShadow = default;
+
+    [ObservableProperty]
+    private string _gpuBadgeBg = "#26B8001C";
+
+    [ObservableProperty]
+    private string _gpuBadgeFg = "#E02038";
+
+    [ObservableProperty]
+    private string _gpuValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _cpuBadgeBg = "#2600E5FF";
+
+    [ObservableProperty]
+    private string _cpuBadgeFg = "#00E5FF";
+
+    [ObservableProperty]
+    private string _cpuValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _vramBadgeBg = "#26BA68C8";
+
+    [ObservableProperty]
+    private string _vramBadgeFg = "#BA68C8";
+
+    [ObservableProperty]
+    private string _vramValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _ramBadgeBg = "#26448AFF";
+
+    [ObservableProperty]
+    private string _ramBadgeFg = "#448AFF";
+
+    [ObservableProperty]
+    private string _ramValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _batBadgeBg = "#2670D078";
+
+    [ObservableProperty]
+    private string _batBadgeFg = "#7ED884";
+
+    [ObservableProperty]
+    private string _batValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _fpsBadgeBg = "#2670D078";
+
+    [ObservableProperty]
+    private string _fpsBadgeFg = "#7ED884";
+
+    [ObservableProperty]
+    private string _frametimeValueColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private Color _graphLineColor = Color.FromRgb(112, 208, 120);
+
+    [ObservableProperty]
+    private Color _graphDotColor = Color.FromRgb(212, 22, 48);
+
+    public void ApplyTheme(OverlayTheme theme)
+    {
+        CurrentTheme = theme;
+        // Classic theme updated with exact colors from the official CherryHud logo
+        CardBackground = Brush.Parse("#8C13141C");
+        CardBorderBrush = Brushes.Transparent;
+        CardBorderThickness = new Thickness(0);
+        CardBoxShadow = default;
+
+        // GPU: Deep ruby cherry from logo
+        GpuBadgeBg = "#26B8001C";
+        GpuBadgeFg = "#E02038";
+        GpuValueColor = "#FFFFFF";
+
+        // CPU: Cyan (Classic)
+        CpuBadgeBg = "#2600E5FF";
+        CpuBadgeFg = "#00E5FF";
+        CpuValueColor = "#FFFFFF";
+
+        // VRAM: Purple (Classic)
+        VramBadgeBg = "#26BA68C8";
+        VramBadgeFg = "#BA68C8";
+        VramValueColor = "#FFFFFF";
+
+        // RAM: Royal Blue (Classic)
+        RamBadgeBg = "#26448AFF";
+        RamBadgeFg = "#448AFF";
+        RamValueColor = "#FFFFFF";
+
+        // BAT: Luminous stem green from logo
+        BatBadgeBg = "#2670D078";
+        BatBadgeFg = "#7ED884";
+        BatValueColor = "#FFFFFF";
+
+        // FPS: Luminous stem green from logo
+        FpsBadgeBg = "#2670D078";
+        FpsBadgeFg = "#7ED884";
+        FrametimeValueColor = "#FFFFFF";
+        FpsStatusColor = "#FFFFFF";
+
+        // Graph: Stem green line & Cherry red dot from logo
+        GraphLineColor = Color.FromRgb(112, 208, 120);
+        GraphDotColor = Color.FromRgb(212, 22, 48);
+    }
 
     public void ToggleVisibility()
     {
@@ -271,6 +394,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         OverlayPosition = s.Position;
         GraphFps = s.GraphFps;
         IsAutoModeActive = s.AutoGameMode;
+        ApplyTheme(s.Theme);
     }
 
     [RelayCommand]
@@ -349,14 +473,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             // 1. Text metrics update every 500ms
             if (!fpsData.HasPermission)
             {
-                FpsValue = "Perm. requise";
+                FpsValue = "Désactivé";
                 FpsUnit = "";
-                FpsDisplay = "Perm. requise";
+                FpsDisplay = "Désactivé";
 
-                FrametimeValue = "Activer";
+                FrametimeValue = "";
                 FrametimeUnit = "";
-                FrametimeDisplay = "Activer";
-                FpsStatusColor = "#FFB300"; // Amber
+                FrametimeDisplay = "";
+                FpsStatusColor = "#8899A6";
             }
             else
             {
@@ -371,7 +495,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     FrametimeValue = $"{1000.0 / currentFps:F1}";
                     FrametimeUnit = "ms";
                     FrametimeDisplay = $"{FrametimeValue} ms";
-                    FpsStatusColor = "#00E676"; // vibrant green
+                    FpsStatusColor = "#FFFFFF";
 
                     if (currentFps >= 100)
                     {
@@ -395,7 +519,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     FrametimeValue = "--";
                     FrametimeUnit = "ms";
                     FrametimeDisplay = "-- ms";
-                    FpsStatusColor = "#8899A6";
+                    FpsStatusColor = "#FFFFFF";
                 }
             }
 
@@ -459,14 +583,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 CpuTempValue = $"{Math.Round(cpuTemp.Value)}";
                 CpuTempUnit = "°C";
                 CpuTemp = $"{CpuTempValue}°C";
-                CpuStatusColor = GetStatusColor(cpuTemp.Value, defaultColor: "#00E5FF");
+                CpuStatusColor = GetStatusColor(cpuTemp.Value, defaultColor: "#FFFFFF");
             }
             else
             {
                 CpuTempValue = "N/A";
                 CpuTempUnit = "";
                 CpuTemp = "N/A";
-                CpuStatusColor = "#778899";
+                CpuStatusColor = "#FFFFFF";
             }
 
             if (gpuTemp.HasValue)
@@ -474,14 +598,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 GpuTempValue = $"{Math.Round(gpuTemp.Value)}";
                 GpuTempUnit = "°C";
                 GpuTemp = $"{GpuTempValue}°C";
-                GpuStatusColor = GetStatusColor(gpuTemp.Value, defaultColor: "#FF5E7E");
+                GpuStatusColor = GetStatusColor(gpuTemp.Value, defaultColor: "#FFFFFF");
             }
             else
             {
                 GpuTempValue = "N/A";
                 GpuTempUnit = "";
                 GpuTemp = "N/A";
-                GpuStatusColor = "#778899";
+                GpuStatusColor = "#FFFFFF";
             }
 
             // CPU Load & RAM usage (Mach host statistics)
@@ -536,7 +660,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         return temperature switch
         {
-            >= 85.0 => "#FF3B30", // macOS Red
+            >= 85.0 => "#D41630", // Cerise Rubis (Logo)
             >= 70.0 => "#FF9500", // macOS Orange
             _ => defaultColor
         };

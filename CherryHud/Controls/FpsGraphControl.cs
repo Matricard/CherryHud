@@ -14,6 +14,12 @@ public class FpsGraphControl : Control
     public static readonly StyledProperty<double> TargetFrametimeMsProperty =
         AvaloniaProperty.Register<FpsGraphControl, double>(nameof(TargetFrametimeMs), defaultValue: 16.67);
 
+    public static readonly StyledProperty<Color> LineColorProperty =
+        AvaloniaProperty.Register<FpsGraphControl, Color>(nameof(LineColor), defaultValue: Color.FromRgb(112, 208, 120));
+
+    public static readonly StyledProperty<Color> DotColorProperty =
+        AvaloniaProperty.Register<FpsGraphControl, Color>(nameof(DotColor), defaultValue: Color.FromRgb(212, 22, 48));
+
     public IReadOnlyList<double>? Frametimes
     {
         get => GetValue(FrametimesProperty);
@@ -26,19 +32,28 @@ public class FpsGraphControl : Control
         set => SetValue(TargetFrametimeMsProperty, value);
     }
 
-    static FpsGraphControl()
+    public Color LineColor
     {
-        AffectsRender<FpsGraphControl>(FrametimesProperty, TargetFrametimeMsProperty);
+        get => GetValue(LineColorProperty);
+        set => SetValue(LineColorProperty, value);
     }
 
-    private static readonly IPen GraphLinePen = new Pen(
-        new SolidColorBrush(Color.FromRgb(0, 230, 118)),
-        1.5,
-        lineCap: PenLineCap.Round,
-        lineJoin: PenLineJoin.Round);
+    public Color DotColor
+    {
+        get => GetValue(DotColorProperty);
+        set => SetValue(DotColorProperty, value);
+    }
 
-    private static readonly IBrush DotBrush = new SolidColorBrush(Color.FromRgb(0, 255, 127));
-    private static readonly IBrush DotGlowBrush = new SolidColorBrush(Color.FromArgb(70, 0, 255, 127));
+    static FpsGraphControl()
+    {
+        AffectsRender<FpsGraphControl>(FrametimesProperty, TargetFrametimeMsProperty, LineColorProperty, DotColorProperty);
+    }
+
+    private Color _cachedLineColor;
+    private Color _cachedDotColor;
+    private IPen? _linePen;
+    private IBrush? _dotBrush;
+    private IBrush? _dotGlowBrush;
 
     private double _currentMaxScaleMs = 33.33;
 
@@ -57,6 +72,23 @@ public class FpsGraphControl : Control
         if (w <= 4 || h <= 4 || frametimes == null || frametimes.Count < 2)
         {
             return;
+        }
+
+        // Ensure cached drawing resources match current LineColor & DotColor with 0 allocations per frame
+        var lineColor = LineColor;
+        var dotColor = DotColor;
+        if (_cachedLineColor != lineColor || _cachedDotColor != dotColor || _linePen == null || _dotBrush == null)
+        {
+            _cachedLineColor = lineColor;
+            _cachedDotColor = dotColor;
+            _linePen = new Pen(
+                new SolidColorBrush(lineColor),
+                1.5,
+                lineCap: PenLineCap.Round,
+                lineJoin: PenLineJoin.Round);
+
+            _dotBrush = new SolidColorBrush(dotColor);
+            _dotGlowBrush = new SolidColorBrush(Color.FromArgb(90, dotColor.R, dotColor.G, dotColor.B));
         }
 
         // Dynamic scale based on frametimes
@@ -125,11 +157,17 @@ public class FpsGraphControl : Control
             lineCtx.EndFigure(isClosed: false);
         }
 
-        // Draw crisp antialiased green line
-        context.DrawGeometry(null, GraphLinePen, lineGeometry);
+        // 1. Draw crisp antialiased sparkline
+        if (_linePen != null)
+        {
+            context.DrawGeometry(null, _linePen, lineGeometry);
+        }
 
-        // Draw glowing dot on the latest frametime (far right)
-        context.DrawEllipse(DotGlowBrush, null, lastPoint, 4.0, 4.0);
-        context.DrawEllipse(DotBrush, null, lastPoint, 2.0, 2.0);
+        // 2. Draw glowing dot on the latest frametime (far right)
+        if (_dotGlowBrush != null && _dotBrush != null)
+        {
+            context.DrawEllipse(_dotGlowBrush, null, lastPoint, 4.5, 4.5);
+            context.DrawEllipse(_dotBrush, null, lastPoint, 2.2, 2.2);
+        }
     }
 }

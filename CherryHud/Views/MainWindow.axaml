@@ -25,22 +25,24 @@
         <KeyBinding Gesture="Cmd+Q" Command="{Binding QuitCommand}" />
     </Window.KeyBindings>
 
-    <!-- Carte HUD translucide sans contour ; extérieur 100% transparent -->
+    <!-- Carte HUD avec theme dynamique et lueur néon optionnelle -->
     <Border CornerRadius="16"
-            Background="#8C13141C"
-            BorderThickness="0"
+            Background="{Binding CardBackground}"
+            BorderBrush="{Binding CardBorderBrush}"
+            BorderThickness="{Binding CardBorderThickness}"
+            BoxShadow="{Binding CardBoxShadow}"
             Padding="14,16,14,10">
 
         <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-            <!-- GPU Row (Coral) -->
+            <!-- GPU Row -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowGpu}">
                 <Border Grid.Column="0"
-                        Background="#26FF5E7E"
+                        Background="{Binding GpuBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="GPU"
-                               Foreground="#FF5E7E"
+                               Foreground="{Binding GpuBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
@@ -48,12 +50,12 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding GpuUsageValue}"
-                                   Foreground="#FF8A80"
+                                   Foreground="{Binding GpuValueColor}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    VerticalAlignment="Bottom" />
                         <TextBlock Text="{Binding GpuUsageUnit}"
-                                   Foreground="#FF8A80"
+                                   Foreground="{Binding GpuValueColor}"
                                    FontSize="10.5"
                                    FontWeight="Heavy"
                                    VerticalAlignment="Top"
@@ -75,15 +77,15 @@
                 </StackPanel>
             </Grid>
 
-            <!-- CPU Row (Cyan) -->
+            <!-- CPU Row -->
             <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowCpu}">
                 <Border Grid.Column="0"
-                        Background="#2600E5FF"
+                        Background="{Binding CpuBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="CPU"
-                               Foreground="#00E5FF"
+                               Foreground="{Binding CpuBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
@@ -91,12 +93,12 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding CpuUsageValue}"
-                                   Foreground="#80D8FF"
+                                   Foreground="{Binding CpuValueColor}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    VerticalAlignment="Bottom" />
                         <TextBlock Text="{Binding CpuUsageUnit}"
-                                   Foreground="#80D8FF"
+                                   Foreground="{Binding CpuValueColor}"
                                    FontSize="10.5"
                                    FontWeight="Heavy"
                                    VerticalAlignment="Top"
@@ -118,27 +120,27 @@
                 </StackPanel>
             </Grid>
 
-            <!-- VRAM Row (Purple) -->
+            <!-- VRAM Row -->
             <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowVram}">
                 <Border Grid.Column="0"
-                        Background="#26BA68C8"
+                        Background="{Binding VramBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="{Binding GpuMemoryLabel}"
-                               Foreground="#BA68C8"
+                               Foreground="{Binding VramBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding GpuVramValue}"
-                               Foreground="#CE93D8"
+                               Foreground="{Binding VramValueColor}"
                                FontSize="16"
                                FontWeight="Bold"
                                VerticalAlignment="Bottom" />
                     <TextBlock Text="{Binding GpuVramUnit}"
-                               Foreground="#CE93D8"
+                               Foreground="{Binding VramValueColor}"
                                FontSize="10.5"
                                FontWeight="Heavy"
                                VerticalAlignment="Top"
@@ -146,27 +148,27 @@
                 </StackPanel>
             </Grid>
 
-            <!-- RAM Row (Blue) -->
+            <!-- RAM Row -->
             <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowRam}">
                 <Border Grid.Column="0"
-                        Background="#26448AFF"
+                        Background="{Binding RamBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="RAM"
-                               Foreground="#448AFF"
+                               Foreground="{Binding RamBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <TextBlock Text="{Binding RamValue}"
-                               Foreground="#E0E0E0"
+                               Foreground="{Binding RamValueColor}"
                                FontSize="16"
                                FontWeight="Bold"
                                VerticalAlignment="Bottom" />
                     <TextBlock Text="{Binding RamUnit}"
-                               Foreground="#E0E0E0"
+                               Foreground="{Binding RamValueColor}"
                                FontSize="10.5"
                                FontWeight="Heavy"
                                VerticalAlignment="Top"
@@ -174,32 +176,32 @@
                 </StackPanel>
             </Grid>
 
-            <!-- BAT Row (Green) -->
+            <!-- BAT Row -->
             <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowBatteryRow}">
                 <Border Grid.Column="0"
-                        Background="#2681C784"
+                        Background="{Binding BatBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="BAT"
-                               Foreground="#81C784"
+                               Foreground="{Binding BatBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
                     <TextBlock Text="{Binding BatteryIcon}"
-                               Foreground="#81C784"
+                               Foreground="{Binding BatValueColor}"
                                FontSize="13"
                                VerticalAlignment="Center" />
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding BatteryValue}"
-                                   Foreground="#A5D6A7"
+                                   Foreground="{Binding BatValueColor}"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    VerticalAlignment="Bottom" />
                         <TextBlock Text="{Binding BatteryUnit}"
-                                   Foreground="#A5D6A7"
+                                   Foreground="{Binding BatValueColor}"
                                    FontSize="10.5"
                                    FontWeight="Heavy"
                                    VerticalAlignment="Top"
@@ -208,15 +210,15 @@
                 </StackPanel>
             </Grid>
 
-            <!-- FPS Row (Lime Green) -->
+            <!-- FPS Row -->
             <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6" IsVisible="{Binding ShowFps}">
                 <Border Grid.Column="0"
-                        Background="#2600E676"
+                        Background="{Binding FpsBadgeBg}"
                         CornerRadius="5"
                         Padding="6,2"
                         VerticalAlignment="Center">
                     <TextBlock Text="FPS"
-                               Foreground="#00E676"
+                               Foreground="{Binding FpsBadgeFg}"
                                FontSize="11"
                                FontWeight="Heavy" />
                 </Border>
@@ -243,12 +245,12 @@
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="{Binding FrametimeValue}"
-                                       Foreground="#A5D6A7"
+                                       Foreground="{Binding FrametimeValueColor}"
                                        FontSize="16"
                                        FontWeight="Bold"
                                        VerticalAlignment="Bottom" />
                             <TextBlock Text="{Binding FrametimeUnit}"
-                                       Foreground="#A5D6A7"
+                                       Foreground="{Binding FrametimeValueColor}"
                                        FontSize="10.5"
                                        FontWeight="Heavy"
                                        VerticalAlignment="Top"
@@ -263,6 +265,8 @@
                                       Height="34"
                                       Frametimes="{Binding FrametimeHistory}"
                                       TargetFrametimeMs="{Binding TargetFrametimeMs}"
+                                      LineColor="{Binding GraphLineColor}"
+                                      DotColor="{Binding GraphDotColor}"
                                       IsVisible="{Binding ShowGraph}"
                                       Margin="0,2,0,0" />
         </Grid>
