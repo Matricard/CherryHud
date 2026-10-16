@@ -146,25 +146,6 @@ public partial class App : Application
         _settingsWindow.Activate();
     }
 
-    private AboutWindow? _aboutWindow;
-
-    private void About_OnClick(object? sender, EventArgs e)
-    {
-        if (_aboutWindow != null)
-        {
-            _aboutWindow.Activate();
-            return;
-        }
-
-        string iconPath = FpsService.EnsureIconPath();
-        FpsService.ShowAboutWindow(IntPtr.Zero, iconPath);
-
-        _aboutWindow = new AboutWindow();
-        _aboutWindow.Closed += (_, _) => _aboutWindow = null;
-        _aboutWindow.Show();
-        _aboutWindow.Activate();
-    }
-
     private void Quit_OnClick(object? sender, EventArgs e)
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

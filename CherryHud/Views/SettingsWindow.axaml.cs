@@ -15,15 +15,8 @@ public partial class SettingsWindow : Window
         Opened += (_, _) =>
         {
             var handle = TryGetPlatformHandle()?.Handle;
-            if (handle.HasValue)
-            {
-                string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "logo.png");
-                if (!File.Exists(iconPath))
-                {
-                    iconPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Assets", "logo.png"));
-                }
-                FpsService.ShowAboutWindow(handle.Value, iconPath);
-            }
+            string iconPath = FpsService.EnsureIconPath();
+            FpsService.ShowAboutWindow(handle ?? IntPtr.Zero, iconPath);
         };
 
         Closed += (_, _) =>

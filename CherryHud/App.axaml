@@ -27,7 +27,6 @@
                                         Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Paramètres..." Click="Settings_OnClick" />
-                        <NativeMenuItem Header="À propos de CherryHud" Click="About_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Quitter CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>

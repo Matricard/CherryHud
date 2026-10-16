@@ -48,7 +48,7 @@
                     <Setter Property="Padding" Value="14,8" />
                 </Style>
                 <Style Selector="TabItem:selected">
-                    <Setter Property="Foreground" Value="#00E676" />
+                    <Setter Property="Foreground" Value="#FF2A6D" />
                 </Style>
             </TabControl.Styles>
 
@@ -56,6 +56,27 @@
             <TabItem Header="Affichage">
                 <ScrollViewer Margin="0,12,0,0">
                     <StackPanel Spacing="14">
+                        <!-- Theme Card -->
+                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="Thème visuel de l'overlay"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12.5"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="Palette classique avec vert fluo et cerise électrique"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11" />
+                                </StackPanel>
+                                <ComboBox Grid.Column="1"
+                                          SelectedIndex="{Binding SelectedThemeIndex}"
+                                          Width="170"
+                                          FontSize="11.5">
+                                    <ComboBoxItem Content="🍏 Classique" />
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
                         <!-- Mode Automatique Card -->
                         <Border Background="#202230" CornerRadius="10" Padding="14,12">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -109,7 +130,7 @@
                                                FontWeight="SemiBold" />
                                     <TextBlock Grid.Column="1"
                                                Text="{Binding OpacityPercent, StringFormat='{}{0}%'}"
-                                               Foreground="#00E676"
+                                               Foreground="#FF2A6D"
                                                FontSize="12"
                                                FontWeight="Bold" />
                                 </Grid>
@@ -298,6 +319,94 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Onglet 4 : À propos -->
+            <TabItem Header="À propos">
+                <ScrollViewer Margin="0,12,0,0">
+                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0">
+                        <!-- App Icon -->
+                        <Border Width="72" Height="72"
+                                CornerRadius="18"
+                                ClipToBounds="True"
+                                HorizontalAlignment="Center"
+                                BoxShadow="0 6 20 0 #40000000"
+                                Margin="0,0,0,10">
+                            <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
+                        </Border>
+
+                        <!-- Titre & Version -->
+                        <TextBlock Text="CherryHud"
+                                   Foreground="#FFFFFF"
+                                   FontSize="20"
+                                   FontWeight="Heavy"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="Version 1.0.0 • .NET 10"
+                                   Foreground="#FF2A6D"
+                                   FontSize="11"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,2,0,4" />
+
+                        <TextBlock Text="Overlay de performance gaming natif pour macOS"
+                                   Foreground="#9E9E9E"
+                                   FontSize="11"
+                                   FontWeight="Medium"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,0,0,14" />
+
+                        <!-- Carte récapitulative des fonctionnalités -->
+                        <Border Background="#202230"
+                                CornerRadius="10"
+                                Padding="14,10"
+                                Margin="0,0,0,14"
+                                Width="380">
+                            <StackPanel Spacing="6">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="⚡" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="Superposition au-dessus des jeux plein écran"
+                                               Foreground="#DCDCDC"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🎮" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="Détection automatique &amp; arrêt hors jeu"
+                                               Foreground="#DCDCDC"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🍒" FontSize="12" VerticalAlignment="Center" />
+                                    <TextBlock Text="Métriques matérielles IOKit &amp; AppleSMC"
+                                               Foreground="#DCDCDC"
+                                               FontSize="11"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Auteur & Licence -->
+                        <TextBlock Text="Créé par Mathieu Ricard"
+                                   Foreground="#7E8092"
+                                   FontSize="11"
+                                   FontWeight="Medium"
+                                   HorizontalAlignment="Center" />
+
+                        <TextBlock Text="Copyright © 2026 • Licence MIT"
+                                   Foreground="#5E6070"
+                                   FontSize="10"
+                                   FontWeight="Normal"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,2,0,0" />
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

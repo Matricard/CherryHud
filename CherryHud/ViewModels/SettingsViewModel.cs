@@ -19,6 +19,9 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedPositionIndex;
 
     [ObservableProperty]
+    private int _selectedThemeIndex;
+
+    [ObservableProperty]
     private double _opacityPercent;
 
     [ObservableProperty]
@@ -74,6 +77,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         _autoGameMode = s.AutoGameMode;
         _selectedPositionIndex = (int)s.Position;
+        _selectedThemeIndex = (int)s.Theme;
         _opacityPercent = Math.Round(s.Opacity * 100.0);
 
         _showGpu = s.ShowGpu;
@@ -135,6 +139,17 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayPosition = corner;
+        }
+    }
+
+    partial void OnSelectedThemeIndexChanged(int value)
+    {
+        var theme = (OverlayTheme)Math.Clamp(value, 0, 1);
+        _settingsService.Current.Theme = theme;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.ApplyTheme(theme);
         }
     }
 
@@ -245,6 +260,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         AutoGameMode = true;
         SelectedPositionIndex = 0;
+        SelectedThemeIndex = 0;
         OpacityPercent = 100;
         ShowGpu = true;
         ShowCpu = true;
