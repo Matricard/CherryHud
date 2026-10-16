@@ -248,10 +248,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _gpuValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _cpuBadgeBg = "#2680DEEA";
+    private string _cpuBadgeBg = "#2679C0FF";
 
     [ObservableProperty]
-    private string _cpuBadgeFg = "#80DEEA";
+    private string _cpuBadgeFg = "#79C0FF";
 
     [ObservableProperty]
     private string _cpuValueColor = "#FFFFFF";
@@ -284,10 +284,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _batValueColor = "#FFFFFF";
 
     [ObservableProperty]
-    private string _fpsBadgeBg = "#267ED884";
+    private string _fpsBadgeBg = "#2670D078";
 
     [ObservableProperty]
-    private string _fpsBadgeFg = "#7ED884";
+    private string _fpsBadgeFg = "#70D078";
 
     [ObservableProperty]
     private string _frametimeValueColor = "#FFFFFF";
@@ -312,9 +312,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         GpuBadgeFg = "#F28B82";
         GpuValueColor = "#FFFFFF";
 
-        // CPU: Soft pastel aqua
-        CpuBadgeBg = "#2680DEEA";
-        CpuBadgeFg = "#80DEEA";
+        // CPU: Soft pastel sky blue
+        CpuBadgeBg = "#2679C0FF";
+        CpuBadgeFg = "#79C0FF";
         CpuValueColor = "#FFFFFF";
 
         // VRAM: Soft pastel lavender
@@ -332,9 +332,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         BatBadgeFg = "#D4A254";
         BatValueColor = "#FFFFFF";
 
-        // FPS: Soft pastel mint green
-        FpsBadgeBg = "#267ED884";
-        FpsBadgeFg = "#7ED884";
+        // FPS & Frametime: Stem green matching the graph line
+        FpsBadgeBg = "#2670D078";
+        FpsBadgeFg = "#70D078";
         FrametimeValueColor = "#FFFFFF";
         FpsStatusColor = "#FFFFFF";
 
@@ -518,9 +518,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
                 if (!fpsData.HasPermission)
                 {
-                    FpsValue = "Désactivé";
+                    FpsValue = "OFF";
                     FpsUnit = "";
-                    FpsDisplay = "Désactivé";
+                    FpsDisplay = "OFF";
 
                     FrametimeValue = "";
                     FrametimeUnit = "";
