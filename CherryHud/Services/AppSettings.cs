@@ -18,6 +18,7 @@ public enum OverlayTheme
 
 public class AppSettings
 {
+    public AppLanguage Language { get; set; } = AppLanguage.English;
     public bool AutoGameMode { get; set; } = true;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
     public OverlayTheme Theme { get; set; } = OverlayTheme.Classic;

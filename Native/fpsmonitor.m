@@ -736,20 +736,15 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
     NSString *path = (iconPathUtf8 && strlen(iconPathUtf8) > 0) ? [NSString stringWithUTF8String:iconPathUtf8] : nil;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 1. Show in Dock
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
+        // Rester impérativement en mode accessoire : n'affiche aucun menu dans la barre de menu de macOS
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        [NSApp setMainMenu:nil];
 
         if (path) {
             NSImage *img = [[NSImage alloc] initWithContentsOfFile:path];
             if (img) {
                 [NSApp setApplicationIconImage:img];
-                NSImageView *iv = [[NSImageView alloc] init];
-                [iv setImage:img];
-                [[NSApp dockTile] setContentView:iv];
-                [[NSApp dockTile] display];
             }
-        } else if ([NSApp applicationIconImage] != nil) {
-            [[NSApp dockTile] display];
         }
 
         NSWindow *win = nil;
@@ -763,7 +758,107 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
         }
 
         if (win) {
-            // Above all other windows (Floating / ScreenSaver level)
+            NSString *className = NSStringFromClass([win class]);
+            if ([className containsString:@"StatusBar"] || [className containsString:@"StatusItem"] || [win level] == 25) {
+                return;
+            }
+        }
+
+        if (!win) {
+            for (NSWindow *w in [NSApp windows]) {
+                if (w && [w isVisible]) {
+                    NSString *className = NSStringFromClass([w class]);
+                    if ([className containsString:@"StatusBar"] || [className containsString:@"StatusItem"] || [w level] == 25 || [w level] == NSScreenSaverWindowLevel) {
+                        continue;
+                    }
+                    win = w;
+                    break;
+                }
+            }
+        }
+
+        if (!win) return;
+
+        NSString *winClass = NSStringFromClass([win class]);
+        if ([winClass containsString:@"StatusBar"] || [winClass containsString:@"StatusItem"] || [win level] == 25 || [win level] == NSScreenSaverWindowLevel) {
+            return;
+        }
+
+        if (win) {
+            // Barre de titre transparente intégrée avec boutons classiques macOS (Fermer et Réduire)
+            win.titlebarAppearsTransparent = YES;
+            win.titleVisibility = NSWindowTitleHidden;
+            win.styleMask |= NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
+            win.styleMask &= ~NSWindowStyleMaskResizable;
+            [win setMovableByWindowBackground:YES];
+
+            // Conserver les boutons classiques macOS : Fermer (rouge) et Réduire (jaune)
+            NSButton *closeBtn = [win standardWindowButton:NSWindowCloseButton];
+            if (closeBtn) {
+                [closeBtn setHidden:NO];
+                [closeBtn setEnabled:YES];
+            }
+            NSButton *miniBtn = [win standardWindowButton:NSWindowMiniaturizeButton];
+            if (miniBtn) {
+                [miniBtn setHidden:NO];
+                [miniBtn setEnabled:YES];
+            }
+            // Retrait du bouton Agrandir (Zoom)
+            NSButton *zoomBtn = [win standardWindowButton:NSWindowZoomButton];
+            if (zoomBtn) {
+                [zoomBtn setHidden:YES];
+                [zoomBtn setEnabled:NO];
+            }
+
+            [win setOpaque:NO];
+            [win setBackgroundColor:[NSColor clearColor]];
+            [win setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+
+            // Flou translucide sombre, net et hautement transparent pour la fenêtre
+            NSView *contentView = [win contentView];
+            if (contentView) {
+                NSVisualEffectView *contentVev = nil;
+                for (NSView *sub in [contentView subviews]) {
+                    if ([sub isKindOfClass:[NSVisualEffectView class]]) {
+                        contentVev = (NSVisualEffectView *)sub;
+                        break;
+                    }
+                }
+
+                if (!contentVev) {
+                    contentVev = [[NSVisualEffectView alloc] initWithFrame:[contentView bounds]];
+                    [contentVev setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+                    [contentVev setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+                    [contentVev setMaterial:NSVisualEffectMaterialHUDWindow];
+                    [contentVev setState:NSVisualEffectStateActive];
+                    [contentVev setAlphaValue:0.70];
+                    [contentVev setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+                    [contentView addSubview:contentVev positioned:NSWindowBelow relativeTo:nil];
+                } else {
+                    [contentVev setAutoresizingMask:NSViewWidthSizable | NSViewHeightSizable];
+                    [contentVev setBlendingMode:NSVisualEffectBlendingModeBehindWindow];
+                    [contentVev setMaterial:NSVisualEffectMaterialHUDWindow];
+                    [contentVev setState:NSVisualEffectStateActive];
+                    [contentVev setAlphaValue:0.70];
+                    [contentVev setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+                }
+
+                // Assurer que tout autre NSVisualEffectView dans la fenêtre (barre de titre) reste également actif
+                NSView *rootView = [contentView superview] ?: contentView;
+                NSMutableArray *stack = [NSMutableArray arrayWithObject:rootView];
+                while ([stack count] > 0) {
+                    NSView *v = [stack lastObject];
+                    [stack removeLastObject];
+                    if ([v isKindOfClass:[NSVisualEffectView class]] && v != contentVev) {
+                        NSVisualEffectView *vev = (NSVisualEffectView *)v;
+                        [vev setState:NSVisualEffectStateActive];
+                        [vev setAppearance:[NSAppearance appearanceNamed:NSAppearanceNameVibrantDark]];
+                    }
+                    [stack addObjectsFromArray:[v subviews]];
+                }
+            }
+
+            // Above all other windows (Floating level)
             [win setLevel:NSFloatingWindowLevel];
             [win setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary];
             [win setHidesOnDeactivate:NO];
