@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Threading;
 using MacTemp.Services;
 using MacTemp.ViewModels;
 
@@ -9,6 +10,8 @@ namespace MacTemp.Views;
 
 public partial class MainWindow : Window
 {
+    private IntPtr? _nativeHandle;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -27,7 +30,13 @@ public partial class MainWindow : Window
             var handle = TryGetPlatformHandle()?.Handle;
             if (handle.HasValue)
             {
-                FpsService.ConfigureOverlayWindow(handle.Value);
+                _nativeHandle = handle.Value;
+                FpsService.ConfigureOverlayWindow(_nativeHandle.Value);
+            }
+
+            if (DataContext is MainWindowViewModel vm)
+            {
+                ApplyVisibility(vm.IsOverlayVisible);
             }
         };
 
@@ -39,6 +48,25 @@ public partial class MainWindow : Window
             }
         };
 
+        DataContextChanged += (_, _) =>
+        {
+            if (DataContext is MainWindowViewModel vm)
+            {
+                vm.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible))
+                    {
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            ApplyVisibility(vm.IsOverlayVisible);
+                        });
+                    }
+                };
+
+                ApplyVisibility(vm.IsOverlayVisible);
+            }
+        };
+
         Closed += (_, _) =>
         {
             if (DataContext is IDisposable disposable)
@@ -46,5 +74,15 @@ public partial class MainWindow : Window
                 disposable.Dispose();
             }
         };
+    }
+
+    private void ApplyVisibility(bool visible)
+    {
+        Opacity = visible ? 1.0 : 0.0;
+        IsHitTestVisible = visible;
+        if (_nativeHandle.HasValue)
+        {
+            FpsService.SetOverlayVisible(_nativeHandle.Value, visible);
+        }
     }
 }

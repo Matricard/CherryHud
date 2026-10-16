@@ -55,6 +55,10 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern void FpsMonitor_Stop();
 
     [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsGameActive();
+
+    [DllImport(LibraryName)]
     private static extern double FpsMonitor_GetFps();
 
     [DllImport(LibraryName)]
@@ -75,6 +79,9 @@ public sealed class FpsService : IFpsService, IDisposable
     [DllImport(LibraryName)]
     private static extern void FpsMonitor_ConfigureOverlayWindow(IntPtr viewOrWindowPtr);
 
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetOverlayVisible(IntPtr viewOrWindowPtr, [MarshalAs(UnmanagedType.I1)] bool visible);
+
     public static void ConfigureOverlayWindow(IntPtr viewOrWindowPtr)
     {
         try
@@ -84,6 +91,17 @@ public sealed class FpsService : IFpsService, IDisposable
         catch
         {
             // Fallback gracefully if native method unavailable
+        }
+    }
+
+    public static void SetOverlayVisible(IntPtr viewOrWindowPtr, bool visible)
+    {
+        try
+        {
+            FpsMonitor_SetOverlayVisible(viewOrWindowPtr, visible);
+        }
+        catch
+        {
         }
     }
 
@@ -130,11 +148,44 @@ public sealed class FpsService : IFpsService, IDisposable
         }
     }
 
+    public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample()
+    {
+        try
+        {
+            return (
+                FpsMonitor_HasPermission(),
+                FpsMonitor_GetFps(),
+                FpsMonitor_GetCurrentFrametime(),
+                FpsMonitor_GetPeakFrametime()
+            );
+        }
+        catch
+        {
+            return (false, 0.0, 0.0, 0.0);
+        }
+    }
+
+    public bool IsGameActive
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_IsGameActive();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
     public FpsData GetFpsData()
     {
         try
         {
             bool hasPerm = FpsMonitor_HasPermission();
+            bool isGameActive = FpsMonitor_IsGameActive();
             double fps = FpsMonitor_GetFps();
             double currentFt = FpsMonitor_GetCurrentFrametime();
             double peakFt = FpsMonitor_GetPeakFrametime();
@@ -148,11 +199,11 @@ public sealed class FpsService : IFpsService, IDisposable
             double vramGb = vramBytes / (1024.0 * 1024.0 * 1024.0);
             int? battery = batPercent >= 0 ? batPercent : null;
 
-            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging);
+            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging, isGameActive);
         }
         catch
         {
-            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false);
+            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false, false);
         }
     }
 

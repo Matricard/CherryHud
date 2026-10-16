@@ -3,7 +3,7 @@
   <h1>CherryHud 🍒⚡</h1>
   <p>
     <b>Le HUD de performance ultime pour macOS</b><br />
-    <i>Propulsé par Avalonia UI, .NET 8 et les APIs système natives Apple (IOKit, ScreenCaptureKit, AppleSMC).</i>
+    <i>Propulsé par Avalonia UI, .NET 10 et les APIs système natives Apple (IOKit, ScreenCaptureKit, AppleSMC).</i>
   </p>
 
   <p>
@@ -55,12 +55,16 @@
 
 ## 🎛️ Contrôles & Intégration macOS
 
+- **Détection Automatique des Jeux (Zéro voyant sur le bureau)** :
+  - **En jeu** : L'overlay apparaît automatiquement et démarre la mesure des FPS/frametimes en temps réel.
+  - **Hors jeu (bureau, navigateur, travail)** : **La capture s'arrête immédiatement** (le voyant d'enregistrement d'écran de macOS s'éteint) et l'overlay se masque automatiquement sans aucune intervention.
 - **Déplacement libre** : Glissez-déposez la fenêtre n'importe où sur votre écran.
 - **Icône dans la barre des menus (TrayIcon)** :
-  - **Afficher / Masquer** : Permet de cacher ou réafficher le HUD d'un simple clic.
-  - **Quitter CherryHud** : L'unique menu dédié pour fermer l'application.
+  - **Afficher / Masquer** : Permet de forcer manuellement l'affichage ou le masquage du HUD.
+  - **Mode Auto (En jeu uniquement)** : Réactive le mode automatique.
+  - **Quitter CherryHud** : Ferme proprement l'application.
 - **Raccourcis clavier** :
-  - <kbd>Cmd</kbd> + <kbd>Q</kbd> : Ferme proprement l'application.
+  - <kbd>Cmd</kbd> + <kbd>Q</kbd> : Ferme l'application.
 
 ---
 
@@ -78,7 +82,7 @@ Pour que macOS autorise le widget à capturer les trames effectives de l'écran 
 
 ### Prérequis
 - macOS 13.0+ (Ventura, Sonoma, Sequoia) sur Mac Apple Silicon (M1/M2/M3/M4) ou Intel.
-- SDK .NET 8.0+.
+- SDK .NET 10.0+.
 - Clang / Xcode Command Line Tools (`xcode-select --install`).
 
 ### Lancer en ligne de commande
