@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Media;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CherryHud.Services;
@@ -33,7 +34,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private string _batteryDisplay = "";
 
     [ObservableProperty]
-    private string _batteryIcon = "🔋";
+    private string _batteryIcon = "";
+
+    [ObservableProperty]
+    private bool _isBatteryCharging;
+
+    [ObservableProperty]
+    private double _batteryFillWidth = 11.0;
 
     [ObservableProperty]
     private string _batteryValue = "";
@@ -154,6 +161,30 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool? _manualVisibilityOverride = true;
 
     private readonly ISettingsService _settingsService;
+    public ISettingsService SettingsService => _settingsService;
+
+    [ObservableProperty]
+    private bool _keepTemperaturesWhite = true;
+
+    partial void OnKeepTemperaturesWhiteChanged(bool value)
+    {
+        if (value)
+        {
+            CpuStatusColor = "#FFFFFF";
+            GpuStatusColor = "#FFFFFF";
+        }
+        else
+        {
+            if (double.TryParse(CpuTempValue, out double cpuT))
+            {
+                CpuStatusColor = GetStatusColor(cpuT);
+            }
+            if (double.TryParse(GpuTempValue, out double gpuT))
+            {
+                GpuStatusColor = GetStatusColor(gpuT);
+            }
+        }
+    }
 
     [ObservableProperty]
     private bool _showGpu = true;
@@ -376,7 +407,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _frametimeHistory = _currentBuffer;
 
         _fpsService.Start();
-        _ = StartMonitoringLoopAsync(_cts.Token);
+        _ = Task.Run(() => StartMonitoringLoopAsync(_cts.Token));
     }
 
     public void ApplySettings(AppSettings s)
@@ -394,6 +425,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         OverlayPosition = s.Position;
         GraphFps = s.GraphFps;
         IsAutoModeActive = s.AutoGameMode;
+        KeepTemperaturesWhite = s.KeepTemperaturesWhite;
         ApplyTheme(s.Theme);
     }
 
@@ -426,7 +458,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         try
         {
-            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token))
+            while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 tickCounter++;
                 // Sync text metrics (FPS text, temps, CPU %, GPU %, RAM, battery, clock) every 500ms (every 30 ticks of 16.67ms)
@@ -447,179 +479,184 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     private void UpdateMetrics(bool isTextTick)
     {
-        // Instant response (16ms): evaluate game state on every frame tick
+        // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
-        if (IsGameActive != isGame)
-        {
-            IsGameActive = isGame;
-            // When a game becomes active, seamlessly re-align to auto mode
-            if (isGame && _manualVisibilityOverride.HasValue)
-            {
-                _manualVisibilityOverride = null;
-                IsAutoModeActive = true;
-            }
-        }
-
         bool targetVisibility = _manualVisibilityOverride ?? isGame;
-        if (IsOverlayVisible != targetVisibility)
+
+        if (IsGameActive != isGame || IsOverlayVisible != targetVisibility)
         {
-            IsOverlayVisible = targetVisibility;
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (IsGameActive != isGame)
+                {
+                    IsGameActive = isGame;
+                    if (isGame && _manualVisibilityOverride.HasValue)
+                    {
+                        _manualVisibilityOverride = null;
+                        IsAutoModeActive = true;
+                    }
+                }
+                IsOverlayVisible = _manualVisibilityOverride ?? isGame;
+            }, DispatcherPriority.Input);
         }
 
         if (isTextTick)
         {
+            // Execute background queries (IOKit, AppleSMC, Mach host) off the UI thread
             var fpsData = _fpsService.GetFpsData();
+            var (cpuTemp, gpuTemp) = _temperatureService.ReadTemperatures();
+            var res = _systemMetricsService.ReadResourceMetrics();
+            string currentTime = DateTime.Now.ToString("HH:mm");
 
-            // 1. Text metrics update every 500ms
-            if (!fpsData.HasPermission)
+            Dispatcher.UIThread.Post(() =>
             {
-                FpsValue = "Désactivé";
-                FpsUnit = "";
-                FpsDisplay = "Désactivé";
+                CurrentTime = currentTime;
 
-                FrametimeValue = "";
-                FrametimeUnit = "";
-                FrametimeDisplay = "";
-                FpsStatusColor = "#8899A6";
-            }
-            else
-            {
-                double currentFps = fpsData.Fps;
+                TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
+                    ? fpsData.AppName
+                    : "";
 
-                if (currentFps > 0.5)
+                if (!fpsData.HasPermission)
                 {
-                    FpsValue = $"{Math.Round(currentFps)}";
-                    FpsUnit = "FPS";
-                    FpsDisplay = $"{FpsValue} FPS";
+                    FpsValue = "Désactivé";
+                    FpsUnit = "";
+                    FpsDisplay = "Désactivé";
 
-                    FrametimeValue = $"{1000.0 / currentFps:F1}";
-                    FrametimeUnit = "ms";
-                    FrametimeDisplay = $"{FrametimeValue} ms";
-                    FpsStatusColor = "#FFFFFF";
-
-                    if (currentFps >= 100)
-                    {
-                        TargetFrametimeMs = 8.33; // 120 FPS
-                    }
-                    else if (currentFps >= 50)
-                    {
-                        TargetFrametimeMs = 16.67; // 60 FPS
-                    }
-                    else
-                    {
-                        TargetFrametimeMs = 33.33; // 30 FPS
-                    }
+                    FrametimeValue = "";
+                    FrametimeUnit = "";
+                    FrametimeDisplay = "";
+                    FpsStatusColor = "#8899A6";
                 }
                 else
                 {
-                    FpsValue = "--";
-                    FpsUnit = "FPS";
-                    FpsDisplay = "-- FPS";
+                    double currentFps = fpsData.Fps;
 
-                    FrametimeValue = "--";
-                    FrametimeUnit = "ms";
-                    FrametimeDisplay = "-- ms";
-                    FpsStatusColor = "#FFFFFF";
+                    if (currentFps > 0.5)
+                    {
+                        FpsValue = $"{Math.Round(currentFps)}";
+                        FpsUnit = "FPS";
+                        FpsDisplay = $"{FpsValue} FPS";
+
+                        FrametimeValue = $"{1000.0 / currentFps:F1}";
+                        FrametimeUnit = "ms";
+                        FrametimeDisplay = $"{FrametimeValue} ms";
+                        FpsStatusColor = "#FFFFFF";
+
+                        if (currentFps >= 100)
+                        {
+                            TargetFrametimeMs = 8.33; // 120 FPS
+                        }
+                        else if (currentFps >= 50)
+                        {
+                            TargetFrametimeMs = 16.67; // 60 FPS
+                        }
+                        else
+                        {
+                            TargetFrametimeMs = 33.33; // 30 FPS
+                        }
+                    }
+                    else
+                    {
+                        FpsValue = "--";
+                        FpsUnit = "FPS";
+                        FpsDisplay = "-- FPS";
+
+                        FrametimeValue = "--";
+                        FrametimeUnit = "ms";
+                        FrametimeDisplay = "-- ms";
+                        FpsStatusColor = "#FFFFFF";
+                    }
                 }
-            }
 
-            CurrentTime = DateTime.Now.ToString("HH:mm");
+                if (fpsData.BatteryPercent.HasValue)
+                {
+                    HasBattery = true;
+                    IsBatteryCharging = fpsData.IsBatteryCharging;
+                    BatteryValue = $"{fpsData.BatteryPercent.Value}";
+                    BatteryUnit = "%";
+                    BatteryDisplay = $"{fpsData.BatteryPercent.Value}%";
+                    BatteryFillWidth = Math.Clamp(fpsData.BatteryPercent.Value / 100.0 * 15.0, 1.5, 15.0);
+                }
+                else
+                {
+                    HasBattery = false;
+                    IsBatteryCharging = false;
+                    BatteryFillWidth = 0.0;
+                    BatteryValue = "";
+                    BatteryUnit = "";
+                    BatteryDisplay = "";
+                }
+                ShowBatteryRow = ShowBattery && HasBattery;
 
-            TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
-                ? fpsData.AppName
-                : "";
+                // GPU load & VRAM
+                if (fpsData.GpuUsagePercent > 0.1)
+                {
+                    GpuUsageValue = $"{Math.Round(fpsData.GpuUsagePercent)}";
+                    GpuUsageUnit = "%";
+                    GpuUsage = $"{GpuUsageValue}%";
+                }
+                else
+                {
+                    GpuUsageValue = "0";
+                    GpuUsageUnit = "%";
+                    GpuUsage = "0%";
+                }
 
-            if (fpsData.BatteryPercent.HasValue)
-            {
-                HasBattery = true;
-                BatteryIcon = fpsData.IsBatteryCharging ? "⚡" : "🔋";
-                BatteryValue = $"{fpsData.BatteryPercent.Value}";
-                BatteryUnit = "%";
-                BatteryDisplay = fpsData.IsBatteryCharging
-                    ? $"⚡ {fpsData.BatteryPercent.Value}%"
-                    : $"🔋 {fpsData.BatteryPercent.Value}%";
-            }
-            else
-            {
-                HasBattery = false;
-                BatteryValue = "";
-                BatteryUnit = "";
-                BatteryDisplay = "";
-            }
-            ShowBatteryRow = ShowBattery && HasBattery;
+                if (fpsData.GpuVramGb > 0.05)
+                {
+                    GpuVramValue = $"{fpsData.GpuVramGb:F1}";
+                    GpuVramUnit = "GB";
+                    GpuVram = $"{GpuVramValue} GB";
+                }
+                else
+                {
+                    GpuVramValue = "--";
+                    GpuVramUnit = "GB";
+                    GpuVram = "-- GB";
+                }
 
-            // GPU load & VRAM
-            if (fpsData.GpuUsagePercent > 0.1)
-            {
-                GpuUsageValue = $"{Math.Round(fpsData.GpuUsagePercent)}";
-                GpuUsageUnit = "%";
-                GpuUsage = $"{GpuUsageValue}%";
-            }
-            else
-            {
-                GpuUsageValue = "0";
-                GpuUsageUnit = "%";
-                GpuUsage = "0%";
-            }
+                // Temperatures (AppleSMC)
+                if (cpuTemp.HasValue)
+                {
+                    CpuTempValue = $"{Math.Round(cpuTemp.Value)}";
+                    CpuTempUnit = "°C";
+                    CpuTemp = $"{CpuTempValue}°C";
+                    CpuStatusColor = KeepTemperaturesWhite ? "#FFFFFF" : GetStatusColor(cpuTemp.Value);
+                }
+                else
+                {
+                    CpuTempValue = "N/A";
+                    CpuTempUnit = "";
+                    CpuTemp = "N/A";
+                    CpuStatusColor = "#778899";
+                }
 
-            if (fpsData.GpuVramGb > 0.05)
-            {
-                GpuVramValue = $"{fpsData.GpuVramGb:F1}";
-                GpuVramUnit = "GB";
-                GpuVram = $"{GpuVramValue} GB";
-            }
-            else
-            {
-                GpuVramValue = "--";
-                GpuVramUnit = "GB";
-                GpuVram = "-- GB";
-            }
+                if (gpuTemp.HasValue)
+                {
+                    GpuTempValue = $"{Math.Round(gpuTemp.Value)}";
+                    GpuTempUnit = "°C";
+                    GpuTemp = $"{GpuTempValue}°C";
+                    GpuStatusColor = KeepTemperaturesWhite ? "#FFFFFF" : GetStatusColor(gpuTemp.Value);
+                }
+                else
+                {
+                    GpuTempValue = "N/A";
+                    GpuTempUnit = "";
+                    GpuTemp = "N/A";
+                    GpuStatusColor = "#778899";
+                }
 
-            // Temperatures (AppleSMC)
-            var (cpuTemp, gpuTemp) = _temperatureService.ReadTemperatures();
+                // CPU Load & RAM usage (Mach host statistics)
+                CpuUsageValue = $"{Math.Round(res.CpuUsagePercent)}";
+                CpuUsageUnit = "%";
+                CpuUsage = $"{CpuUsageValue}%";
 
-            if (cpuTemp.HasValue)
-            {
-                CpuTempValue = $"{Math.Round(cpuTemp.Value)}";
-                CpuTempUnit = "°C";
-                CpuTemp = $"{CpuTempValue}°C";
-                CpuStatusColor = GetStatusColor(cpuTemp.Value, defaultColor: "#FFFFFF");
-            }
-            else
-            {
-                CpuTempValue = "N/A";
-                CpuTempUnit = "";
-                CpuTemp = "N/A";
-                CpuStatusColor = "#FFFFFF";
-            }
+                RamValue = $"{res.RamUsedGb:F1}";
+                RamUnit = "GB";
+                RamDisplay = $"{RamValue} GB";
+                RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
+            }, DispatcherPriority.Normal);
 
-            if (gpuTemp.HasValue)
-            {
-                GpuTempValue = $"{Math.Round(gpuTemp.Value)}";
-                GpuTempUnit = "°C";
-                GpuTemp = $"{GpuTempValue}°C";
-                GpuStatusColor = GetStatusColor(gpuTemp.Value, defaultColor: "#FFFFFF");
-            }
-            else
-            {
-                GpuTempValue = "N/A";
-                GpuTempUnit = "";
-                GpuTemp = "N/A";
-                GpuStatusColor = "#FFFFFF";
-            }
-
-            // CPU Load & RAM usage (Mach host statistics)
-            var res = _systemMetricsService.ReadResourceMetrics();
-            CpuUsageValue = $"{Math.Round(res.CpuUsagePercent)}";
-            CpuUsageUnit = "%";
-            CpuUsage = $"{CpuUsageValue}%";
-
-            RamValue = $"{res.RamUsedGb:F1}";
-            RamUnit = "GB";
-            RamDisplay = $"{RamValue} GB";
-            RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
-
-            // Update graph on text tick
             UpdateFrametimeGraph(fpsData.HasPermission, fpsData.Fps, fpsData.CurrentFrametimeMs, fpsData.PeakFrametimeMs);
         }
         else
@@ -653,16 +690,21 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         nextBuffer[HistoryCapacity - 1] = sampleFt;
 
         _currentBuffer = nextBuffer;
-        FrametimeHistory = _currentBuffer;
+        Dispatcher.UIThread.Post(() =>
+        {
+            FrametimeHistory = nextBuffer;
+        }, DispatcherPriority.Render);
     }
 
-    private static string GetStatusColor(double temperature, string defaultColor)
+    private static string GetStatusColor(double temperature)
     {
         return temperature switch
         {
-            >= 85.0 => "#D41630", // Cerise Rubis (Logo)
-            >= 70.0 => "#FF9500", // macOS Orange
-            _ => defaultColor
+            >= 85.0 => "#FF2A6D", // Rouge Cerise intense (très chaud / throttling)
+            >= 75.0 => "#FF9500", // Orange vif (charge élevée)
+            >= 65.0 => "#FFD600", // Jaune éclatant / ambre (tiède / modéré)
+            >= 50.0 => "#00E676", // Vert menthe vif (normal / confort)
+            _       => "#00E5FF"  // Cyan éclatant (frais / repos)
         };
     }
 

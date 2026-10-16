@@ -133,7 +133,7 @@ public partial class App : Application
             mainVm = vm;
         }
 
-        var settingsService = new SettingsService();
+        var settingsService = mainVm?.SettingsService ?? new SettingsService();
         var fpsService = new FpsService();
         var settingsVm = new SettingsViewModel(settingsService, mainVm, fpsService);
 

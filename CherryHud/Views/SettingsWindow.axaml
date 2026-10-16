@@ -64,7 +64,7 @@
                                                Foreground="#FFFFFF"
                                                FontSize="12.5"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="Palette classique avec vert fluo et cerise électrique"
+                                    <TextBlock Text="Palette classique de CherryHud"
                                                Foreground="#8A8D9F"
                                                FontSize="11" />
                                 </StackPanel>
@@ -72,8 +72,26 @@
                                           SelectedIndex="{Binding SelectedThemeIndex}"
                                           Width="170"
                                           FontSize="11.5">
-                                    <ComboBoxItem Content="🍏 Classique" />
+                                    <ComboBoxItem Content="Classique" />
                                 </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Températures en blanc Card -->
+                        <Border Background="#202230" CornerRadius="10" Padding="14,12">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="Températures en blanc"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12.5"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="Laisse les températures CPU et GPU en blanc fixe au lieu du dégradé thermique"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1"
+                                              IsChecked="{Binding KeepTemperaturesWhite}"
+                                              OnContent="" OffContent="" />
                             </Grid>
                         </Border>
 

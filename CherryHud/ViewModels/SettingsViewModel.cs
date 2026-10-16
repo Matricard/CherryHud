@@ -25,6 +25,9 @@ public partial class SettingsViewModel : ViewModelBase
     private double _opacityPercent;
 
     [ObservableProperty]
+    private bool _keepTemperaturesWhite = true;
+
+    [ObservableProperty]
     private bool _showGpu;
 
     [ObservableProperty]
@@ -79,6 +82,7 @@ public partial class SettingsViewModel : ViewModelBase
         _selectedPositionIndex = (int)s.Position;
         _selectedThemeIndex = (int)s.Theme;
         _opacityPercent = Math.Round(s.Opacity * 100.0);
+        _keepTemperaturesWhite = s.KeepTemperaturesWhite;
 
         _showGpu = s.ShowGpu;
         _showCpu = s.ShowCpu;
@@ -161,6 +165,16 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayOpacity = normalized;
+        }
+    }
+
+    partial void OnKeepTemperaturesWhiteChanged(bool value)
+    {
+        _settingsService.Current.KeepTemperaturesWhite = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.KeepTemperaturesWhite = value;
         }
     }
 
@@ -262,6 +276,7 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedPositionIndex = 0;
         SelectedThemeIndex = 0;
         OpacityPercent = 100;
+        KeepTemperaturesWhite = true;
         ShowGpu = true;
         ShowCpu = true;
         ShowVram = true;
