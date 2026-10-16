@@ -4,10 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" 
-        Width="210" Height="106"
+        Width="190" Height="96"
         x:Class="MacTemp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        TransparencyLevelHint="Mica, AcrylicBlur, Transparent"
+        TransparencyLevelHint="Transparent"
         CanResize="False"
         ExtendClientAreaChromeHints="NoChrome"
         Background="Transparent"
@@ -16,13 +16,12 @@
         SystemDecorations="None"
         WindowStartupLocation="CenterScreen">
 
-    <Border Margin="5"
-            CornerRadius="16"
+    <!-- Carte arrondie avec fond sombre ; tout l'extérieur de la carte est 100% transparent -->
+    <Border CornerRadius="16"
             Background="#D916171F"
-            BorderBrush="#33FFFFFF"
-            BorderThickness="1"
-            BoxShadow="0 8 24 0 #60000000">
-        <Grid RowDefinitions="*,*" Margin="14,10">
+            BorderThickness="0"
+            Padding="14,10">
+        <Grid RowDefinitions="*,*">
             <!-- CPU Row -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
                 <Border Grid.Column="0"
