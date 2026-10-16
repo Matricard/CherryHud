@@ -190,10 +190,35 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding BatteryIcon}"
-                               Foreground="{Binding BatValueColor}"
-                               FontSize="13"
-                               VerticalAlignment="Center" />
+                    <!-- Batterie vectorielle libre de droits & haute précision (Licence MIT) -->
+                    <Viewbox Width="24" Height="14" VerticalAlignment="Center" Margin="0,0,1,0">
+                        <Canvas Width="24" Height="14">
+                            <!-- Cadre de la batterie -->
+                            <Rectangle Canvas.Left="1.2" Canvas.Top="1.5"
+                                       Width="18.5" Height="11"
+                                       RadiusX="3" RadiusY="3"
+                                       Stroke="{Binding BatValueColor}"
+                                       StrokeThickness="1.2"
+                                       Fill="Transparent" />
+
+                            <!-- Borne positive droite -->
+                            <Path Data="M 19.7,4.5 C 20.8,4.5 21.6,5.2 21.6,6 L 21.6,8 C 21.6,8.8 20.8,9.5 19.7,9.5 Z"
+                                  Fill="{Binding BatValueColor}" />
+
+                            <!-- Niveau de charge dynamique selon pourcentage (sur batterie) -->
+                            <Rectangle Canvas.Left="2.5" Canvas.Top="2.8"
+                                       Width="{Binding BatteryFillWidth}" Height="8.4"
+                                       RadiusX="1.6" RadiusY="1.6"
+                                       Fill="{Binding BatValueColor}"
+                                       IsVisible="{Binding !IsBatteryCharging}" />
+
+                            <!-- Éclair horizontal centré à l'intérieur de la batterie (en recharge) -->
+                            <Path Data="M 5.0,7.2 L 10.8,7.2 L 9.2,10.2 L 16.5,6.8 L 10.8,6.8 L 12.2,3.8 Z"
+                                  Fill="{Binding BatValueColor}"
+                                  IsVisible="{Binding IsBatteryCharging}" />
+                        </Canvas>
+                    </Viewbox>
+
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <TextBlock Text="{Binding BatteryValue}"
                                    Foreground="{Binding BatValueColor}"

@@ -166,6 +166,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     double _intervalPeakFrametime;
 
     BOOL _isRunning;
+    BOOL _isQueryingContent;
 }
 
 - (instancetype)init {
@@ -182,6 +183,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _tsCount = 0;
         _prevFrameTime = 0;
         _isGameActive = NO;
+        _isQueryingContent = NO;
     }
     return self;
 }
@@ -195,27 +197,32 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _intervalPeakFrametime = 0;
         _tsHead = 0;
         _tsCount = 0;
+        _isQueryingContent = NO;
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            // Register for instant workspace app activation events (0ms latency!)
             [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
                                                                    selector:@selector(onAppActivated:)
                                                                        name:NSWorkspaceDidActivateApplicationNotification
                                                                      object:nil];
 
             [self checkActiveWindow];
-            self->_pollTimer = [NSTimer scheduledTimerWithTimeInterval:0.1
-                                                                target:self
-                                                              selector:@selector(checkActiveWindow)
-                                                              userInfo:nil
-                                                               repeats:YES];
+
+            // Gentle fallback polling every 1.5s on common runloop modes (never blocks menu tracking)
+            self->_pollTimer = [NSTimer timerWithTimeInterval:1.5
+                                                       target:self
+                                                     selector:@selector(checkActiveWindow)
+                                                     userInfo:nil
+                                                      repeats:YES];
+            [[NSRunLoop mainRunLoop] addTimer:self->_pollTimer forMode:NSRunLoopCommonModes];
         });
     }
 }
 
 - (void)onAppActivated:(NSNotification *)note {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self checkActiveWindow];
+        // Debounce workspace transitions by 150ms to allow WindowServer space animation to complete
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(checkActiveWindow) object:nil];
+        [self performSelector:@selector(checkActiveWindow) withObject:nil afterDelay:0.15];
     });
 }
 
@@ -225,6 +232,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _isRunning = NO;
 
         dispatch_async(dispatch_get_main_queue(), ^{
+            [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(checkActiveWindow) object:nil];
             [[[NSWorkspace sharedWorkspace] notificationCenter] removeObserver:self];
             [self->_pollTimer invalidate];
             self->_pollTimer = nil;
@@ -241,6 +249,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _tsCount = 0;
         _prevFrameTime = 0;
         self.isGameActive = NO;
+        _isQueryingContent = NO;
     }
 }
 
@@ -347,82 +356,97 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
         self.isGameActive = YES;
     }
 
+    // If we are already capturing this exact process and stream is healthy, NO NEED to re-query ScreenCaptureKit!
+    if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
+        return;
+    }
+
+    // Prevent overlapping asynchronous queries to ScreenCaptureKit
+    if (_isQueryingContent) {
+        return;
+    }
+    _isQueryingContent = YES;
+
     // 2. Query ScreenCaptureKit to stream the game's window (or verify fullscreen if not a known game)
     [SCShareableContent getShareableContentExcludingDesktopWindows:YES
                                               onScreenWindowsOnly:NO
                                                 completionHandler:^(SCShareableContent *content, NSError *error) {
-        if (error || !content || !self->_isRunning) {
-            // Even if SCShareableContent fails or permission is missing,
-            // we PRESERVE self.isGameActive = isKnownGame so the HUD stays visible over the game!
-            return;
-        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self->_isQueryingContent = NO;
 
-        SCWindow *targetWindow = nil;
-        CGFloat maxArea = 0;
-        for (SCWindow *w in content.windows) {
-            if (w.owningApplication.processID == frontApp.processIdentifier) {
-                CGFloat area = w.frame.size.width * w.frame.size.height;
-                if (area > maxArea && area > 100) {
-                    maxArea = area;
-                    targetWindow = w;
+            if (error || !content || !self->_isRunning) {
+                // Even if SCShareableContent fails or permission is missing,
+                // we PRESERVE self.isGameActive = isKnownGame so the HUD stays visible over the game!
+                return;
+            }
+
+            SCWindow *targetWindow = nil;
+            CGFloat maxArea = 0;
+            for (SCWindow *w in content.windows) {
+                if (w.owningApplication.processID == frontApp.processIdentifier) {
+                    CGFloat area = w.frame.size.width * w.frame.size.height;
+                    if (area > maxArea && area > 100) {
+                        maxArea = area;
+                        targetWindow = w;
+                    }
                 }
             }
-        }
 
-        // Check if frontmost application is a game (verifying window geometry if needed)
-        BOOL isGame = isKnownGame || IsGameApplication(frontApp, targetWindow);
+            // Check if frontmost application is a game (verifying window geometry if needed)
+            BOOL isGame = isKnownGame || IsGameApplication(frontApp, targetWindow);
 
-        if (!isGame) {
-            // NOT a game: Stop capture immediately
-            self.isGameActive = NO;
-            if (self->_stream != nil) {
-                [self->_stream stopCaptureWithCompletionHandler:nil];
-                self->_stream = nil;
+            if (!isGame) {
+                // NOT a game: Stop capture immediately
+                self.isGameActive = NO;
+                if (self->_stream != nil) {
+                    [self->_stream stopCaptureWithCompletionHandler:nil];
+                    self->_stream = nil;
+                }
+                self->_currentPid = 0;
+                os_unfair_lock_lock(&self->_lock);
+                self.currentFps = 0.0;
+                self.currentFrametime = 0.0;
+                self->_intervalPeakFrametime = 0.0;
+                self->_tsCount = 0;
+                self->_prevFrameTime = 0;
+                os_unfair_lock_unlock(&self->_lock);
+                return;
             }
-            self->_currentPid = 0;
-            os_unfair_lock_lock(&self->_lock);
-            self.currentFps = 0.0;
-            self.currentFrametime = 0.0;
-            self->_intervalPeakFrametime = 0.0;
-            self->_tsCount = 0;
-            self->_prevFrameTime = 0;
-            os_unfair_lock_unlock(&self->_lock);
-            return;
-        }
 
-        // Active game confirmed
-        self.isGameActive = YES;
+            // Active game confirmed
+            self.isGameActive = YES;
 
-        if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
-            return; // Already tracking this game stream
-        }
-
-        if (!targetWindow) {
-            return;
-        }
-
-        self->_currentPid = frontApp.processIdentifier;
-
-        SCContentFilter *filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:targetWindow];
-        SCStreamConfiguration *config = [[SCStreamConfiguration alloc] init];
-        config.width = 64;
-        config.height = 64;
-        config.minimumFrameInterval = CMTimeMake(1, 240);
-        config.pixelFormat = kCVPixelFormatType_32BGRA;
-        config.queueDepth = 3;
-        config.showsCursor = NO;
-
-        if (self->_stream) {
-            [self->_stream updateContentFilter:filter completionHandler:nil];
-            [self->_stream updateConfiguration:config completionHandler:nil];
-        } else {
-            NSError *streamError = nil;
-            self->_stream = [[SCStream alloc] initWithFilter:filter configuration:config delegate:self];
-            [self->_stream addStreamOutput:self type:SCStreamOutputTypeScreen sampleHandlerQueue:self->_queue error:&streamError];
-            if (!streamError) {
-                [self->_stream startCaptureWithCompletionHandler:nil];
+            if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
+                return; // Already tracking this game stream
             }
-        }
+
+            if (!targetWindow) {
+                return;
+            }
+
+            self->_currentPid = frontApp.processIdentifier;
+
+            SCContentFilter *filter = [[SCContentFilter alloc] initWithDesktopIndependentWindow:targetWindow];
+            SCStreamConfiguration *config = [[SCStreamConfiguration alloc] init];
+            config.width = 64;
+            config.height = 64;
+            config.minimumFrameInterval = CMTimeMake(1, 240);
+            config.pixelFormat = kCVPixelFormatType_32BGRA;
+            config.queueDepth = 3;
+            config.showsCursor = NO;
+
+            if (self->_stream) {
+                [self->_stream updateContentFilter:filter completionHandler:nil];
+                [self->_stream updateConfiguration:config completionHandler:nil];
+            } else {
+                NSError *streamError = nil;
+                self->_stream = [[SCStream alloc] initWithFilter:filter configuration:config delegate:self];
+                [self->_stream addStreamOutput:self type:SCStreamOutputTypeScreen sampleHandlerQueue:self->_queue error:&streamError];
+                if (!streamError) {
+                    [self->_stream startCaptureWithCompletionHandler:nil];
+                }
+            }
+        });
     }];
 }
 
@@ -612,54 +636,10 @@ void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
     CFRelease(blob);
 }
 
-static BOOL ReturnNO(id self, SEL _cmd) {
-    return NO;
-}
-
-static BOOL Swizzled_CanBecomeKeyWindow(NSWindow *self, SEL _cmd) {
-    if ([self level] == NSScreenSaverWindowLevel) {
-        return NO;
-    }
-    return YES;
-}
-
-static BOOL Swizzled_CanBecomeMainWindow(NSWindow *self, SEL _cmd) {
-    if ([self level] == NSScreenSaverWindowLevel) {
-        return NO;
-    }
-    return YES;
-}
-
-static void NoOp_Activate(id self, SEL _cmd) {
-    // Prevent overlay window from activating over games
-}
-
-static void NoOp_ActivateIgnoring(id self, SEL _cmd, BOOL flag) {
-    // Prevent overlay window from activating over games
-}
-
-static void Swizzled_MakeKeyAndOrderFront(NSWindow *self, SEL _cmd, id sender) {
-    [self orderFront:sender];
-}
-
-static void Swizzled_MakeKeyWindow(NSWindow *self, SEL _cmd) {
-    // NO-OP for overlay window
-}
-
 void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 1. Set app as accessory overlay so clicking it never summons the Dock or Menu Bar
+        // 1. Set app as accessory overlay so clicking it never summons the Dock or steals active app focus
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-
-        // 2. Swizzle NSApplication activation methods
-        class_replaceMethod([NSApplication class], @selector(activate), (IMP)NoOp_Activate, "v@:");
-        class_replaceMethod([NSApplication class], @selector(activateIgnoringOtherApps:), (IMP)NoOp_ActivateIgnoring, "v@:c");
-
-        // 3. Swizzle NSWindow class methods (guarded by window level)
-        class_replaceMethod([NSWindow class], @selector(canBecomeKeyWindow), (IMP)Swizzled_CanBecomeKeyWindow, "c@:");
-        class_replaceMethod([NSWindow class], @selector(canBecomeMainWindow), (IMP)Swizzled_CanBecomeMainWindow, "c@:");
-        class_replaceMethod([NSWindow class], @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
-        class_replaceMethod([NSWindow class], @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
 
         NSWindow *win = nil;
         if (viewOrWindowPtr) {
@@ -671,44 +651,27 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
             }
         }
 
-        NSMutableArray<NSWindow *> *targets = [NSMutableArray array];
-        if (win) {
-            [targets addObject:win];
-        } else {
-            for (NSWindow *w in [NSApp windows]) {
-                [targets addObject:w];
-            }
-        }
+        if (!win) return;
 
-        for (NSWindow *w in targets) {
-            // Elevate window above macOS menu bar and over fullscreen games
-            [w setLevel:NSScreenSaverWindowLevel];
+        // Elevate window above normal windows and over fullscreen games
+        [win setLevel:NSScreenSaverWindowLevel];
 
-            // Non-activating style mask: prevents mouse clicks from activating the app
-            w.styleMask = w.styleMask | NSWindowStyleMaskNonactivatingPanel;
+        // Non-activating style mask: prevents mouse clicks on overlay from stealing focus from games
+        win.styleMask = win.styleMask | NSWindowStyleMaskNonactivatingPanel;
 
-            // Auxiliary fullscreen collection behavior:
-            // Allows the floating HUD to stay visible on top of full-screen games!
-            NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
-                                                 NSWindowCollectionBehaviorFullScreenAuxiliary |
-                                                 NSWindowCollectionBehaviorStationary |
-                                                 NSWindowCollectionBehaviorIgnoresCycle;
-            [w setCollectionBehavior:behavior];
+        // Auxiliary fullscreen collection behavior:
+        // Allows the floating HUD to stay visible on top of full-screen games
+        NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
+                                             NSWindowCollectionBehaviorFullScreenAuxiliary |
+                                             NSWindowCollectionBehaviorStationary |
+                                             NSWindowCollectionBehaviorIgnoresCycle;
+        [win setCollectionBehavior:behavior];
 
-            // Do not hide when switching away from the widget
-            [w setHidesOnDeactivate:NO];
-            [w setAlphaValue:1.0];
-            [w setIgnoresMouseEvents:NO];
-            [w orderFront:nil];
-
-            Class winClass = [w class];
-            if (winClass != [NSWindow class]) {
-                class_replaceMethod(winClass, @selector(canBecomeKeyWindow), (IMP)ReturnNO, "c@:");
-                class_replaceMethod(winClass, @selector(canBecomeMainWindow), (IMP)ReturnNO, "c@:");
-                class_replaceMethod(winClass, @selector(makeKeyWindow), (IMP)Swizzled_MakeKeyWindow, "v@:");
-                class_replaceMethod(winClass, @selector(makeKeyAndOrderFront:), (IMP)Swizzled_MakeKeyAndOrderFront, "v@:@");
-            }
-        }
+        // Do not hide when switching away from the widget
+        [win setHidesOnDeactivate:NO];
+        [win setAlphaValue:1.0];
+        [win setIgnoresMouseEvents:NO];
+        [win orderFront:nil];
     });
 }
 
@@ -724,26 +687,17 @@ void FpsMonitor_SetOverlayVisible(void *viewOrWindowPtr, bool visible) {
             }
         }
 
-        NSMutableArray<NSWindow *> *targets = [NSMutableArray array];
-        if (win) {
-            [targets addObject:win];
-        } else {
-            for (NSWindow *w in [NSApp windows]) {
-                [targets addObject:w];
-            }
-        }
+        if (!win) return;
 
-        for (NSWindow *w in targets) {
-            if (visible) {
-                [w setLevel:NSScreenSaverWindowLevel];
-                [w setAlphaValue:1.0];
-                [w setIgnoresMouseEvents:NO];
-                [w orderFront:nil];
-            } else {
-                [w setAlphaValue:0.0];
-                [w setIgnoresMouseEvents:YES];
-                [w orderOut:nil];
-            }
+        if (visible) {
+            [win setLevel:NSScreenSaverWindowLevel];
+            [win setAlphaValue:1.0];
+            [win setIgnoresMouseEvents:NO];
+            [win orderFront:nil];
+        } else {
+            [win setAlphaValue:0.0];
+            [win setIgnoresMouseEvents:YES];
+            [win orderOut:nil];
         }
     });
 }
