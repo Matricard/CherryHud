@@ -9,6 +9,7 @@
 #import <IOKit/ps/IOPSKeys.h>
 #import <os/lock.h>
 #import <objc/runtime.h>
+#include <sys/sysctl.h>
 
 #define MAX_TIMESTAMPS 360
 
@@ -613,18 +614,88 @@ void FpsMonitor_GetGpuStats(double *outUtilization, double *outVramBytes) {
     }
 }
 
+bool FpsMonitor_IsLaptop(void) {
+    static int s_isLaptop = -1;
+    if (s_isLaptop != -1) {
+        return s_isLaptop == 1;
+    }
+
+    // 1. Check IOKit AppleSmartBattery
+    mach_port_t mainPort = kIOMainPortDefault;
+    io_service_t batteryService = IOServiceGetMatchingService(mainPort, IOServiceMatching("AppleSmartBattery"));
+    if (batteryService != IO_OBJECT_NULL) {
+        IOObjectRelease(batteryService);
+        s_isLaptop = 1;
+        return true;
+    }
+
+    // 2. Check IOPowerSources for InternalBattery
+    CFTypeRef blob = IOPSCopyPowerSourcesInfo();
+    if (blob) {
+        CFArrayRef list = IOPSCopyPowerSourcesList(blob);
+        if (list) {
+            CFIndex count = CFArrayGetCount(list);
+            for (CFIndex i = 0; i < count; i++) {
+                CFDictionaryRef desc = IOPSGetPowerSourceDescription(blob, CFArrayGetValueAtIndex(list, i));
+                if (desc) {
+                    NSString *type = (__bridge NSString *)CFDictionaryGetValue(desc, CFSTR(kIOPSTypeKey));
+                    if ([type isEqualToString:(__bridge NSString *)CFSTR(kIOPSInternalBatteryType)]) {
+                        CFRelease(list);
+                        CFRelease(blob);
+                        s_isLaptop = 1;
+                        return true;
+                    }
+                }
+            }
+            CFRelease(list);
+        }
+        CFRelease(blob);
+    }
+
+    // 3. Fallback: check hw.model
+    size_t size = 0;
+    if (sysctlbyname("hw.model", NULL, &size, NULL, 0) == 0 && size > 0) {
+        char *model = malloc(size);
+        if (model) {
+            if (sysctlbyname("hw.model", model, &size, NULL, 0) == 0) {
+                NSString *modelStr = [NSString stringWithUTF8String:model];
+                if ([modelStr containsString:@"MacBook"]) {
+                    free(model);
+                    s_isLaptop = 1;
+                    return true;
+                }
+            }
+            free(model);
+        }
+    }
+
+    s_isLaptop = 0;
+    return false;
+}
+
 void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
     if (outPercent) *outPercent = -1;
     if (outIsCharging) *outIsCharging = false;
+
+    if (!FpsMonitor_IsLaptop()) {
+        return;
+    }
 
     CFTypeRef blob = IOPSCopyPowerSourcesInfo();
     if (!blob) return;
 
     CFArrayRef list = IOPSCopyPowerSourcesList(blob);
     if (list) {
-        if (CFArrayGetCount(list) > 0) {
-            CFDictionaryRef desc = IOPSGetPowerSourceDescription(blob, CFArrayGetValueAtIndex(list, 0));
+        CFIndex count = CFArrayGetCount(list);
+        for (CFIndex i = 0; i < count; i++) {
+            CFDictionaryRef desc = IOPSGetPowerSourceDescription(blob, CFArrayGetValueAtIndex(list, i));
             if (desc) {
+                NSString *type = (__bridge NSString *)CFDictionaryGetValue(desc, CFSTR(kIOPSTypeKey));
+                // Only consider internal laptop battery, ignore UPS / external peripherals
+                if (type && ![type isEqualToString:(__bridge NSString *)CFSTR(kIOPSInternalBatteryType)]) {
+                    continue;
+                }
+
                 NSNumber *cur = (__bridge NSNumber *)CFDictionaryGetValue(desc, CFSTR(kIOPSCurrentCapacityKey));
                 NSNumber *max = (__bridge NSNumber *)CFDictionaryGetValue(desc, CFSTR(kIOPSMaxCapacityKey));
                 NSString *state = (__bridge NSString *)CFDictionaryGetValue(desc, CFSTR(kIOPSPowerSourceStateKey));
@@ -636,6 +707,7 @@ void FpsMonitor_GetBatteryStats(int *outPercent, bool *outIsCharging) {
                 if (outIsCharging) {
                     *outIsCharging = (charging && [charging boolValue]) || [state isEqualToString:(__bridge NSString *)CFSTR(kIOPSACPowerValue)];
                 }
+                break;
             }
         }
         CFRelease(list);
@@ -738,12 +810,49 @@ void FpsMonitor_SetApplicationIcon(const char *iconPathUtf8) {
     });
 }
 
+@interface CherryZoomHandler : NSObject
+@property (nonatomic, assign) NSWindow *window;
+@property (nonatomic, assign) NSRect preZoomFrame;
+@property (nonatomic, assign) BOOL isZoomed;
+- (void)toggleZoom:(id)sender;
+@end
+
+@implementation CherryZoomHandler
+- (void)toggleZoom:(id)sender {
+    if (!self.window) return;
+    NSScreen *screen = [self.window screen] ?: [NSScreen mainScreen];
+    if (!screen) return;
+
+    NSRect currentFrame = [self.window frame];
+    NSRect vis = [screen visibleFrame];
+    CGFloat maxH = vis.size.height;
+    CGFloat maxW = round(maxH * (470.0 / 680.0));
+
+    // Si la fenêtre est déjà à la taille agrandie (ou marquée comme telle)
+    if (self.isZoomed || fabs(currentFrame.size.height - maxH) < 8.0) {
+        NSRect restoreFrame = self.preZoomFrame;
+        if (restoreFrame.size.width < 470.0 || restoreFrame.size.height < 680.0) {
+            restoreFrame = NSMakeRect(currentFrame.origin.x, currentFrame.origin.y, 470.0, 680.0);
+        }
+        [self.window setFrame:restoreFrame display:YES animate:YES];
+        self.isZoomed = NO;
+    } else {
+        self.preZoomFrame = currentFrame;
+        CGFloat targetX = round(vis.origin.x + (vis.size.width - maxW) / 2.0);
+        CGFloat targetY = vis.origin.y;
+        NSRect targetFrame = NSMakeRect(targetX, targetY, maxW, maxH);
+        [self.window setFrame:targetFrame display:YES animate:YES];
+        self.isZoomed = YES;
+    }
+}
+@end
+
 void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
     // Capture path synchronously to avoid dangling pointer across dispatch_async
     NSString *path = (iconPathUtf8 && strlen(iconPathUtf8) > 0) ? [NSString stringWithUTF8String:iconPathUtf8] : nil;
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        // 1. S'assurer que le nom du processus est CherryHud
+        // 1. S'assurer que le nom du processus est CherryHud et activation policy regular pour le dock
         [[NSProcessInfo processInfo] setProcessName:@"CherryHud"];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
 
@@ -798,14 +907,21 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
         }
 
         if (win) {
-            // Barre de titre transparente intégrée avec boutons classiques macOS (Fermer et Réduire)
+            // Barre de titre transparente intégrée avec boutons classiques macOS (Fermer, Réduire, Agrandir)
             win.titlebarAppearsTransparent = YES;
             win.titleVisibility = NSWindowTitleHidden;
-            win.styleMask |= NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
-            win.styleMask &= ~NSWindowStyleMaskResizable;
+            win.styleMask |= NSWindowStyleMaskFullSizeContentView | NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable;
+            [win setLevel:NSNormalWindowLevel];
             [win setMovableByWindowBackground:YES];
 
-            // Conserver les boutons classiques macOS : Fermer (rouge) et Réduire (jaune)
+            // Maintien strict du ratio d'aspect (470 x 680) lors du redimensionnement et du zoom (agrandir)
+            NSSize baseRatio = NSMakeSize(470.0, 680.0);
+            [win setMinSize:baseRatio];
+            [win setContentMinSize:baseRatio];
+            [win setAspectRatio:baseRatio];
+            [win setContentAspectRatio:baseRatio];
+
+            // Rétablir les 3 boutons classiques macOS avec leur comportement natif par défaut
             NSButton *closeBtn = [win standardWindowButton:NSWindowCloseButton];
             if (closeBtn) {
                 [closeBtn setHidden:NO];
@@ -816,11 +932,22 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
                 [miniBtn setHidden:NO];
                 [miniBtn setEnabled:YES];
             }
-            // Retrait du bouton Agrandir (Zoom)
             NSButton *zoomBtn = [win standardWindowButton:NSWindowZoomButton];
             if (zoomBtn) {
-                [zoomBtn setHidden:YES];
-                [zoomBtn setEnabled:NO];
+                [zoomBtn setHidden:NO];
+                [zoomBtn setEnabled:YES];
+                [zoomBtn setMenu:nil];
+                [zoomBtn setToolTip:nil];
+                for (NSTrackingArea *ta in [[zoomBtn trackingAreas] copy]) {
+                    [zoomBtn removeTrackingArea:ta];
+                }
+                CherryZoomHandler *handler = [[CherryZoomHandler alloc] init];
+                handler.window = win;
+                handler.preZoomFrame = [win frame];
+                handler.isZoomed = NO;
+                objc_setAssociatedObject(win, "cherry_zoom_handler", handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                [zoomBtn setTarget:handler];
+                [zoomBtn setAction:@selector(toggleZoom:)];
             }
 
             [win setOpaque:NO];
@@ -871,9 +998,11 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
                 }
             }
 
-            // Above all other windows (Floating level)
-            [win setLevel:NSFloatingWindowLevel];
-            [win setCollectionBehavior:NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary];
+            [win setLevel:NSNormalWindowLevel];
+            // Désactiver le menu popup de disposition/mosaïque (Move & Resize) de macOS Sequoia
+            NSWindowCollectionBehavior behavior = NSWindowCollectionBehaviorFullScreenNone;
+            behavior |= (NSWindowCollectionBehavior)(1 << 12); // NSWindowCollectionBehaviorFullScreenDisallowsTiling
+            [win setCollectionBehavior:behavior];
             [win setHidesOnDeactivate:NO];
             [win orderFrontRegardless];
             [win makeKeyAndOrderFront:nil];
@@ -881,6 +1010,38 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
 
         // 2. Bring application forward over all other windows
         [[NSRunningApplication currentApplication] activateWithOptions:0];
+    });
+}
+
+void FpsMonitor_MinimizeWindow(void *windowPtr) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSWindow *win = nil;
+        if (windowPtr) {
+            id obj = (__bridge id)windowPtr;
+            if ([obj isKindOfClass:[NSWindow class]]) {
+                win = (NSWindow *)obj;
+            } else if ([obj isKindOfClass:[NSView class]]) {
+                win = [(NSView *)obj window];
+            }
+        }
+        if (!win) {
+            for (NSWindow *w in [NSApp windows]) {
+                if (w && [w isVisible]) {
+                    NSString *className = NSStringFromClass([w class]);
+                    if ([className containsString:@"StatusBar"] || [className containsString:@"StatusItem"] || [w level] == 25 || [w level] == NSScreenSaverWindowLevel) {
+                        continue;
+                    }
+                    win = w;
+                    break;
+                }
+            }
+        }
+        if (win) {
+            [win performMiniaturize:nil];
+            if (![win isMiniaturized]) {
+                [win miniaturize:nil];
+            }
+        }
     });
 }
 

@@ -10,19 +10,11 @@ public enum OverlayCorner
     BottomRight = 3
 }
 
-public enum OverlayTheme
-{
-    Classic = 0,
-    CherryNeon = 1
-}
-
 public class AppSettings
 {
     public AppLanguage Language { get; set; } = AppLanguage.English;
     public bool AutoGameMode { get; set; } = true;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
-    public OverlayTheme Theme { get; set; } = OverlayTheme.Classic;
-    public double Opacity { get; set; } = 1.0;
     
     public bool ShowGpu { get; set; } = true;
     public bool ShowCpu { get; set; } = true;
@@ -32,9 +24,6 @@ public class AppSettings
     public bool ShowFps { get; set; } = true;
     public bool ShowGraph { get; set; } = true;
 
-    public string GpuMemoryLabel { get; set; } = "VRAM";
-    public int GraphFps { get; set; } = 60;
-    public bool KeepTemperaturesWhite { get; set; } = true;
     public bool AutoCheckUpdates { get; set; } = true;
     public string GitHubRepo { get; set; } = "Matricard/CherryHud";
 }

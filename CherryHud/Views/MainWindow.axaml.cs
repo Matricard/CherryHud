@@ -71,8 +71,7 @@ public partial class MainWindow : Window
             {
                 vm.PropertyChanged += (_, e) =>
                 {
-                    if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible) ||
-                        e.PropertyName == nameof(MainWindowViewModel.OverlayOpacity))
+                    if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible))
                     {
                         Dispatcher.UIThread.Post(() =>
                         {
@@ -135,8 +134,7 @@ public partial class MainWindow : Window
 
     private void ApplyVisibility(bool visible)
     {
-        double targetOpacity = DataContext is MainWindowViewModel vm ? vm.OverlayOpacity : 1.0;
-        Opacity = visible ? targetOpacity : 0.0;
+        Opacity = visible ? 1.0 : 0.0;
         IsHitTestVisible = visible;
         if (_nativeHandle.HasValue)
         {

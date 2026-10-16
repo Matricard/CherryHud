@@ -40,11 +40,30 @@ public partial class SettingsWindow : Window
             FpsService.HideAboutWindow();
         };
 
-        // Permet de déplacer la fenêtre en cliquant sur l'en-tête ou les zones de fond
+        KeyDown += (_, e) =>
+        {
+            if (e.KeyModifiers.HasFlag(KeyModifiers.Meta) && e.Key == Key.M)
+            {
+                WindowState = WindowState.Minimized;
+                e.Handled = true;
+            }
+        };
+
+        // Permet de déplacer la fenêtre en cliquant sur l'en-tête ou les zones de fond,
+        // sans interférer avec les feux tricolores natifs de macOS
         AddHandler(PointerPressedEvent, (sender, e) =>
         {
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
+                var pt = e.GetCurrentPoint(this).Position;
+
+                // Zone des feux tricolores macOS en haut à gauche (x: 0..85, y: 0..36) :
+                // Laisser macOS gérer nativement les clics sur Fermer, Réduire et Agrandir
+                if (pt.Y <= 36 && pt.X <= 85)
+                {
+                    return;
+                }
+
                 if (e.Source is Button || (e.Source as Avalonia.Visual)?.FindAncestorOfType<Button>() != null ||
                     e.Source is ToggleSwitch || (e.Source as Avalonia.Visual)?.FindAncestorOfType<ToggleSwitch>() != null ||
                     e.Source is ComboBox || (e.Source as Avalonia.Visual)?.FindAncestorOfType<ComboBox>() != null ||

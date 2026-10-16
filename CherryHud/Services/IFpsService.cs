@@ -18,6 +18,7 @@ public interface IFpsService
     FpsData GetFpsData();
     (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample();
     bool IsGameActive { get; }
+    bool IsLaptop { get; }
     void Start();
     void Stop();
     void RequestPermission();

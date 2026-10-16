@@ -14,21 +14,23 @@
         <FluentTheme />
     </Application.Styles>
 
+    <NativeMenu.Menu>
+        <NativeMenu />
+    </NativeMenu.Menu>
+
     <TrayIcon.Icons>
         <TrayIcons>
             <TrayIcon Icon="/Assets/tray-icon.png" ToolTipText="CherryHud">
                 <TrayIcon.Menu>
                     <NativeMenu>
-                        <NativeMenuItem Header="CherryHud" IsEnabled="False" />
-                        <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Show / Hide" Click="ToggleVisibility_OnClick" />
-                        <NativeMenuItem Header="Auto Mode (In-Game Only)"
+                        <NativeMenuItem Header="Hide" Click="ToggleVisibility_OnClick" />
+                        <NativeMenuItem Header="Auto Mode"
                                         ToggleType="CheckBox"
                                         IsChecked="True"
                                         Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Settings..." Click="Settings_OnClick" />
-                        <NativeMenuItem Header="Check for Updates..." Click="CheckUpdates_OnClick" />
+                        <NativeMenuItem Header="Update" Click="Update_OnClick" IsVisible="False" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Quit CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>

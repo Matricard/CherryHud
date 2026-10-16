@@ -5,9 +5,11 @@
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Loc.WindowTitle}"
         Icon="/Assets/logo.png"
-        Width="470" Height="600"
-        CanResize="False"
-        Topmost="True"
+        Width="470" Height="680"
+        MinWidth="470"
+        MinHeight="680"
+        CanResize="True"
+        Topmost="False"
         WindowStartupLocation="CenterScreen"
         TransparencyLevelHint="Mica, AcrylicBlur"
         ExtendClientAreaToDecorationsHint="True"
@@ -36,17 +38,71 @@
             <TabControl.Styles>
                 <Style Selector="TabItem">
                     <Setter Property="FontSize" Value="12" />
-                    <Setter Property="FontWeight" Value="SemiBold" />
+                    <Setter Property="FontWeight" Value="Medium" />
                     <Setter Property="Foreground" Value="#8A8D9F" />
-                    <Setter Property="Padding" Value="14,8" />
+                    <Setter Property="Background" Value="#1C1E28" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                    <Setter Property="BorderThickness" Value="1" />
+                    <Setter Property="CornerRadius" Value="8" />
+                    <Setter Property="Padding" Value="16,6" />
+                    <Setter Property="Margin" Value="0,0,8,10" />
+                    <Setter Property="MinHeight" Value="32" />
+                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                    <Setter Property="VerticalContentAlignment" Value="Center" />
+                    <Setter Property="Cursor" Value="Hand" />
+                    <Setter Property="Template">
+                        <ControlTemplate>
+                            <Border Name="PART_LayoutRoot"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="{TemplateBinding CornerRadius}"
+                                    Padding="{TemplateBinding Padding}">
+                                <Border.Transitions>
+                                    <Transitions>
+                                        <BrushTransition Property="Background" Duration="0:0:0.15" />
+                                        <BrushTransition Property="BorderBrush" Duration="0:0:0.15" />
+                                    </Transitions>
+                                </Border.Transitions>
+                                <ContentPresenter Name="PART_ContentPresenter"
+                                                  Content="{TemplateBinding Header}"
+                                                  ContentTemplate="{TemplateBinding HeaderTemplate}"
+                                                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                  RecognizesAccessKey="True" />
+                            </Border>
+                        </ControlTemplate>
+                    </Setter>
                 </Style>
+
+                <!-- Unselected tab hover -->
+                <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
+                    <Setter Property="Background" Value="#2A2C3A" />
+                </Style>
+                <Style Selector="TabItem:pointerover">
+                    <Setter Property="Foreground" Value="#D0D3E0" />
+                </Style>
+
+                <!-- Selected tab -->
                 <Style Selector="TabItem:selected">
-                    <Setter Property="Foreground" Value="#FF2A6D" />
+                    <Setter Property="Foreground" Value="#FFFFFF" />
+                    <Setter Property="FontWeight" Value="SemiBold" />
+                </Style>
+                <Style Selector="TabItem:selected /template/ Border#PART_LayoutRoot">
+                    <Setter Property="Background" Value="#700008" />
+                    <Setter Property="BorderBrush" Value="#7ED884" />
+                    <Setter Property="BorderThickness" Value="1.5" />
+                </Style>
+
+                <!-- Selected tab hover -->
+                <Style Selector="TabItem:selected:pointerover /template/ Border#PART_LayoutRoot">
+                    <Setter Property="Background" Value="#8B0014" />
+                    <Setter Property="BorderBrush" Value="#95E69B" />
                 </Style>
             </TabControl.Styles>
 
-            <!-- Onglet 1 : Affichage -->
-            <TabItem Header="{Binding Loc.TabDisplay}">
+            <!-- Onglet 1 : Général -->
+            <TabItem Header="{Binding Loc.TabGeneral}">
                 <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
                     <StackPanel Spacing="9">
                         <!-- Language Card -->
@@ -69,47 +125,6 @@
                                     <ComboBoxItem Content="English" />
                                     <ComboBoxItem Content="Français" />
                                 </ComboBox>
-                            </Grid>
-                        </Border>
-
-                        <!-- Theme Card -->
-                        <Border Background="#4E1C1F2D" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.ThemeCardTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.ThemeCardSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ComboBox Grid.Column="1"
-                                          SelectedIndex="{Binding SelectedThemeIndex}"
-                                          Width="145"
-                                          FontSize="11.5">
-                                    <ComboBoxItem Content="{Binding Loc.ThemeClassic}" />
-                                </ComboBox>
-                            </Grid>
-                        </Border>
-
-                        <!-- Températures en blanc Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.WhiteTempTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.WhiteTempSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ToggleSwitch Grid.Column="1"
-                                              IsChecked="{Binding KeepTemperaturesWhite}"
-                                              OnContent="" OffContent="" />
                             </Grid>
                         </Border>
 
@@ -146,36 +161,57 @@
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding PositionOptions}"
                                           SelectedIndex="{Binding SelectedPositionIndex}"
                                           Width="145"
-                                          FontSize="11.5">
-                                    <ComboBoxItem Content="{Binding Loc.PositionTopLeft}" />
-                                    <ComboBoxItem Content="{Binding Loc.PositionTopRight}" />
-                                    <ComboBoxItem Content="{Binding Loc.PositionBottomLeft}" />
-                                    <ComboBoxItem Content="{Binding Loc.PositionBottomRight}" />
-                                </ComboBox>
+                                          FontSize="11.5" />
                             </Grid>
                         </Border>
 
-                        <!-- Opacité Card -->
+                        <!-- Screen Recording Permission Card -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <StackPanel Spacing="6">
-                                <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding Loc.ScreenCaptureTitle}"
+                                           Foreground="#FFFFFF"
+                                           FontSize="12"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Loc.ScreenCaptureSubtitle}"
+                                           Foreground="#8A8D9F"
+                                           FontSize="11"
+                                           TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
                                     <TextBlock Grid.Column="0"
-                                               Text="{Binding Loc.OpacityTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Grid.Column="1"
-                                               Text="{Binding OpacityPercent, StringFormat='{}{0}%'}"
-                                               Foreground="#FF2A6D"
-                                               FontSize="12"
-                                               FontWeight="Bold" />
+                                               Text="{Binding PermissionStatusText}"
+                                               Foreground="{Binding PermissionStatusColor}"
+                                               FontSize="11.5"
+                                               FontWeight="Bold"
+                                               VerticalAlignment="Center"
+                                               Margin="0,0,16,0"
+                                               TextWrapping="Wrap" />
+                                    <Button Grid.Column="1"
+                                            Content="{Binding Loc.OpenSystemSettingsButton}"
+                                            Command="{Binding OpenSystemSettingsCommand}"
+                                            Background="#242838"
+                                            Foreground="#FFFFFF"
+                                            BorderBrush="#383D54"
+                                            BorderThickness="1"
+                                            FontSize="11"
+                                            FontWeight="Medium"
+                                            CornerRadius="6"
+                                            Padding="12,5"
+                                            Cursor="Hand">
+                                        <Button.Styles>
+                                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                <Setter Property="Background" Value="#32384D" />
+                                                <Setter Property="Foreground" Value="#FFFFFF" />
+                                                <Setter Property="BorderBrush" Value="#4C5474" />
+                                            </Style>
+                                            <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                                                <Setter Property="Background" Value="#1C202E" />
+                                            </Style>
+                                        </Button.Styles>
+                                    </Button>
                                 </Grid>
-                                <Slider Minimum="40" Maximum="100"
-                                        Value="{Binding OpacityPercent}"
-                                        TickFrequency="5"
-                                        IsSnapToTickEnabled="True" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -240,7 +276,7 @@
                             <Rectangle Height="1" Fill="#14FFFFFF" />
 
                             <!-- BAT -->
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center" IsVisible="{Binding IsLaptop}">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
                                     <Border Background="#523C0F" CornerRadius="5" Width="48" Height="22">
                                         <TextBlock Text="BAT" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -250,7 +286,7 @@
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowBattery}" OnContent="" OffContent="" />
                             </Grid>
 
-                            <Rectangle Height="1" Fill="#14FFFFFF" />
+                            <Rectangle Height="1" Fill="#14FFFFFF" IsVisible="{Binding IsLaptop}" />
 
                             <!-- FPS -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -280,121 +316,33 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Onglet 3 : Système & Rendu -->
-            <TabItem Header="{Binding Loc.TabAdvanced}">
-                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
-                    <StackPanel Spacing="9">
-                        <!-- Libellé Mémoire GPU -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.GpuMemLabelTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.GpuMemLabelSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ComboBox Grid.Column="1"
-                                          SelectedIndex="{Binding SelectedGpuMemoryLabelIndex}"
-                                          Width="130"
-                                          FontSize="11.5">
-                                    <ComboBoxItem Content="VRAM" />
-                                    <ComboBoxItem Content="GPU MEM" />
-                                </ComboBox>
-                            </Grid>
-                        </Border>
-
-                        <!-- Rafraîchissement Graphique -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.GraphFpsTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.GraphFpsSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ComboBox Grid.Column="1"
-                                          SelectedIndex="{Binding SelectedGraphFpsIndex}"
-                                          Width="130"
-                                          FontSize="11.5">
-                                    <ComboBoxItem Content="60 FPS" />
-                                    <ComboBoxItem Content="120 FPS" />
-                                    <ComboBoxItem Content="30 FPS" />
-                                </ComboBox>
-                            </Grid>
-                        </Border>
-
-                        <!-- Screen Recording Permission Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding Loc.ScreenCaptureTitle}"
-                                           Foreground="#FFFFFF"
-                                           FontSize="12"
-                                           FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding Loc.ScreenCaptureSubtitle}"
-                                           Foreground="#8A8D9F"
-                                           FontSize="11"
-                                           TextWrapping="Wrap" />
-                                <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
-                                    <TextBlock Grid.Column="0"
-                                               Text="{Binding PermissionStatusText}"
-                                               Foreground="{Binding PermissionStatusColor}"
-                                               FontSize="11.5"
-                                               FontWeight="Bold"
-                                               VerticalAlignment="Center"
-                                               Margin="0,0,16,0"
-                                               TextWrapping="Wrap" />
-                                    <Button Grid.Column="1"
-                                            Content="{Binding Loc.OpenSystemSettingsButton}"
-                                            Command="{Binding OpenSystemSettingsCommand}"
-                                            Background="#2600E5FF"
-                                            Foreground="#00E5FF"
-                                            FontSize="11"
-                                            FontWeight="SemiBold"
-                                            CornerRadius="6"
-                                            Padding="10,5"
-                                            Cursor="Hand" />
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
-            <!-- Onglet 4 : À propos -->
+            <!-- Onglet 3 : À propos -->
             <TabItem Header="{Binding Loc.TabAbout}">
-                <ScrollViewer Margin="0,10,0,0" Padding="0,0,10,0">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,10,0,0">
+                <ScrollViewer Margin="0,2,0,0" Padding="0" VerticalScrollBarVisibility="Disabled">
+                    <StackPanel VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0">
                         <!-- App Icon -->
-                        <Border Width="72" Height="72"
-                                CornerRadius="18"
+                        <Border Width="144" Height="144"
+                                CornerRadius="32"
                                 ClipToBounds="True"
                                 HorizontalAlignment="Center"
-                                BoxShadow="0 6 20 0 #40000000"
-                                Margin="0,0,0,10">
+                                BoxShadow="0 10 32 0 #50000000"
+                                Margin="0,0,0,12">
                             <Image Source="/Assets/logo.png" Stretch="UniformToFill" />
                         </Border>
 
                         <!-- Titre & Version -->
                         <TextBlock Text="CherryHud"
-                                    Foreground="#FFFFFF"
-                                    FontSize="20"
-                                    FontWeight="Heavy"
-                                    HorizontalAlignment="Center" />
+                                   Foreground="#FFFFFF"
+                                   FontSize="22"
+                                   FontWeight="Heavy"
+                                   HorizontalAlignment="Center" />
 
-                        <TextBlock Text="Version 0.9.0 • .NET 10"
-                                    Foreground="#D41630"
-                                    FontSize="11"
-                                    FontWeight="Bold"
-                                    HorizontalAlignment="Center"
-                                    Margin="0,2,0,4" />
+                        <TextBlock Text="Version 0.9.0"
+                                   Foreground="#7ED884"
+                                   FontSize="11.5"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,3,0,6" />
 
                         <TextBlock Text="{Binding Loc.AboutDesc}"
                                     Foreground="#9E9E9E"
@@ -405,39 +353,89 @@
                                     HorizontalAlignment="Center"
                                     Margin="0,0,0,14" />
 
-                        <!-- Carte récapitulative des fonctionnalités -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1"
+                        <!-- Carte GitHub Repo -->
+                        <Button Command="{Binding OpenGitHubRepoCommand}"
+                                Background="#24141724"
+                                BorderBrush="#1AFFFFFF"
+                                BorderThickness="1"
                                 CornerRadius="10"
                                 Padding="14,10"
-                                Margin="0,0,0,14"
-                                Width="380">
-                            <StackPanel Spacing="6">
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="⚡" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Loc.AboutFeat1}"
-                                               Foreground="#DCDCDC"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center" />
+                                Margin="0,0,0,8"
+                                Width="380"
+                                HorizontalAlignment="Center"
+                                Cursor="Hand">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="#301A2035" />
+                                    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+                                </Style>
+                            </Button.Styles>
+                            <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                <Path Grid.Column="0"
+                                      Width="18" Height="18"
+                                      Fill="#FFFFFF"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center"
+                                      Data="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Loc.GitHubCardTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.GitHubCardSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="10.5" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🎮" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Loc.AboutFeat2}"
-                                               Foreground="#DCDCDC"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center" />
+                                <TextBlock Grid.Column="2"
+                                           Text="↗"
+                                           Foreground="#8A8D9F"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Carte Licence MIT -->
+                        <Button Command="{Binding OpenLicenseCommand}"
+                                Background="#24141724"
+                                BorderBrush="#1AFFFFFF"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="14,10"
+                                Margin="0,0,0,8"
+                                Width="380"
+                                HorizontalAlignment="Center"
+                                Cursor="Hand">
+                            <Button.Styles>
+                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                    <Setter Property="Background" Value="#301A2035" />
+                                    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+                                </Style>
+                            </Button.Styles>
+                            <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                <Path Grid.Column="0"
+                                      Width="16" Height="16"
+                                      Fill="#FFFFFF"
+                                      Stretch="Uniform"
+                                      VerticalAlignment="Center"
+                                      Data="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+                                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Loc.LicenseCardTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.LicenseCardSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="10.5" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="🍒" FontSize="12" VerticalAlignment="Center" />
-                                    <TextBlock Text="{Binding Loc.AboutFeat3}"
-                                               Foreground="#DCDCDC"
-                                               FontSize="11"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center" />
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
+                                <TextBlock Grid.Column="2"
+                                           Text="↗"
+                                           Foreground="#8A8D9F"
+                                           FontSize="14"
+                                           FontWeight="Bold"
+                                           VerticalAlignment="Center" />
+                            </Grid>
+                        </Button>
 
                         <!-- Carte Mises à jour -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1"
@@ -447,25 +445,26 @@
                                 Width="380">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.SoftwareUpdatesTitle}"
+                                    <TextBlock Text="{Binding UpdateCardTitle}"
                                                Foreground="#FFFFFF"
                                                FontSize="12"
                                                FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.SoftwareUpdatesSubtitle}"
+                                    <TextBlock Text="{Binding UpdateCardSubtitle}"
                                                Foreground="#8A8D9F"
                                                FontSize="10.5"
                                                TextWrapping="Wrap" />
                                 </StackPanel>
                                 <Button Grid.Column="1"
-                                        Content="{Binding Loc.CheckButton}"
-                                        Command="{Binding CheckForUpdatesCommand}"
+                                        Content="{Binding Loc.UpdateButton}"
+                                        Command="{Binding OpenUpdateWindowCommand}"
                                         Background="#267ED884"
                                         Foreground="#7ED884"
                                         FontSize="11"
                                         FontWeight="Bold"
                                         CornerRadius="6"
                                         Padding="12,5"
-                                        Cursor="Hand" />
+                                        Cursor="Hand"
+                                        IsVisible="{Binding IsUpdateAvailable}" />
                             </Grid>
                         </Border>
 
@@ -495,42 +494,45 @@
         </TabControl>
 
         <!-- Footer -->
-        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*" Margin="0,16,0,0">
             <Button Grid.Column="0"
                     Content="{Binding Loc.ResetDefaultsButton}"
                     Command="{Binding RequestResetDefaultsCommand}"
                     Background="Transparent"
                     Foreground="#8A8D9F"
                     FontSize="11.5"
-                    Padding="0"
+                    FontWeight="Medium"
+                    Padding="10,5"
+                    CornerRadius="6"
+                    Margin="-10,-4,0,-4"
                     BorderThickness="0"
-                    Cursor="Hand" />
-
-            <Button Grid.Column="2"
-                    Content="{Binding Loc.CloseButton}"
-                    Click="Close_OnClick"
-                    Background="#2600E676"
-                    Foreground="#00E676"
-                    FontSize="12"
-                    FontWeight="Bold"
-                    CornerRadius="8"
-                    Padding="22,7"
-                    Cursor="Hand" />
+                    Cursor="Hand">
+                <Button.Styles>
+                    <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                        <Setter Property="Background" Value="#1FFFFFFF" />
+                        <Setter Property="Foreground" Value="#FFFFFF" />
+                    </Style>
+                    <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                        <Setter Property="Background" Value="#33FFFFFF" />
+                        <Setter Property="Foreground" Value="#FFFFFF" />
+                    </Style>
+                </Button.Styles>
+            </Button>
         </Grid>
     </Grid>
 
     <!-- Modal de confirmation de réinitialisation -->
     <Border IsVisible="{Binding IsResetConfirmationVisible}"
-            Background="#C007080F">
+            Background="#D8000000">
         <Border HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Width="380"
-                Background="#24141724"
-                BorderBrush="#2AFFFFFF"
+                Background="#1C1E2A"
+                BorderBrush="#33FFFFFF"
                 BorderThickness="1"
                 CornerRadius="14"
                 Padding="24,20"
-                BoxShadow="0 10 30 0 #80000000">
+                BoxShadow="0 16 48 0 #CC000000">
             <StackPanel Spacing="14">
                 <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
                     <TextBlock Text="⚠️" FontSize="18" VerticalAlignment="Center" />
@@ -568,14 +570,24 @@
                             Command="{Binding ConfirmResetDefaultsCommand}"
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
-                            Background="#D41630"
+                            Background="#700008"
                             Foreground="#FFFFFF"
                             FontSize="12"
                             FontWeight="Bold"
                             CornerRadius="8"
                             Padding="0,8"
                             Margin="6,0,0,0"
-                            Cursor="Hand" />
+                            Cursor="Hand">
+                        <Button.Styles>
+                            <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="#8B0014" />
+                                <Setter Property="Foreground" Value="#FFFFFF" />
+                            </Style>
+                            <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                                <Setter Property="Background" Value="#5C0006" />
+                            </Style>
+                        </Button.Styles>
+                    </Button>
                 </Grid>
             </StackPanel>
         </Border>

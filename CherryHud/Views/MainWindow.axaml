@@ -7,7 +7,6 @@
         mc:Ignorable="d" 
         Width="200"
         SizeToContent="Height"
-        Opacity="{Binding OverlayOpacity}"
         x:Class="CherryHud.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         TransparencyLevelHint="Transparent"
@@ -111,7 +110,7 @@
             <!-- VRAM Row -->
             <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="0,0,0,5" IsVisible="{Binding ShowVram}">
                 <TextBlock Grid.Column="0"
-                           Text="{Binding GpuMemoryLabel}"
+                           Text="VRAM"
                            Foreground="{Binding VramBadgeFg}"
                            FontSize="14"
                            FontWeight="Bold"

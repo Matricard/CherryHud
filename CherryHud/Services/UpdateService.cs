@@ -36,7 +36,32 @@ public class UpdateService
         return "0.9.0";
     }
 
+    public static bool IsUpdateAvailable { get; private set; }
+    public static string? LatestAvailableVersion { get; private set; }
+    public static event Action<bool>? UpdateAvailabilityChanged;
+
+    public static void SetUpdateAvailable(bool isAvailable, string? latestVersion = null)
+    {
+        bool changed = IsUpdateAvailable != isAvailable || (latestVersion != null && LatestAvailableVersion != latestVersion);
+        IsUpdateAvailable = isAvailable;
+        if (latestVersion != null)
+        {
+            LatestAvailableVersion = latestVersion;
+        }
+        if (changed)
+        {
+            UpdateAvailabilityChanged?.Invoke(isAvailable);
+        }
+    }
+
     public async Task<UpdateInfo> CheckForUpdatesAsync(string? specificRepo = null, CancellationToken ct = default)
+    {
+        var info = await CheckForUpdatesInternalAsync(specificRepo, ct).ConfigureAwait(false);
+        SetUpdateAvailable(info.IsUpdateAvailable, info.LatestVersion);
+        return info;
+    }
+
+    private async Task<UpdateInfo> CheckForUpdatesInternalAsync(string? specificRepo = null, CancellationToken ct = default)
     {
         string currentVer = GetCurrentVersion();
         var info = new UpdateInfo
