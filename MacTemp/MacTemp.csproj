@@ -13,7 +13,14 @@
   <ItemGroup>
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
+    <None Include="..\Native\libfpsmonitor.dylib" Condition="Exists('..\Native\libfpsmonitor.dylib')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
+
+  <Target Name="BuildNativeFpsLibrary" BeforeTargets="BeforeBuild">
+    <Exec Command="clang -dynamiclib -O2 -framework Foundation -framework AppKit -framework ScreenCaptureKit -framework CoreMedia -framework CoreGraphics ../Native/fpsmonitor.m -o ../Native/libfpsmonitor.dylib" Condition="!Exists('../Native/libfpsmonitor.dylib')" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.1.0" />

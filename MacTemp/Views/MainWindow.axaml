@@ -1,10 +1,11 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:MacTemp.ViewModels"
+        xmlns:controls="using:MacTemp.Controls"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" 
-        Width="190" Height="96"
+        Width="210" Height="175"
         x:Class="MacTemp.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         TransparencyLevelHint="Transparent"
@@ -16,14 +17,14 @@
         SystemDecorations="None"
         WindowStartupLocation="CenterScreen">
 
-    <!-- Carte arrondie avec fond sombre ; tout l'extérieur de la carte est 100% transparent -->
+    <!-- Carte arrondie avec fond sombre ; extérieur 100% transparent -->
     <Border CornerRadius="16"
             Background="#D916171F"
             BorderThickness="0"
-            Padding="14,10">
-        <Grid RowDefinitions="*,*">
+            Padding="14,12">
+        <Grid RowDefinitions="Auto,Auto,Auto,*">
             <!-- CPU Row -->
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
                 <Border Grid.Column="0"
                         Background="#2600E5FF"
                         CornerRadius="6"
@@ -38,13 +39,13 @@
                 <TextBlock Grid.Column="2"
                            Text="{Binding CpuTemp}"
                            Foreground="{Binding CpuStatusColor}"
-                           FontSize="20"
+                           FontSize="18"
                            FontWeight="Bold"
                            VerticalAlignment="Center" />
             </Grid>
 
             <!-- GPU Row -->
-            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
                 <Border Grid.Column="0"
                         Background="#26FF5376"
                         CornerRadius="6"
@@ -59,10 +60,44 @@
                 <TextBlock Grid.Column="2"
                            Text="{Binding GpuTemp}"
                            Foreground="{Binding GpuStatusColor}"
-                           FontSize="20"
+                           FontSize="18"
                            FontWeight="Bold"
                            VerticalAlignment="Center" />
             </Grid>
+
+            <!-- FPS Row (cliquable si permission requise) -->
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center" Margin="0,0,0,6">
+                <Border Grid.Column="0"
+                        Background="#2600E676"
+                        CornerRadius="6"
+                        Padding="7,3"
+                        VerticalAlignment="Center">
+                    <TextBlock Text="FPS"
+                               Foreground="#00E676"
+                               FontSize="11"
+                               FontWeight="Heavy" />
+                </Border>
+
+                <Button Grid.Column="2"
+                        Command="{Binding RequestPermissionCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Cursor="Hand">
+                    <TextBlock Text="{Binding FpsDisplay}"
+                               Foreground="{Binding FpsStatusColor}"
+                               FontSize="18"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+                </Button>
+            </Grid>
+
+            <!-- MangoHud Framerate Sparkline Graph -->
+            <controls:FpsGraphControl Grid.Row="3"
+                                     Height="32"
+                                     History="{Binding FpsHistory}"
+                                     TargetFps="{Binding TargetFps}"
+                                     Margin="0,2,0,0" />
         </Grid>
     </Border>
 </Window>
