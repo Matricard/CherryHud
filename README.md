@@ -68,17 +68,17 @@
   - **Show / Hide**: Manually toggle overlay visibility.
   - **Auto Mode (In-Game Only)**: Toggle automatic game detection.
   - **Settings...**: Open the centralized preferences and About window.
+  - **Check for Updates**: Check for and download new releases directly from GitHub.
   - **Quit CherryHud**: Cleanly shut down the application (<kbd>Cmd</kbd> + <kbd>Q</kbd>).
 
 ---
 
 ## ⚙️ Settings Window
 
-CherryHud includes a comprehensive settings window with four dedicated tabs:
-1. **Display**: Auto-game mode toggle, screen corner placement, and opacity slider (40% to 100%).
-2. **Metrics**: Granular toggles for GPU, CPU, VRAM, RAM, Battery, FPS, and the Frametime Graph.
-3. **Advanced**: VRAM naming convention, sparkline animation refresh rate, and direct shortcut to macOS Security & Privacy settings.
-4. **About**: Official application icon, release version, summary of features, credits, and MIT license.
+CherryHud includes a modern macOS settings window with three dedicated tabs and full macOS native window controls (including aspect-ratio preserved zoom and Dock minimization):
+1. **General**: Language selection (instant English & French switching), auto-game detection toggle, screen placement anchoring (*Top-Left*, *Top-Right*, *Bottom-Left*, *Bottom-Right*), and start at login.
+2. **Metrics**: Granular toggles for GPU, CPU, VRAM, RAM, Battery, FPS counter, and Frametime Sparkline Graph (**MS**).
+3. **About**: Official cherry artwork, current version, in-app update notifications with one-click GitHub download, project repository links, and settings reset.
 
 ---
 
@@ -103,8 +103,8 @@ To calculate exact frame delivery times and FPS without display server throttle,
 
 ```bash
 # Clone the repository
-git clone https://github.com/MathieuRicard/MacTemp.git
-cd MacTemp
+git clone https://github.com/Matricard/CherryHud.git
+cd CherryHud
 
 # Build and launch CherryHud
 dotnet run --project CherryHud/CherryHud.csproj
