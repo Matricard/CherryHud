@@ -16,6 +16,7 @@ public class AppSettings
     public bool AutoGameMode { get; set; } = true;
     public bool LaunchAtLogin { get; set; } = false;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
+    public bool AllowOverlayDrag { get; set; } = true;
     
     public bool ShowGpu { get; set; } = true;
     public bool ShowCpu { get; set; } = true;

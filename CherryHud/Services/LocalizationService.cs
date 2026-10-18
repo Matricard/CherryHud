@@ -63,6 +63,10 @@ public class LocalizationService : ObservableObject
     public string PositionBottomLeft => IsFrench ? "Bas Gauche" : "Bottom Left";
     public string PositionBottomRight => IsFrench ? "Bas Droite" : "Bottom Right";
 
+    // Drag & Drop Card
+    public string AllowDragTitle => IsFrench ? "Glisser-déposer de l'overlay" : "Overlay Drag & Drop";
+    public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre de l'overlay à la souris" : "Allow moving the overlay freely with the mouse";
+
     // Metrics
     public string MetricGpu => IsFrench ? "Charge GPU & Température" : "GPU Load & Temperature";
     public string MetricCpu => IsFrench ? "Charge CPU & Température" : "CPU Load & Temperature";
@@ -71,6 +75,7 @@ public class LocalizationService : ObservableObject
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
     public string MetricFps => IsFrench ? "Images par seconde" : "Frames Per Second";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
+    public string BetaNoteText => IsFrench ? "Ces métriques sont en cours de développement." : "These metrics are currently under development.";
 
     // Advanced
 

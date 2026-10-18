@@ -206,6 +206,25 @@
                             </Grid>
                         </Border>
 
+                        <!-- Drag and Drop Card -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
+                                    <TextBlock Text="{Binding Loc.AllowDragTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.AllowDragSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1"
+                                              IsChecked="{Binding AllowOverlayDrag}"
+                                              OnContent="" OffContent="" />
+                            </Grid>
+                        </Border>
+
                         <!-- Screen Recording Permission Card -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <StackPanel Spacing="8">
@@ -343,27 +362,48 @@
 
                             <!-- FPS -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
                                         <TextBlock Text="FPS" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
                                     <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                        <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </Border>
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
                             </Grid>
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />
 
-                            <!-- Graphique -->
+                            <!-- Graphique (Frametime) -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" VerticalAlignment="Center">
                                     <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
                                         <TextBlock Text="MS" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Border>
                                     <TextBlock Text="{Binding Loc.MetricGraph}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                        <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </Border>
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowGraph}" OnContent="" OffContent="" />
                             </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
+                            <!-- Note Beta -->
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="2,4,0,2">
+                                <TextBlock Text="* Beta :"
+                                           Foreground="#FF9F0A"
+                                           FontSize="11"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding Loc.BetaNoteText}"
+                                           Foreground="#8A8D9F"
+                                           FontSize="11"
+                                           VerticalAlignment="Center" />
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </ScrollViewer>

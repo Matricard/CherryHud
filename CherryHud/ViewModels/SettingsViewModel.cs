@@ -65,6 +65,9 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedPositionIndex;
 
     [ObservableProperty]
+    private bool _allowOverlayDrag = true;
+
+    [ObservableProperty]
     private bool _showGpu;
 
     [ObservableProperty]
@@ -171,6 +174,7 @@ public partial class SettingsViewModel : ViewModelBase
         _autoGameMode = s.AutoGameMode;
         _launchAtLogin = s.LaunchAtLogin || LaunchAtLoginService.IsLaunchAtLoginEnabled();
         _selectedPositionIndex = (int)s.Position;
+        _allowOverlayDrag = s.AllowOverlayDrag;
         UpdatePositionOptions();
 
         _showGpu = s.ShowGpu;
@@ -269,6 +273,16 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayPosition = corner;
+        }
+    }
+
+    partial void OnAllowOverlayDragChanged(bool value)
+    {
+        _settingsService.Current.AllowOverlayDrag = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.AllowOverlayDrag = value;
         }
     }
 
@@ -471,6 +485,7 @@ public partial class SettingsViewModel : ViewModelBase
         AutoGameMode = true;
         LaunchAtLogin = false;
         SelectedPositionIndex = 0;
+        AllowOverlayDrag = true;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";
         ShowGpu = true;

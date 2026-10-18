@@ -191,6 +191,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
 
+    [ObservableProperty]
+    private bool _allowOverlayDrag = true;
+
     // Theme properties
 
     [ObservableProperty]
@@ -391,6 +394,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ShowFps = s.ShowFps;
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
+        AllowOverlayDrag = s.AllowOverlayDrag;
         IsAutoModeActive = s.AutoGameMode;
         if (s.AutoGameMode)
         {

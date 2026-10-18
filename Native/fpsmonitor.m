@@ -459,6 +459,9 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 - (void)checkActiveWindow {
     if (!_isRunning) return;
 
+    NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
+    NSString *appName = frontApp.localizedName ?: @"";
+
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     os_unfair_lock_lock(&_lock);
     if (now - _lastFrameWallTime > 1.2 && self.currentFps > 0) {
@@ -470,12 +473,10 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
     }
     os_unfair_lock_unlock(&_lock);
 
-    NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
     if (!frontApp || frontApp.processIdentifier == getpid()) {
         return;
     }
 
-    NSString *appName = frontApp.localizedName ?: @"";
     @synchronized (self) {
         self.trackedAppName = appName;
     }
@@ -497,7 +498,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
             self.currentFrametime = 0.0;
             self->_intervalPeakFrametime = 0.0;
             self->_tsCount = 0;
-            self->_prevFrameTime = 0;
+            self->_prevFrameTime = 0.0;
             os_unfair_lock_unlock(&self->_lock);
             return;
         }
@@ -530,7 +531,6 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
                                                 completionHandler:^(SCShareableContent *content, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             self->_isQueryingContent = NO;
-
             if (!error && content != nil) {
                 s_hasPermission = YES;
             } else if (error && error.code == -3801) {
@@ -593,7 +593,13 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
             SCStreamConfiguration *config = [[SCStreamConfiguration alloc] init];
             config.width = 64;
             config.height = 64;
-            config.minimumFrameInterval = CMTimeMake(1, 240);
+            config.scalesToFit = NO;
+            CGFloat winW = targetWindow.frame.size.width;
+            CGFloat winH = targetWindow.frame.size.height;
+            if (winW > 64 && winH > 64) {
+                config.sourceRect = CGRectMake((winW - 64) / 2.0, (winH - 64) / 2.0, 64, 64);
+            }
+            config.minimumFrameInterval = kCMTimeZero;
             config.pixelFormat = kCVPixelFormatType_32BGRA;
             config.queueDepth = 8;
             config.showsCursor = NO;

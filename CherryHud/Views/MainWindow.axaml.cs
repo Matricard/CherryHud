@@ -51,9 +51,14 @@ public partial class MainWindow : Window
             }
         };
 
-        // Déplacement standard de la fenêtre au clic-glisser
+        // Déplacement standard de la fenêtre au clic-glisser (si autorisé)
         AddHandler(PointerPressedEvent, (sender, e) =>
         {
+            if (DataContext is MainWindowViewModel vm && !vm.AllowOverlayDrag)
+            {
+                return;
+            }
+
             if (e.GetCurrentPoint(this).Properties.IsLeftButtonPressed)
             {
                 if (e.Source is Button || (e.Source as Visual)?.FindAncestorOfType<Button>() != null)

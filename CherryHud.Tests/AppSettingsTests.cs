@@ -21,6 +21,7 @@ public class AppSettingsTests
         Assert.True(settings.ShowFps);
         Assert.True(settings.ShowGraph);
         Assert.True(settings.AutoCheckUpdates);
+        Assert.True(settings.AllowOverlayDrag);
         Assert.Equal("Matricard/CherryHud", settings.GitHubRepo);
     }
 
@@ -34,6 +35,8 @@ public class AppSettingsTests
         Assert.False(loc.IsFrench);
         Assert.Equal("CherryHud Settings", loc.WindowTitle);
         Assert.Equal("General", loc.TabGeneral);
+        Assert.Equal("Overlay Drag & Drop", loc.AllowDragTitle);
+        Assert.Equal("Allow moving the overlay freely with the mouse", loc.AllowDragSubtitle);
         Assert.Equal("Reset to Defaults", loc.ResetDefaultsButton);
         Assert.Equal("Reset Settings?", loc.ResetConfirmTitle);
         Assert.Equal("Cancel", loc.CancelButton);
@@ -45,6 +48,8 @@ public class AppSettingsTests
         Assert.True(loc.IsFrench);
         Assert.Equal("Paramètres de CherryHud", loc.WindowTitle);
         Assert.Equal("Général", loc.TabGeneral);
+        Assert.Equal("Glisser-déposer de l'overlay", loc.AllowDragTitle);
+        Assert.Equal("Autoriser le déplacement libre de l'overlay à la souris", loc.AllowDragSubtitle);
         Assert.Equal("Rétablir par défaut", loc.ResetDefaultsButton);
         Assert.Equal("Rétablir les paramètres ?", loc.ResetConfirmTitle);
         Assert.Equal("Annuler", loc.CancelButton);
