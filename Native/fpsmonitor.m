@@ -12,7 +12,7 @@
 #import <objc/runtime.h>
 #include <sys/sysctl.h>
 
-#define MAX_TIMESTAMPS 360
+#define MAX_TIMESTAMPS 1024
 
 static NSImage* g_updateBadgeImage = nil;
 static BOOL s_hasPermission = NO;
@@ -183,6 +183,8 @@ static void FpsMonitor_LibraryInit(void) {
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
+- (double)readFps;
+- (double)readCurrentFrametime;
 - (double)consumePeakFrametime;
 @end
 
@@ -302,7 +304,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     NSTimeInterval _timestamps[MAX_TIMESTAMPS];
     int _tsHead;
     int _tsCount;
-    NSTimeInterval _lastFrameTime;
+    NSTimeInterval _lastFrameWallTime;
     NSTimeInterval _prevFrameTime;
     double _intervalPeakFrametime;
 
@@ -313,7 +315,8 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
 - (instancetype)init {
     self = [super init];
     if (self) {
-        _queue = dispatch_queue_create("com.cherryhud.fpsmonitor", DISPATCH_QUEUE_SERIAL);
+        dispatch_queue_attr_t attr = dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INTERACTIVE, 0);
+        _queue = dispatch_queue_create("com.cherryhud.fpsmonitor", attr);
         _lock = OS_UNFAIR_LOCK_INIT;
         _trackedAppName = @"";
         _currentFps = 0.0;
@@ -322,7 +325,8 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _currentPid = 0;
         _tsHead = 0;
         _tsCount = 0;
-        _prevFrameTime = 0;
+        _prevFrameTime = 0.0;
+        _lastFrameWallTime = 0.0;
         _isGameActive = NO;
         _isQueryingContent = NO;
     }
@@ -333,9 +337,9 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     @synchronized (self) {
         if (_isRunning) return;
         _isRunning = YES;
-        _lastFrameTime = [NSDate timeIntervalSinceReferenceDate];
-        _prevFrameTime = 0;
-        _intervalPeakFrametime = 0;
+        _lastFrameWallTime = [NSDate timeIntervalSinceReferenceDate];
+        _prevFrameTime = 0.0;
+        _intervalPeakFrametime = 0.0;
         _tsHead = 0;
         _tsCount = 0;
         _isQueryingContent = NO;
@@ -457,11 +461,12 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
     os_unfair_lock_lock(&_lock);
-    if (now - _lastFrameTime > 1.0 && self.currentFps > 0) {
+    if (now - _lastFrameWallTime > 1.2 && self.currentFps > 0) {
         self.currentFps = 0.0;
         self.currentFrametime = 0.0;
         _intervalPeakFrametime = 0.0;
         _tsCount = 0;
+        _prevFrameTime = 0.0;
     }
     os_unfair_lock_unlock(&_lock);
 
@@ -566,7 +571,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
                 self.currentFrametime = 0.0;
                 self->_intervalPeakFrametime = 0.0;
                 self->_tsCount = 0;
-                self->_prevFrameTime = 0;
+                self->_prevFrameTime = 0.0;
                 os_unfair_lock_unlock(&self->_lock);
                 return;
             }
@@ -590,8 +595,11 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
             config.height = 64;
             config.minimumFrameInterval = CMTimeMake(1, 240);
             config.pixelFormat = kCVPixelFormatType_32BGRA;
-            config.queueDepth = 3;
+            config.queueDepth = 8;
             config.showsCursor = NO;
+            if (@available(macOS 13.0, *)) {
+                config.capturesAudio = NO;
+            }
 
             if (self->_stream) {
                 [self->_stream updateContentFilter:filter completionHandler:nil];
@@ -613,54 +621,107 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 - (void)stream:(SCStream *)stream didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer ofType:(SCStreamOutputType)type {
     if (type != SCStreamOutputTypeScreen) return;
 
-    // 1. Only count new completed frames!
+    // Filter out frames that are explicitly idle, blank or suspended
     CFArrayRef attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, false);
-    if (!attachments || CFArrayGetCount(attachments) == 0) return;
-
-    CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
-    NSNumber *statusNum = (__bridge NSNumber *)CFDictionaryGetValue(attachment, (__bridge const void *)SCStreamFrameInfoStatus);
-    if (statusNum == nil || [statusNum integerValue] != SCFrameStatusComplete) {
-        return; // Skip idle / duplicate frames
+    if (attachments && CFArrayGetCount(attachments) > 0) {
+        CFDictionaryRef attachment = (CFDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
+        if (attachment) {
+            CFTypeRef statusVal = CFDictionaryGetValue(attachment, (__bridge const void *)SCStreamFrameInfoStatus);
+            if (statusVal) {
+                NSInteger status = [(__bridge NSNumber *)statusVal integerValue];
+                if (status == SCFrameStatusIdle || status == SCFrameStatusBlank || status == SCFrameStatusSuspended) {
+                    return; // Screen or window content did not change
+                }
+            }
+        }
     }
 
+    CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+    double ptsSec = CMTIME_IS_VALID(pts) ? CMTimeGetSeconds(pts) : 0.0;
+    NSTimeInterval wallNow = [NSDate timeIntervalSinceReferenceDate];
+    NSTimeInterval frameTime = (ptsSec > 0.0) ? ptsSec : wallNow;
+
     os_unfair_lock_lock(&_lock);
-    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
 
     // Measure exact frametime in milliseconds between consecutive completed frames
-    if (_prevFrameTime > 0) {
-        NSTimeInterval delta = now - _prevFrameTime;
-        double ftMs = delta * 1000.0;
-        if (ftMs >= 0.2 && ftMs <= 500.0) {
+    if (_prevFrameTime > 0.0) {
+        NSTimeInterval delta = frameTime - _prevFrameTime;
+        if (delta >= 0.0005 && delta <= 0.5) {
+            double ftMs = delta * 1000.0;
             if (ftMs > _intervalPeakFrametime) {
                 _intervalPeakFrametime = ftMs;
             }
             self.currentFrametime = ftMs;
         }
     }
-    _prevFrameTime = now;
-    _lastFrameTime = now;
+    _prevFrameTime = frameTime;
+    _lastFrameWallTime = wallNow;
 
-    // 2. Sliding 1.0-second window of real completed frames for FPS
-    _timestamps[_tsHead] = now;
+    // Sliding window of frames for accurate FPS
+    _timestamps[_tsHead] = frameTime;
     _tsHead = (_tsHead + 1) % MAX_TIMESTAMPS;
     if (_tsCount < MAX_TIMESTAMPS) {
         _tsCount++;
     }
 
     // Prune timestamps older than 1.0 second
-    NSTimeInterval cutoff = now - 1.0;
+    NSTimeInterval cutoff = frameTime - 1.0;
     int tail = (_tsHead - _tsCount + MAX_TIMESTAMPS) % MAX_TIMESTAMPS;
     while (_tsCount > 0 && _timestamps[tail] < cutoff) {
         tail = (tail + 1) % MAX_TIMESTAMPS;
         _tsCount--;
     }
 
-    self.currentFps = (double)_tsCount;
+    if (_tsCount >= 3) {
+        int newestIdx = (_tsHead - 1 + MAX_TIMESTAMPS) % MAX_TIMESTAMPS;
+        NSTimeInterval newest = _timestamps[newestIdx];
+        NSTimeInterval oldest = _timestamps[tail];
+        double span = newest - oldest;
+        if (span >= 0.25 && span <= 1.25) {
+            self.currentFps = ((double)(_tsCount - 1)) / span;
+        } else {
+            self.currentFps = (double)_tsCount;
+        }
+    } else {
+        self.currentFps = (double)_tsCount;
+    }
+
     os_unfair_lock_unlock(&_lock);
+}
+
+- (double)readFps {
+    os_unfair_lock_lock(&_lock);
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - _lastFrameWallTime > 1.2) {
+        self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        _intervalPeakFrametime = 0.0;
+        _tsCount = 0;
+        _prevFrameTime = 0.0;
+    }
+    double fps = self.currentFps;
+    os_unfair_lock_unlock(&_lock);
+    return fps;
+}
+
+- (double)readCurrentFrametime {
+    os_unfair_lock_lock(&_lock);
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - _lastFrameWallTime > 1.2) {
+        self.currentFrametime = 0.0;
+    }
+    double ft = self.currentFrametime;
+    os_unfair_lock_unlock(&_lock);
+    return ft;
 }
 
 - (double)consumePeakFrametime {
     os_unfair_lock_lock(&_lock);
+    NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
+    if (now - _lastFrameWallTime > 1.2) {
+        _intervalPeakFrametime = 0.0;
+        self.currentFrametime = 0.0;
+    }
     double peak = _intervalPeakFrametime;
     _intervalPeakFrametime = self.currentFrametime;
     os_unfair_lock_unlock(&_lock);
@@ -674,7 +735,8 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
         self.currentFrametime = 0.0;
         _intervalPeakFrametime = 0.0;
         _tsCount = 0;
-        _prevFrameTime = 0;
+        _prevFrameTime = 0.0;
+        self->_currentPid = 0;
     }
 }
 
@@ -733,12 +795,12 @@ bool FpsMonitor_IsGameActive(void) {
 
 double FpsMonitor_GetFps(void) {
     if (!s_monitor) return 0.0;
-    return s_monitor.currentFps;
+    return [s_monitor readFps];
 }
 
 double FpsMonitor_GetCurrentFrametime(void) {
     if (!s_monitor) return 0.0;
-    return s_monitor.currentFrametime;
+    return [s_monitor readCurrentFrametime];
 }
 
 double FpsMonitor_GetPeakFrametime(void) {

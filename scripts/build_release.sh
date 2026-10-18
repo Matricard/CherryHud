@@ -74,7 +74,13 @@ clang -dynamiclib -O3 -arch arm64 -arch x86_64 \
 echo "📦 Publishing .NET 10 project for osx-${ARCH}..."
 DOTNET_BIN="${DOTNET_ROOT:-$HOME/.dotnet}/dotnet"
 if ! command -v "$DOTNET_BIN" &>/dev/null; then
-    DOTNET_BIN="dotnet"
+    if command -v dotnet &>/dev/null; then
+        DOTNET_BIN="dotnet"
+    elif [[ -x "/Applications/Rider.app/Contents/lib/ReSharperHost/macos-arm64/dotnet/dotnet" ]]; then
+        DOTNET_BIN="/Applications/Rider.app/Contents/lib/ReSharperHost/macos-arm64/dotnet/dotnet"
+    else
+        DOTNET_BIN="dotnet"
+    fi
 fi
 
 "$DOTNET_BIN" publish "$REPO_ROOT/CherryHud/CherryHud.csproj" \
@@ -147,9 +153,19 @@ fi
 # Ensure executable permissions
 chmod +x "$APP_BUNDLE/Contents/MacOS/CherryHud"
 
-# Ad-hoc code sign for macOS Apple Silicon Gatekeeper
-echo "🔐 Signing ${APP_NAME}.app (ad-hoc)..."
-codesign --force --deep -s - "$APP_BUNDLE"
+# Code sign for macOS Apple Silicon Gatekeeper
+# Prefer stable Apple Development / Developer ID certificate from Keychain to preserve TCC permissions (Screen Recording, etc.) across updates!
+SIGN_IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | grep -E "Apple Development|Developer ID Application" | head -n 1 | sed -e 's/.*"\(.*\)".*/\1/')
+ENTITLEMENTS_FILE="$REPO_ROOT/CherryHud/entitlements.plist"
+
+if [[ -n "$SIGN_IDENTITY" ]]; then
+    echo "🔐 Signing nested libraries and ${APP_NAME}.app with persistent identity: ${SIGN_IDENTITY}..."
+    find "$APP_BUNDLE" -name "*.dylib" -exec codesign --force -s "$SIGN_IDENTITY" {} \;
+    codesign --force --deep --entitlements "$ENTITLEMENTS_FILE" -s "$SIGN_IDENTITY" "$APP_BUNDLE"
+else
+    echo "🔐 Signing ${APP_NAME}.app (ad-hoc fallback)..."
+    codesign --force --deep -s - "$APP_BUNDLE"
+fi
 
 # 5. Create .dmg Installer
 echo "💿 Building ${DMG_NAME} installer..."
@@ -241,6 +257,11 @@ echo "⚡ Compressing read-only disk image (UDZO)..."
 hdiutil convert "$DMG_TMP" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
 
 rm -f "$DMG_TMP"
+
+if [[ -n "$SIGN_IDENTITY" ]]; then
+    echo "🔐 Signing ${DMG_NAME} installer..."
+    codesign --force -s "$SIGN_IDENTITY" "$DMG_PATH" || true
+fi
 
 # Cleanup everything in dist except the final target .dmg
 echo "🧹 Cleaning up intermediate files in $DIST_DIR (keeping only $DMG_NAME)..."

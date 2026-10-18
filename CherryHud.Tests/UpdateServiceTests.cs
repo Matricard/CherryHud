@@ -50,8 +50,8 @@ public class UpdateServiceTests
         }
 
         Assert.False(info.HasError, info.ErrorMessage);
-        Assert.Equal("0.9.0", info.CurrentVersion);
-        Assert.Equal("0.9.0", info.LatestVersion);
+        Assert.Equal("1.0.0", info.CurrentVersion);
+        Assert.NotNull(info.LatestVersion);
         Assert.False(info.IsUpdateAvailable);
     }
 

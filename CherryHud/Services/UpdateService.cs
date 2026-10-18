@@ -540,10 +540,10 @@ done
 
 # Replace destination application
 rm -rf ""$TARGET""
-cp -R ""$SOURCE"" ""$TARGET""
+ditto ""$SOURCE"" ""$TARGET""
 
-# Remove Gatekeeper quarantine attribute
-xattr -cr ""$TARGET"" 2>/dev/null || true
+# Remove Gatekeeper quarantine attribute without altering code signature
+xattr -r -d com.apple.quarantine ""$TARGET"" 2>/dev/null || true
 
 # Reopen the updated application
 open ""$TARGET""
