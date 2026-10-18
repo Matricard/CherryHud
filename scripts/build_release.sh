@@ -54,7 +54,7 @@ PUBLISH_DIR="$DIST_DIR/publish_${ARCH}"
 DMG_NAME="CherryHud-${VERSION}-macOS-${ARCH}.dmg"
 DMG_PATH="$DIST_DIR/$DMG_NAME"
 # Clean previous build artifacts
-rm -rf "$PUBLISH_DIR" "$APP_BUNDLE" "$DMG_PATH"
+rm -rf "$PUBLISH_DIR" "$APP_BUNDLE" "$DMG_PATH" "$DIST_DIR"/*.zip "$DIST_DIR"/temp_rw.dmg
 mkdir -p "$DIST_DIR"
 
 # 2. Build Native Universal Library

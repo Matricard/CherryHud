@@ -170,6 +170,19 @@ public partial class App : Application
         {
             _updateMenuItem.IsVisible = UpdateService.IsUpdateAvailable;
             _updateMenuItem.Header = LocalizationService.Instance.TrayUpdate;
+            if (_updateMenuItem.Icon == null)
+            {
+                try
+                {
+                    var uri = new Uri("avares://CherryHud/Assets/update-icon.png");
+                    if (Avalonia.Platform.AssetLoader.Exists(uri))
+                    {
+                        using var stream = Avalonia.Platform.AssetLoader.Open(uri);
+                        _updateMenuItem.Icon = new Avalonia.Media.Imaging.Bitmap(stream);
+                    }
+                }
+                catch { }
+            }
         }
     }
 

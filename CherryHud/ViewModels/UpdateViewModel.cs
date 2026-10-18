@@ -12,6 +12,7 @@ public partial class UpdateViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
 
     public Action? CloseAction { get; set; }
+    public LocalizationService Loc => LocalizationService.Instance;
 
     [ObservableProperty]
     private bool _isLoading = true;
@@ -52,37 +53,109 @@ public partial class UpdateViewModel : ViewModelBase
     [ObservableProperty]
     private string? _assetInfoText;
 
+    [ObservableProperty]
+    private bool _isDownloading;
+
+    [ObservableProperty]
+    private double _downloadProgress;
+
+    [ObservableProperty]
+    private string _downloadProgressText = string.Empty;
+
+    private UpdateInfo? _latestUpdateInfo;
+    private System.Threading.CancellationTokenSource? _downloadCts;
+
     public UpdateViewModel(UpdateService? updateService = null, ISettingsService? settingsService = null)
     {
         _updateService = updateService ?? new UpdateService();
         _settingsService = settingsService ?? new SettingsService();
+        Loc.LanguageChanged += (_, _) => RefreshLocalizedState();
+        RefreshLocalizedState();
+    }
+
+    private void RefreshLocalizedState()
+    {
+        bool fr = Loc.IsFrench;
+        string curVer = _latestUpdateInfo?.CurrentVersion ?? UpdateService.GetCurrentVersion();
+        CurrentVersionText = fr ? $"Version actuelle : {curVer}" : $"Current version: {curVer}";
+
+        if (_latestUpdateInfo != null)
+        {
+            LatestVersionText = fr ? $"Dernière version : {_latestUpdateInfo.LatestVersion}" : $"Latest version: {_latestUpdateInfo.LatestVersion}";
+
+            if (_latestUpdateInfo.AssetSizeBytes > 0 && !string.IsNullOrEmpty(_latestUpdateInfo.AssetName))
+            {
+                AssetInfoText = $"{(fr ? "Fichier disponible : " : "Available package: ")}{_latestUpdateInfo.AssetName} ({UpdateService.FormatBytes(_latestUpdateInfo.AssetSizeBytes)})";
+            }
+            else
+            {
+                AssetInfoText = _latestUpdateInfo.AssetName;
+            }
+
+            if (string.IsNullOrWhiteSpace(_latestUpdateInfo.Changelog))
+            {
+                Changelog = fr ? "Aucune note de version fournie." : "No release notes provided.";
+            }
+
+            if (HasError)
+            {
+                StatusTitle = fr ? "Vérification terminée" : "Check completed";
+                StatusMessage = _latestUpdateInfo.ErrorMessage ?? (fr ? "Impossible de récupérer les informations de mise à jour." : "Unable to retrieve update information.");
+            }
+            else if (HasUpdate)
+            {
+                StatusTitle = fr ? "Mise à jour disponible !" : "Update Available!";
+                StatusMessage = fr
+                    ? $"Une nouvelle version de CherryHud (v{_latestUpdateInfo.LatestVersion}) est prête à être installée."
+                    : $"A new version of CherryHud (v{_latestUpdateInfo.LatestVersion}) is ready to be installed.";
+            }
+            else if (IsUpToDate)
+            {
+                StatusTitle = fr ? "CherryHud est à jour !" : "CherryHud is up to date!";
+                StatusMessage = fr
+                    ? $"Vous disposez de la version la plus récente (v{_latestUpdateInfo.CurrentVersion})."
+                    : $"You have the latest version (v{_latestUpdateInfo.CurrentVersion}).";
+            }
+        }
+        else if (IsLoading)
+        {
+            StatusTitle = fr ? "Recherche de mises à jour..." : "Checking for updates...";
+            StatusMessage = fr ? "Vérification de la dernière version sur GitHub..." : "Checking for latest release on GitHub...";
+        }
+        else if (IsDownloading)
+        {
+            StatusTitle = fr ? "Mise à jour en cours..." : "Updating CherryHud...";
+            StatusMessage = fr ? "Téléchargement et installation automatique de CherryHud..." : "Downloading and installing CherryHud automatically...";
+        }
     }
 
     [RelayCommand]
     public async Task CheckUpdatesAsync()
     {
+        bool fr = Loc.IsFrench;
         IsLoading = true;
+        IsDownloading = false;
         HasUpdate = false;
         IsUpToDate = false;
         HasError = false;
-        StatusTitle = "Recherche de mises à jour...";
-        StatusMessage = "Vérification de la dernière version sur GitHub...";
+        StatusTitle = fr ? "Recherche de mises à jour..." : "Checking for updates...";
+        StatusMessage = fr ? "Vérification de la dernière version sur GitHub..." : "Checking for latest release on GitHub...";
 
         string repo = _settingsService.Current.GitHubRepo;
         var info = await _updateService.CheckForUpdatesAsync(repo);
+        _latestUpdateInfo = info;
 
         IsLoading = false;
-        CurrentVersionText = $"Version actuelle : {info.CurrentVersion}";
-        LatestVersionText = $"Dernière version : {info.LatestVersion}";
+        CurrentVersionText = fr ? $"Version actuelle : {info.CurrentVersion}" : $"Current version: {info.CurrentVersion}";
+        LatestVersionText = fr ? $"Dernière version : {info.LatestVersion}" : $"Latest version: {info.LatestVersion}";
         ReleaseTitle = info.ReleaseTitle;
-        Changelog = !string.IsNullOrWhiteSpace(info.Changelog) ? info.Changelog : "Aucune note de version fournie.";
+        Changelog = !string.IsNullOrWhiteSpace(info.Changelog) ? info.Changelog : (fr ? "Aucune note de version fournie." : "No release notes provided.");
         DownloadUrl = info.DownloadUrl;
         ReleaseUrl = info.ReleaseUrl;
 
         if (info.AssetSizeBytes > 0 && !string.IsNullOrEmpty(info.AssetName))
         {
-            double mb = info.AssetSizeBytes / (1024.0 * 1024.0);
-            AssetInfoText = $"{info.AssetName} ({mb:F1} Mo)";
+            AssetInfoText = $"{(fr ? "Fichier disponible : " : "Available package: ")}{info.AssetName} ({UpdateService.FormatBytes(info.AssetSizeBytes)})";
         }
         else
         {
@@ -92,20 +165,71 @@ public partial class UpdateViewModel : ViewModelBase
         if (info.HasError)
         {
             HasError = true;
-            StatusTitle = "Vérification terminée";
-            StatusMessage = info.ErrorMessage ?? "Impossible de récupérer les informations de mise à jour.";
+            StatusTitle = fr ? "Vérification terminée" : "Check completed";
+            StatusMessage = info.ErrorMessage ?? (fr ? "Impossible de récupérer les informations de mise à jour." : "Unable to retrieve update information.");
         }
         else if (info.IsUpdateAvailable)
         {
             HasUpdate = true;
-            StatusTitle = "Mise à jour disponible !";
-            StatusMessage = $"Une nouvelle version de CherryHud (v{info.LatestVersion}) est prête au téléchargement.";
+            StatusTitle = fr ? "Mise à jour disponible !" : "Update Available!";
+            StatusMessage = fr
+                ? $"Une nouvelle version de CherryHud (v{info.LatestVersion}) est prête à être installée."
+                : $"A new version of CherryHud (v{info.LatestVersion}) is ready to be installed.";
         }
         else
         {
             IsUpToDate = true;
-            StatusTitle = "CherryHud est à jour !";
-            StatusMessage = $"Vous disposez de la version la plus récente (v{info.CurrentVersion}).";
+            StatusTitle = fr ? "CherryHud est à jour !" : "CherryHud is up to date!";
+            StatusMessage = fr
+                ? $"Vous disposez de la version la plus récente (v{info.CurrentVersion})."
+                : $"You have the latest version (v{info.CurrentVersion}).";
+        }
+    }
+
+    [RelayCommand]
+    public async Task InstallUpdateAsync()
+    {
+        if (_latestUpdateInfo == null || !_latestUpdateInfo.IsUpdateAvailable)
+        {
+            DownloadOrOpen();
+            return;
+        }
+
+        bool fr = Loc.IsFrench;
+        IsDownloading = true;
+        HasUpdate = false;
+        HasError = false;
+        DownloadProgress = 0;
+        DownloadProgressText = fr ? "Préparation du téléchargement..." : "Preparing download...";
+        StatusTitle = fr ? "Mise à jour en cours..." : "Updating CherryHud...";
+        StatusMessage = fr ? "Téléchargement et installation automatique de CherryHud..." : "Downloading and installing CherryHud automatically...";
+
+        _downloadCts = new System.Threading.CancellationTokenSource();
+
+        var progress = new Progress<(double percent, long downloadedBytes, long totalBytes, string statusText)>(p =>
+        {
+            DownloadProgress = p.percent * 100.0;
+            DownloadProgressText = p.statusText;
+        });
+
+        try
+        {
+            await _updateService.DownloadAndInstallUpdateAsync(_latestUpdateInfo, progress, _downloadCts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            IsDownloading = false;
+            HasUpdate = true;
+            StatusTitle = fr ? "Mise à jour annulée" : "Update cancelled";
+            StatusMessage = fr ? "Le téléchargement a été annulé." : "The download was cancelled.";
+        }
+        catch (Exception ex)
+        {
+            IsDownloading = false;
+            HasUpdate = false;
+            HasError = true;
+            StatusTitle = fr ? "Erreur de mise à jour" : "Update error";
+            StatusMessage = fr ? $"Impossible d'installer la mise à jour : {ex.Message}" : $"Failed to install update: {ex.Message}";
         }
     }
 
@@ -131,6 +255,7 @@ public partial class UpdateViewModel : ViewModelBase
     [RelayCommand]
     public void Close()
     {
+        _downloadCts?.Cancel();
         CloseAction?.Invoke();
     }
 }

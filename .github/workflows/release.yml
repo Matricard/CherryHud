@@ -5,6 +5,7 @@ on:
     tags:
       - 'v*'
       - 'Release-*'
+      - 'PreRelease-*'
   workflow_dispatch:
     inputs:
       version:
@@ -34,7 +35,7 @@ jobs:
             VER="${{ github.event.inputs.version }}"
           else
             TAG_NAME="${GITHUB_REF#refs/tags/}"
-            VER=$(echo "$TAG_NAME" | sed -e 's/^Release-//' -e 's/^v//')
+            VER=$(echo "$TAG_NAME" | sed -e 's/^PreRelease-//' -e 's/^Release-//' -e 's/^v//')
           fi
           ./scripts/build_release.sh --version "$VER" --arch arm64
 
@@ -43,6 +44,7 @@ jobs:
         with:
           files: |
             dist/*.dmg
+            dist/*.zip
           generate_release_notes: true
           draft: false
           prerelease: false

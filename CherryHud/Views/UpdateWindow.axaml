@@ -3,20 +3,34 @@
         xmlns:vm="using:CherryHud.ViewModels"
         x:Class="CherryHud.Views.UpdateWindow"
         x:DataType="vm:UpdateViewModel"
-        Title="Mise à jour de CherryHud"
+        Title="{Binding Loc.UpdateWindowTitle}"
         Icon="/Assets/logo.png"
-        Width="440" Height="420"
+        Width="460" Height="440"
         CanResize="False"
         Topmost="True"
         WindowStartupLocation="CenterScreen"
-        Background="#161722">
+        TransparencyLevelHint="Mica, AcrylicBlur"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="36"
+        ExtendClientAreaChromeHints="PreferSystemChrome"
+        Background="Transparent">
 
     <Window.KeyBindings>
         <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
         <KeyBinding Gesture="Cmd+W" Command="{Binding CloseCommand}" />
     </Window.KeyBindings>
 
-    <Grid RowDefinitions="Auto,*,Auto" Margin="22,20">
+    <Panel>
+        <!-- Teinte d'arrière-plan sombre obsidian fusionnée avec la barre de titre -->
+        <Border x:Name="WindowBackgroundBorder" Background="#9E030408">
+            <Border.Transitions>
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Border.Transitions>
+        </Border>
+
+        <Grid RowDefinitions="Auto,*,Auto" Margin="22,36,22,18">
         <!-- En-tête -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Margin="0,0,0,16">
             <Border Grid.Column="0"
@@ -53,7 +67,7 @@
                     <ProgressBar IsIndeterminate="True"
                                  Width="180" Height="4"
                                  Foreground="#FF2A6D" />
-                    <TextBlock Text="Interrogation de GitHub Releases..."
+                    <TextBlock Text="{Binding Loc.UpdateQueryingGitHub}"
                                Foreground="#8A8D9F"
                                FontSize="11.5"
                                HorizontalAlignment="Center" />
@@ -74,7 +88,7 @@
                                        FontSize="11.5"
                                        FontWeight="SemiBold" />
                         </Grid>
-                        <TextBlock Text="{Binding AssetInfoText, StringFormat='Fichier disponible : {0}'}"
+                        <TextBlock Text="{Binding AssetInfoText}"
                                    Foreground="#9E9E9E"
                                    FontSize="11"
                                    IsVisible="{Binding AssetInfoText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -118,7 +132,7 @@
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="Aucune nouvelle version requise."
+                    <TextBlock Text="{Binding Loc.UpdateUpToDateSubtitle}"
                                Foreground="#FFFFFF"
                                FontSize="13"
                                FontWeight="SemiBold"
@@ -145,7 +159,7 @@
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center" />
                     </Border>
-                    <TextBlock Text="Vérification impossible"
+                    <TextBlock Text="{Binding Loc.UpdateErrorSubtitle}"
                                Foreground="#FFFFFF"
                                FontSize="13"
                                FontWeight="SemiBold"
@@ -158,6 +172,30 @@
                                MaxWidth="300"
                                HorizontalAlignment="Center" />
                 </StackPanel>
+
+                <!-- État 5 : Téléchargement et installation en cours -->
+                <StackPanel VerticalAlignment="Center"
+                            HorizontalAlignment="Center"
+                            Spacing="14"
+                            IsVisible="{Binding IsDownloading}">
+                    <ProgressBar Value="{Binding DownloadProgress}"
+                                 Minimum="0" Maximum="100"
+                                 Width="280" Height="6"
+                                 CornerRadius="3"
+                                 Foreground="#7ED884"
+                                 Background="#161722" />
+                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                        <TextBlock Text="{Binding DownloadProgressText}"
+                                   Foreground="#FFFFFF"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center" />
+                        <TextBlock Text="{Binding Loc.UpdateAutoRestartNote}"
+                                   Foreground="#8A8D9F"
+                                   FontSize="11"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -165,7 +203,7 @@
         <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
             <!-- Bouton secondaire (Voir GitHub ou Réessayer) -->
             <Button Grid.Column="0"
-                    Content="Voir sur GitHub"
+                    Content="{Binding Loc.UpdateViewOnGitHub}"
                     Command="{Binding OpenReleaseCommand}"
                     Background="Transparent"
                     Foreground="#9DA1B8"
@@ -177,7 +215,7 @@
                     IsVisible="{Binding HasUpdate}" />
 
             <Button Grid.Column="0"
-                    Content="Réessayer"
+                    Content="{Binding Loc.UpdateRetry}"
                     Command="{Binding CheckUpdatesCommand}"
                     Background="Transparent"
                     Foreground="#9DA1B8"
@@ -190,7 +228,7 @@
 
             <!-- Boutons principaux -->
             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10">
-                <Button Content="Fermer"
+                <Button Content="{Binding Loc.CloseButton}"
                         Command="{Binding CloseCommand}"
                         Background="#26FFFFFF"
                         Foreground="#CCCCCC"
@@ -200,8 +238,8 @@
                         Padding="16,7"
                         Cursor="Hand" />
 
-                <Button Content="Télécharger l'artéfact"
-                        Command="{Binding DownloadOrOpenCommand}"
+                <Button Content="{Binding Loc.UpdateButton}"
+                        Command="{Binding InstallUpdateCommand}"
                         Background="#267ED884"
                         Foreground="#7ED884"
                         FontSize="12"
@@ -213,4 +251,5 @@
             </StackPanel>
         </Grid>
     </Grid>
+    </Panel>
 </Window>

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Text.Json;
@@ -31,9 +32,10 @@ public class UpdateService
         var ver = asm.GetName().Version;
         if (ver != null)
         {
-            return $"{ver.Major}.{ver.Minor}.{ver.Build}";
+            int build = ver.Build >= 0 ? ver.Build : 0;
+            return $"{ver.Major}.{ver.Minor}.{build}";
         }
-        return "0.9.1";
+        return "0.9.0";
     }
 
     public static bool IsUpdateAvailable { get; private set; }
@@ -130,31 +132,111 @@ public class UpdateService
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("message", out var msgElement) && msgElement.GetString() == "Not Found")
+            JsonElement releaseEl = default;
+            bool hasRelease = false;
+
+            if (root.ValueKind == JsonValueKind.Array)
             {
-                info.ErrorMessage = $"Aucune version publiée (Release) n'a été trouvée sur GitHub ({usedRepo}).";
+                string highestVer = "0.0.0";
+                foreach (var rel in root.EnumerateArray())
+                {
+                    if (rel.TryGetProperty("draft", out var draftEl) && draftEl.GetBoolean())
+                    {
+                        continue;
+                    }
+
+                    if (rel.TryGetProperty("prerelease", out var prereleaseEl) && prereleaseEl.GetBoolean())
+                    {
+                        continue;
+                    }
+
+                    if (!rel.TryGetProperty("tag_name", out var tagEl))
+                    {
+                        continue;
+                    }
+
+                    string tag = tagEl.GetString() ?? "";
+                    string v = CleanVersionString(tag);
+
+                    if (!hasRelease)
+                    {
+                        releaseEl = rel;
+                        highestVer = v;
+                        hasRelease = true;
+                    }
+                    else if (IsNewerVersion(v, highestVer))
+                    {
+                        releaseEl = rel;
+                        highestVer = v;
+                    }
+                }
+
+                if (!hasRelease)
+                {
+                    info.LatestVersion = currentVer;
+                    info.IsUpdateAvailable = false;
+                    info.ReleaseTitle = LocalizationService.Instance.IsFrench ? "Aucune version publiée" : "No release published";
+                    info.Changelog = LocalizationService.Instance.IsFrench
+                        ? "Aucune release n'a encore été publiée sur le dépôt GitHub. Vous utilisez la version de développement locale."
+                        : "No releases published yet on GitHub. You are using the local development build.";
+                    return info;
+                }
+            }
+            else if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("message", out var msgElement) && msgElement.GetString() == "Not Found")
+                {
+                    info.ErrorMessage = LocalizationService.Instance.IsFrench
+                        ? $"Aucune version publiée (Release) n'a été trouvée sur GitHub ({usedRepo})."
+                        : $"No published releases found on GitHub ({usedRepo}).";
+                    return info;
+                }
+
+                if (!root.TryGetProperty("tag_name", out _))
+                {
+                    info.ErrorMessage = LocalizationService.Instance.IsFrench
+                        ? "Format de release GitHub inattendu (tag_name manquant)."
+                        : "Unexpected GitHub release format (missing tag_name).";
+                    return info;
+                }
+
+                if (root.TryGetProperty("prerelease", out var preEl) && preEl.GetBoolean())
+                {
+                    info.LatestVersion = currentVer;
+                    info.IsUpdateAvailable = false;
+                    info.ReleaseTitle = "Aucune version publiée";
+                    info.Changelog = "Aucune release stable n'a encore été publiée sur le dépôt GitHub. Vous utilisez la version de développement locale.";
+                    return info;
+                }
+
+                releaseEl = root;
+                hasRelease = true;
+            }
+            else
+            {
+                info.ErrorMessage = LocalizationService.Instance.IsFrench
+                    ? "Format de réponse GitHub inattendu."
+                    : "Unexpected GitHub response format.";
                 return info;
             }
 
-            if (!root.TryGetProperty("tag_name", out var tagElement))
-            {
-                info.ErrorMessage = "Format de release GitHub inattendu (tag_name manquant).";
-                return info;
-            }
-
-            string rawTag = tagElement.GetString() ?? "";
+            string rawTag = releaseEl.TryGetProperty("tag_name", out var tagElement) ? tagElement.GetString() ?? "" : "";
             string cleanLatest = CleanVersionString(rawTag);
             info.LatestVersion = cleanLatest;
-            info.ReleaseTitle = root.TryGetProperty("name", out var nameEl) ? nameEl.GetString() ?? rawTag : rawTag;
-            info.Changelog = root.TryGetProperty("body", out var bodyEl) ? bodyEl.GetString() ?? "" : "";
-            info.ReleaseUrl = root.TryGetProperty("html_url", out var htmlEl) ? htmlEl.GetString() ?? "" : "";
+            info.ReleaseTitle = releaseEl.TryGetProperty("name", out var nameEl) ? (nameEl.GetString() ?? rawTag) : rawTag;
+            if (string.IsNullOrWhiteSpace(info.ReleaseTitle)) info.ReleaseTitle = rawTag;
+            info.Changelog = releaseEl.TryGetProperty("body", out var bodyEl) ? bodyEl.GetString() ?? "" : "";
+            info.ReleaseUrl = releaseEl.TryGetProperty("html_url", out var htmlEl) ? htmlEl.GetString() ?? "" : "";
 
             // Find matching release asset (e.g. .dmg or .zip)
-            if (root.TryGetProperty("assets", out var assetsEl) && assetsEl.ValueKind == JsonValueKind.Array)
+            if (releaseEl.TryGetProperty("assets", out var assetsEl) && assetsEl.ValueKind == JsonValueKind.Array)
             {
                 string? bestUrl = null;
                 string? bestName = null;
                 long bestSize = 0;
+
+                bool isArm64 = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
+                               System.Runtime.InteropServices.Architecture.Arm64;
 
                 foreach (var asset in assetsEl.EnumerateArray())
                 {
@@ -166,15 +248,45 @@ public class UpdateService
                         aName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
                         aName.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase))
                     {
-                        bestUrl = aUrl;
-                        bestName = aName;
-                        bestSize = aSize;
-
-                        // Give priority to arm64 or mac builds
-                        if (aName.Contains("arm64", StringComparison.OrdinalIgnoreCase) ||
-                            aName.Contains("mac", StringComparison.OrdinalIgnoreCase))
+                        if (bestUrl == null)
                         {
-                            break;
+                            bestUrl = aUrl;
+                            bestName = aName;
+                            bestSize = aSize;
+                        }
+
+                        // Prefer matching architecture, prioritizing .zip for seamless in-app extraction
+                        bool isZip = aName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
+                        bool isDmg = aName.EndsWith(".dmg", StringComparison.OrdinalIgnoreCase);
+                        bool isMatchingArch = isArm64
+                            ? (aName.Contains("arm64", StringComparison.OrdinalIgnoreCase) || aName.Contains("aarch64", StringComparison.OrdinalIgnoreCase))
+                            : (aName.Contains("x64", StringComparison.OrdinalIgnoreCase) || aName.Contains("x86_64", StringComparison.OrdinalIgnoreCase));
+
+                        if (isZip && isMatchingArch)
+                        {
+                            bestUrl = aUrl;
+                            bestName = aName;
+                            bestSize = aSize;
+                            break; // Perfect match for in-app update!
+                        }
+
+                        if (isDmg && isMatchingArch && (bestUrl == null || !bestName!.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            bestUrl = aUrl;
+                            bestName = aName;
+                            bestSize = aSize;
+                        }
+                        else if (isZip && bestUrl == null)
+                        {
+                            bestUrl = aUrl;
+                            bestName = aName;
+                            bestSize = aSize;
+                        }
+                        else if (isMatchingArch || isDmg)
+                        {
+                            bestUrl ??= aUrl;
+                            bestName ??= aName;
+                            if (bestSize == 0) bestSize = aSize;
                         }
                     }
                 }
@@ -193,7 +305,9 @@ public class UpdateService
         }
         catch (Exception ex)
         {
-            info.ErrorMessage = $"Erreur d'analyse des données de mise à jour : {ex.Message}";
+            info.ErrorMessage = LocalizationService.Instance.IsFrench
+                ? $"Erreur d'analyse des données de mise à jour : {ex.Message}"
+                : $"Failed to parse update data: {ex.Message}";
             return info;
         }
     }
@@ -211,12 +325,6 @@ public class UpdateService
         string cleanLatest = CleanVersionString(latestStr);
         string cleanCurrent = CleanVersionString(currentStr);
 
-        if (Version.TryParse(cleanLatest, out var vLatest) && Version.TryParse(cleanCurrent, out var vCurrent))
-        {
-            return vLatest > vCurrent;
-        }
-
-        // Compare component by component if Version.TryParse fails
         var partsL = cleanLatest.Split('.');
         var partsC = cleanCurrent.Split('.');
         int max = Math.Max(partsL.Length, partsC.Length);
@@ -235,16 +343,238 @@ public class UpdateService
     {
         if (string.IsNullOrWhiteSpace(v)) return "0.0.0";
         v = v.Trim();
-        if (v.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+
+        var match = System.Text.RegularExpressions.Regex.Match(v, @"\d+(\.\d+)+");
+        if (match.Success)
         {
-            v = v.Substring(1);
+            return match.Value;
         }
-        int dashIdx = v.IndexOf('-');
-        if (dashIdx > 0)
+
+        var singleMatch = System.Text.RegularExpressions.Regex.Match(v, @"\d+");
+        if (singleMatch.Success)
         {
-            v = v.Substring(0, dashIdx);
+            return singleMatch.Value;
         }
-        return v.Trim();
+
+        return v;
+    }
+
+    public static string FormatBytes(long bytes, bool? isFrench = null)
+    {
+        bool fr = isFrench ?? LocalizationService.Instance.IsFrench;
+        string k = fr ? "Ko" : "KB";
+        string m = fr ? "Mo" : "MB";
+        string g = fr ? "Go" : "GB";
+
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " " + k;
+        if (bytes < 1024 * 1024 * 1024) return (bytes / (1024.0 * 1024.0)).ToString("F1", System.Globalization.CultureInfo.InvariantCulture) + " " + m;
+        return (bytes / (1024.0 * 1024.0 * 1024.0)).ToString("F2", System.Globalization.CultureInfo.InvariantCulture) + " " + g;
+    }
+
+    public async Task DownloadAndInstallUpdateAsync(
+        UpdateInfo info,
+        IProgress<(double percent, long downloadedBytes, long totalBytes, string statusText)>? progress = null,
+        CancellationToken ct = default)
+    {
+        bool fr = LocalizationService.Instance.IsFrench;
+        if (string.IsNullOrWhiteSpace(info.DownloadUrl))
+        {
+            throw new InvalidOperationException(fr ? "Aucun lien de téléchargement direct n'est disponible." : "No direct download link available.");
+        }
+
+        string tempRoot = Path.Combine(Path.GetTempPath(), "CherryHudUpdate");
+        if (Directory.Exists(tempRoot))
+        {
+            try { Directory.Delete(tempRoot, true); } catch { }
+        }
+        Directory.CreateDirectory(tempRoot);
+
+        string fileName = !string.IsNullOrEmpty(info.AssetName) ? info.AssetName : "CherryHud_update.zip";
+        string localFilePath = Path.Combine(tempRoot, fileName);
+
+        progress?.Report((0, 0, info.AssetSizeBytes, fr ? "Démarrage du téléchargement..." : "Starting download..."));
+
+        using var response = await HttpClient.GetAsync(info.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        long totalBytes = response.Content.Headers.ContentLength ?? info.AssetSizeBytes;
+        using (var contentStream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
+        using (var fileStream = new FileStream(localFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+        {
+            byte[] buffer = new byte[81920];
+            long totalRead = 0;
+            int bytesRead;
+
+            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, ct).ConfigureAwait(false)) > 0)
+            {
+                await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead), ct).ConfigureAwait(false);
+                totalRead += bytesRead;
+
+                if (totalBytes > 0)
+                {
+                    double pct = (double)totalRead / totalBytes;
+                    progress?.Report((pct, totalRead, totalBytes, fr
+                        ? $"Téléchargement... {pct * 100:F0}% ({FormatBytes(totalRead)} / {FormatBytes(totalBytes)})"
+                        : $"Downloading... {pct * 100:F0}% ({FormatBytes(totalRead)} / {FormatBytes(totalBytes)})"));
+                }
+                else
+                {
+                    progress?.Report((0, totalRead, 0, fr
+                        ? $"Téléchargement... {FormatBytes(totalRead)}"
+                        : $"Downloading... {FormatBytes(totalRead)}"));
+                }
+            }
+
+            await fileStream.FlushAsync(ct).ConfigureAwait(false);
+        }
+
+        progress?.Report((1.0, totalBytes, totalBytes, fr ? "Extraction de la mise à jour..." : "Extracting update..."));
+
+        string extractDir = Path.Combine(tempRoot, "extracted");
+        Directory.CreateDirectory(extractDir);
+
+        if (fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+        {
+            var dittoProc = Process.Start(new ProcessStartInfo
+            {
+                FileName = "ditto",
+                Arguments = $"-xk \"{localFilePath}\" \"{extractDir}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            if (dittoProc != null)
+            {
+                await dittoProc.WaitForExitAsync(ct).ConfigureAwait(false);
+            }
+        }
+        else if (fileName.EndsWith(".dmg", StringComparison.OrdinalIgnoreCase))
+        {
+            string mountDir = Path.Combine(tempRoot, "mount");
+            Directory.CreateDirectory(mountDir);
+
+            var attachProc = Process.Start(new ProcessStartInfo
+            {
+                FileName = "hdiutil",
+                Arguments = $"attach \"{localFilePath}\" -mountpoint \"{mountDir}\" -nobrowse -readonly",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            if (attachProc != null)
+            {
+                await attachProc.WaitForExitAsync(ct).ConfigureAwait(false);
+            }
+
+            try
+            {
+                var appsOnDisk = Directory.GetDirectories(mountDir, "*.app");
+                if (appsOnDisk.Length > 0)
+                {
+                    var cpProc = Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "cp",
+                        Arguments = $"-R \"{appsOnDisk[0]}\" \"{extractDir}/\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    });
+                    if (cpProc != null)
+                    {
+                        await cpProc.WaitForExitAsync(ct).ConfigureAwait(false);
+                    }
+                }
+            }
+            finally
+            {
+                var detachProc = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "hdiutil",
+                    Arguments = $"detach \"{mountDir}\" -force",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                if (detachProc != null)
+                {
+                    await detachProc.WaitForExitAsync(ct).ConfigureAwait(false);
+                }
+            }
+        }
+        else
+        {
+            throw new NotSupportedException(fr
+                ? $"Format de paquet non supporté pour l'installation automatique : {fileName}"
+                : $"Unsupported package format for auto-installation: {fileName}");
+        }
+
+        var candidateApps = Directory.GetDirectories(extractDir, "*.app", SearchOption.AllDirectories);
+        if (candidateApps.Length == 0)
+        {
+            throw new InvalidOperationException(fr
+                ? "L'application CherryHud.app n'a pas été trouvée dans le paquet téléchargé."
+                : "CherryHud.app was not found in the downloaded package.");
+        }
+        string sourceApp = candidateApps[0];
+
+        string exePath = Process.GetCurrentProcess().MainModule?.FileName ?? "";
+        string targetApp = "/Applications/CherryHud.app";
+        int appIdx = exePath.IndexOf(".app/Contents/MacOS", StringComparison.OrdinalIgnoreCase);
+        if (appIdx > 0)
+        {
+            targetApp = exePath.Substring(0, appIdx + 4);
+        }
+
+        progress?.Report((1.0, totalBytes, totalBytes, fr ? "Installation et redémarrage en cours..." : "Installing and restarting..."));
+
+        string scriptPath = Path.Combine(tempRoot, "relaunch.sh");
+        int currentPid = Environment.ProcessId;
+
+        string script = $@"#!/bin/bash
+PID={currentPid}
+TARGET=""{targetApp}""
+SOURCE=""{sourceApp}""
+TEMP_ROOT=""{tempRoot}""
+
+# Wait for old CherryHud process to terminate
+while kill -0 $PID 2>/dev/null; do
+    sleep 0.2
+done
+
+# Replace destination application
+rm -rf ""$TARGET""
+cp -R ""$SOURCE"" ""$TARGET""
+
+# Remove Gatekeeper quarantine attribute
+xattr -cr ""$TARGET"" 2>/dev/null || true
+
+# Reopen the updated application
+open ""$TARGET""
+
+# Clean temporary update files
+sleep 1
+rm -rf ""$TEMP_ROOT""
+";
+        await File.WriteAllTextAsync(scriptPath, script, ct).ConfigureAwait(false);
+
+        var chmodProc = Process.Start(new ProcessStartInfo
+        {
+            FileName = "chmod",
+            Arguments = $"+x \"{scriptPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+        if (chmodProc != null)
+        {
+            await chmodProc.WaitForExitAsync(ct).ConfigureAwait(false);
+        }
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "/bin/bash",
+            Arguments = $"\"{scriptPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+
+        Environment.Exit(0);
     }
 
     public static void OpenUrl(string url)

@@ -419,7 +419,7 @@
                                    FontWeight="Heavy"
                                    HorizontalAlignment="Center" />
 
-                        <TextBlock Text="Version 0.9.1"
+                        <TextBlock Text="{Binding CurrentVersionText}"
                                    Foreground="#7ED884"
                                    FontSize="11.5"
                                    FontWeight="SemiBold"

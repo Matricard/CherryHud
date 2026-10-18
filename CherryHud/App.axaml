@@ -29,8 +29,8 @@
                                         IsChecked="True"
                                         Click="ResetAutoMode_OnClick" />
                         <NativeMenuItemSeparator />
-                        <NativeMenuItem Header="Settings..." Click="Settings_OnClick" />
-                        <NativeMenuItem Header="Update" Click="Update_OnClick" IsVisible="False" />
+                        <NativeMenuItem Header="Settings" Click="Settings_OnClick" />
+                        <NativeMenuItem Header="Update" Icon="/Assets/update-icon.png" Click="Update_OnClick" IsVisible="False" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Quit CherryHud" Click="Quit_OnClick" />
                     </NativeMenu>

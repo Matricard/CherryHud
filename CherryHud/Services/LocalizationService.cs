@@ -95,9 +95,18 @@ public class LocalizationService : ObservableObject
     public string LicenseCardSubtitle => IsFrench ? "Licence MIT Open-Source" : "MIT Open-Source License";
 
     public string SoftwareUpdatesTitle => IsFrench ? "Mises à jour du logiciel" : "Software Updates";
-    public string SoftwareUpdatesSubtitle => IsFrench ? "Rechercher une nouvelle version ou un artéfact" : "Check for a new version or artifact";
+    public string SoftwareUpdatesSubtitle => IsFrench ? "Rechercher la dernière mise à jour disponible" : "Check for the latest available update";
     public string CheckButton => IsFrench ? "Vérifier..." : "Check...";
     public string UpdateButton => IsFrench ? "Mettre à jour" : "Update";
+
+    // Update Window
+    public string UpdateWindowTitle => IsFrench ? "Mise à jour de CherryHud" : "CherryHud Update";
+    public string UpdateQueryingGitHub => IsFrench ? "Interrogation de GitHub Releases..." : "Querying GitHub Releases...";
+    public string UpdateUpToDateSubtitle => IsFrench ? "Aucune nouvelle version requise." : "No new version required.";
+    public string UpdateErrorSubtitle => IsFrench ? "Vérification impossible" : "Unable to check for updates";
+    public string UpdateAutoRestartNote => IsFrench ? "Installation et redémarrage automatiques..." : "Automatic installation and restart...";
+    public string UpdateViewOnGitHub => IsFrench ? "Voir sur GitHub" : "View on GitHub";
+    public string UpdateRetry => IsFrench ? "Réessayer" : "Retry";
 
     public string AuthorText => IsFrench ? "Créé par Mathieu Ricard" : "Created by Mathieu Ricard";
     public string BuiltWithAvaloniaText => IsFrench ? "Construit avec Avalonia UI & .NET 10" : "Built with Avalonia UI & .NET 10";
@@ -116,7 +125,7 @@ public class LocalizationService : ObservableObject
     public string TrayShow => IsFrench ? "Afficher" : "Show";
     public string TrayHide => IsFrench ? "Masquer" : "Hide";
     public string TrayAutoMode => IsFrench ? "Mode Auto" : "Auto Mode";
-    public string TraySettings => IsFrench ? "Paramètres..." : "Settings...";
+    public string TraySettings => IsFrench ? "Paramètres" : "Settings";
     public string TrayUpdate => IsFrench ? "Mettre à jour" : "Update";
     public string TrayCheckUpdates => TrayUpdate;
     public string TrayQuit => IsFrench ? "Quitter CherryHud" : "Quit CherryHud";

@@ -14,10 +14,163 @@
 
 #define MAX_TIMESTAMPS 360
 
+static NSImage* g_updateBadgeImage = nil;
+
+static NSImage* GetUpdateBadgeImage(void) {
+    if (g_updateBadgeImage) return g_updateBadgeImage;
+
+    NSString *bundlePath = [[NSBundle mainBundle] bundlePath];
+    NSArray<NSString *> *candidates = @[
+        [bundlePath stringByAppendingPathComponent:@"Contents/Resources/Assets/update-icon.png"],
+        [bundlePath stringByAppendingPathComponent:@"Assets/update-icon.png"],
+        @"Assets/update-icon.png",
+        @"CherryHud/Assets/update-icon.png"
+    ];
+
+    for (NSString *path in candidates) {
+        if ([[NSFileManager defaultManager] fileExistsAtPath:path]) {
+            g_updateBadgeImage = [[NSImage alloc] initWithContentsOfFile:path];
+            if (g_updateBadgeImage) {
+                [g_updateBadgeImage setSize:NSMakeSize(18, 18)];
+                return g_updateBadgeImage;
+            }
+        }
+    }
+
+    // High resolution in-memory fallback (72px / 18pt)
+    int width = 72;
+    int height = 72;
+    CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+    CGContextRef ctx = CGBitmapContextCreate(NULL, width, height, 8, width * 4, colorSpace, (CGBitmapInfo)kCGImageAlphaPremultipliedLast);
+    CGColorSpaceRelease(colorSpace);
+
+    if (ctx) {
+        CGContextSetAllowsAntialiasing(ctx, true);
+        CGContextSetShouldAntialias(ctx, true);
+        CGContextClearRect(ctx, CGRectMake(0, 0, width, height));
+
+        // Orange circle (#FF9F0A)
+        CGFloat pad = 2.0;
+        CGRect circleRect = CGRectMake(pad, pad, width - 2 * pad, height - 2 * pad);
+        CGContextSetRGBFillColor(ctx, 1.0, 0.6235, 0.0392, 1.0);
+        CGContextFillEllipseInRect(ctx, circleRect);
+
+        // White download icon
+        CGContextSetRGBStrokeColor(ctx, 1.0, 1.0, 1.0, 1.0);
+        CGContextSetLineCap(ctx, kCGLineCapRound);
+        CGContextSetLineJoin(ctx, kCGLineJoinRound);
+        CGContextSetLineWidth(ctx, 5.5);
+
+        CGFloat cx = width / 2.0;
+
+        // Tray
+        CGFloat trayY = 17.0;
+        CGFloat trayW = 14.0;
+        CGContextMoveToPoint(ctx, cx - trayW, trayY);
+        CGContextAddLineToPoint(ctx, cx + trayW, trayY);
+        CGContextStrokePath(ctx);
+
+        // Arrow stem
+        CGFloat stemTop = 53.0;
+        CGFloat stemBottom = 27.0;
+        CGContextMoveToPoint(ctx, cx, stemTop);
+        CGContextAddLineToPoint(ctx, cx, stemBottom);
+        CGContextStrokePath(ctx);
+
+        // Arrowhead
+        CGFloat arrowW = 12.0;
+        CGFloat arrowH = 39.0;
+        CGContextMoveToPoint(ctx, cx - arrowW, arrowH);
+        CGContextAddLineToPoint(ctx, cx, stemBottom);
+        CGContextAddLineToPoint(ctx, cx + arrowW, arrowH);
+        CGContextStrokePath(ctx);
+
+        CGImageRef cgImage = CGBitmapContextCreateImage(ctx);
+        CGContextRelease(ctx);
+
+        if (cgImage) {
+            NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCGImage:cgImage];
+            [rep setSize:NSMakeSize(18, 18)];
+            CGImageRelease(cgImage);
+
+            g_updateBadgeImage = [[NSImage alloc] initWithSize:NSMakeSize(18, 18)];
+            [g_updateBadgeImage addRepresentation:rep];
+        }
+    }
+
+    return g_updateBadgeImage;
+}
+
+static void CheckAndSetMenuItemBadge(NSMenuItem *item) {
+    if (!item) return;
+    NSString *title = [item title];
+    if (!title) return;
+    if ([title localizedCaseInsensitiveContainsString:@"update"] ||
+        [title localizedCaseInsensitiveContainsString:@"mettre à jour"] ||
+        [title localizedCaseInsensitiveContainsString:@"mise à jour"]) {
+        NSImage *badge = GetUpdateBadgeImage();
+        if (badge && [item image] != badge) {
+            [item setImage:badge];
+        }
+    }
+}
+
+static void ScanMenuForUpdateItem(NSMenu *menu) {
+    if (!menu) return;
+    for (NSMenuItem *item in [menu itemArray]) {
+        CheckAndSetMenuItemBadge(item);
+        if (item.hasSubmenu) {
+            ScanMenuForUpdateItem(item.submenu);
+        }
+    }
+}
+
 __attribute__((constructor))
 static void FpsMonitor_LibraryInit(void) {
     @autoreleasepool {
         [[NSProcessInfo processInfo] setProcessName:@"CherryHud"];
+
+        NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+
+        [nc addObserverForName:NSMenuDidBeginTrackingNotification
+                        object:nil
+                         queue:[NSOperationQueue mainQueue]
+                    usingBlock:^(NSNotification *note) {
+            NSMenu *menu = [note object];
+            if ([menu isKindOfClass:[NSMenu class]]) {
+                ScanMenuForUpdateItem(menu);
+            }
+        }];
+
+        [nc addObserverForName:NSMenuDidAddItemNotification
+                        object:nil
+                         queue:[NSOperationQueue mainQueue]
+                    usingBlock:^(NSNotification *note) {
+            NSDictionary *userInfo = [note userInfo];
+            NSNumber *indexNum = userInfo[@"NSMenuItemIndex"];
+            NSMenu *menu = [note object];
+            if ([menu isKindOfClass:[NSMenu class]] && indexNum) {
+                NSInteger idx = [indexNum integerValue];
+                if (idx >= 0 && idx < [menu numberOfItems]) {
+                    CheckAndSetMenuItemBadge([menu itemAtIndex:idx]);
+                }
+            }
+        }];
+
+        [nc addObserverForName:NSMenuDidChangeItemNotification
+                        object:nil
+                         queue:[NSOperationQueue mainQueue]
+                    usingBlock:^(NSNotification *note) {
+            NSDictionary *userInfo = [note userInfo];
+            NSNumber *indexNum = userInfo[@"NSMenuItemIndex"];
+            NSMenu *menu = [note object];
+            if ([menu isKindOfClass:[NSMenu class]] && indexNum) {
+                NSInteger idx = [indexNum integerValue];
+                if (idx >= 0 && idx < [menu numberOfItems]) {
+                    CheckAndSetMenuItemBadge([menu itemAtIndex:idx]);
+                }
+            }
+        }];
     }
 }
 
