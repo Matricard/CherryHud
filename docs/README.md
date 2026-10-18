@@ -1,46 +1,46 @@
-# 🍒 CherryHud — Site Web Officiel & Landing Page
+# 🍒 CherryHud — Official Website & Landing Page
 
-Landing page moderne, responsive et légère pour **CherryHud** (l'overlay de performance gaming natif pour macOS).
-
----
-
-## ✨ Fonctionnalités du site
-
-1. **Téléchargement automatique de la dernière version :**
-   * Interroge dynamiquement l'API GitHub (`https://api.github.com/repos/Matricard/CherryHud/releases`).
-   * Détecte le dernier tag (ex: `v0.9.1`) et lie directement les boutons de téléchargement au fichier `.dmg` pour Apple Silicon (`arm64`).
-   * Affiche la taille du fichier en temps réel et dispose d'un repli automatique sans faille en cas de limite d'API.
-2. **Design Gaming Moderne :**
-   * Thème sombre inspiré de CherryHud (noir obsidienne, néon rubis `#FF2A55`, vert émeraude `#00E676`).
-   * Glassmorphism, typographie soignée (*Plus Jakarta Sans* et *JetBrains Mono*).
-   * Showcase de l'interface en jeu avec `assets/preview.png`.
-3. **Zéro dépendance de compilation :**
-   * Fichier HTML statique pur utilisant Tailwind CSS.
-   * Peut être hébergé instantanément n'importe où sans Node.js ni bundler.
+Modern, responsive, and lightweight landing page for **CherryHud** (the native gaming performance overlay for macOS).
 
 ---
 
-## 🚀 Tester en local
+## ✨ Website Features
 
-Pour prévisualiser le site sur votre Mac, double-cliquez simplement sur `index.html` ou tapez dans votre terminal :
+1. **Automatic Latest Release Detection:**
+   * Dynamically queries the GitHub Releases API (`https://api.github.com/repos/Matricard/CherryHud/releases`).
+   * Fetches the latest release tag (e.g., `v1.0.0`) and links the download buttons directly to the `.dmg` installer for Apple Silicon (`arm64`).
+   * Displays live file size information with a fallback to the repository releases page if the GitHub API rate limit is reached.
+2. **Modern Gaming Aesthetics:**
+   * Dark theme inspired by CherryHud (obsidian black, ruby red `#FF2A55`, and emerald mint `#00E676`).
+   * Glassmorphism and typography using *Plus Jakarta Sans* and *JetBrains Mono*.
+   * In-game overlay showcase using `assets/preview.png`.
+3. **Zero Build Dependencies:**
+   * Pure static HTML powered by Tailwind CSS CDN.
+   * Can be served instantly anywhere without Node.js, npm, or bundlers.
+
+---
+
+## 🚀 Local Preview
+
+To preview the website locally on your Mac, double-click `index.html` or run:
 
 ```bash
-open /Users/math/Repos/CherryHud-Web/index.html
+open docs/index.html
 ```
 
 ---
 
-## 🌐 Activer sur GitHub Pages (depuis ce dépôt)
+## 🌐 Deploy to GitHub Pages
 
-1. Allez sur votre dépôt GitHub : `https://github.com/Matricard/CherryHud`
-2. Rendez-vous dans **Settings > Pages**.
-3. Sous **Build and deployment** :
-   * **Source** : `Deploy from a branch`
-   * **Branch** : `main`
-   * **Folder** : `/docs`
-4. Cliquez sur **Save**.
-5. Votre site sera automatiquement en ligne en moins d'une minute à l'adresse :  
+1. Navigate to your GitHub repository: [https://github.com/Matricard/CherryHud](https://github.com/Matricard/CherryHud)
+2. Go to **Settings > Pages**.
+3. Under **Build and deployment**:
+   * **Source**: `Deploy from a branch`
+   * **Branch**: `main`
+   * **Folder**: `/docs`
+4. Click **Save**.
+5. Your website will be live in under a minute at:  
    👉 **`https://matricard.github.io/CherryHud/`**
 
-### Domaine personnalisé (ex: `cherryhud.app`)
-Dans les paramètres **Settings > Pages**, renseignez votre domaine personnalisé dans le champ **Custom domain** et cochez **Enforce HTTPS**.
+### Custom Domain (e.g., `cherryhud.app`)
+In **Settings > Pages**, enter your custom domain into the **Custom domain** field and check **Enforce HTTPS**.
