@@ -56,7 +56,10 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedLanguageIndex;
 
     [ObservableProperty]
-    private bool _autoGameMode;
+    private bool _autoGameMode = true;
+
+    [ObservableProperty]
+    private bool _launchAtLogin;
 
     [ObservableProperty]
     private int _selectedPositionIndex;
@@ -166,6 +169,7 @@ public partial class SettingsViewModel : ViewModelBase
         LocalizationService.Instance.CurrentLanguage = s.Language;
 
         _autoGameMode = s.AutoGameMode;
+        _launchAtLogin = s.LaunchAtLogin || LaunchAtLoginService.IsLaunchAtLoginEnabled();
         _selectedPositionIndex = (int)s.Position;
         UpdatePositionOptions();
 
@@ -219,6 +223,13 @@ public partial class SettingsViewModel : ViewModelBase
         {
             _mainViewModel.SetAutoGameMode(value);
         }
+    }
+
+    partial void OnLaunchAtLoginChanged(bool value)
+    {
+        _settingsService.Current.LaunchAtLogin = value;
+        _settingsService.Save();
+        LaunchAtLoginService.SetLaunchAtLogin(value);
     }
 
     partial void OnSelectedPositionIndexChanged(int value)
@@ -431,6 +442,7 @@ public partial class SettingsViewModel : ViewModelBase
     {
         SelectedLanguageIndex = (int)AppLanguage.English;
         AutoGameMode = true;
+        LaunchAtLogin = false;
         SelectedPositionIndex = 0;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";

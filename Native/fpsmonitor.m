@@ -7,6 +7,7 @@
 #import <IOKit/IOKitLib.h>
 #import <IOKit/ps/IOPowerSources.h>
 #import <IOKit/ps/IOPSKeys.h>
+#import <ServiceManagement/ServiceManagement.h>
 #import <os/lock.h>
 #import <objc/runtime.h>
 #include <sys/sysctl.h>
@@ -1048,5 +1049,45 @@ void FpsMonitor_HideAboutWindow(void) {
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     });
 }
+
+int FpsMonitor_SetLaunchAtLogin(int enable) {
+    if (@available(macOS 13.0, *)) {
+        SMAppService *service = [SMAppService mainAppService];
+        NSError *error = nil;
+        if (enable) {
+            if (service.status == SMAppServiceStatusEnabled) {
+                return 1;
+            }
+            BOOL ok = [service registerAndReturnError:&error];
+            if (ok) {
+                NSLog(@"[CherryHud] SMAppService successfully registered main app at login");
+                return 1;
+            } else {
+                NSLog(@"[CherryHud] SMAppService register failed: %@", error);
+            }
+        } else {
+            if (service.status != SMAppServiceStatusEnabled) {
+                return 1;
+            }
+            BOOL ok = [service unregisterAndReturnError:&error];
+            if (ok) {
+                NSLog(@"[CherryHud] SMAppService successfully unregistered main app from login");
+                return 1;
+            } else {
+                NSLog(@"[CherryHud] SMAppService unregister failed: %@", error);
+            }
+        }
+    }
+    return 0;
+}
+
+int FpsMonitor_GetLaunchAtLogin(void) {
+    if (@available(macOS 13.0, *)) {
+        SMAppService *service = [SMAppService mainAppService];
+        return service.status == SMAppServiceStatusEnabled ? 1 : 0;
+    }
+    return 0;
+}
+
 
 

@@ -33,7 +33,7 @@ public class UpdateService
         {
             return $"{ver.Major}.{ver.Minor}.{ver.Build}";
         }
-        return "0.9.0";
+        return "0.9.1";
     }
 
     public static bool IsUpdateAvailable { get; private set; }

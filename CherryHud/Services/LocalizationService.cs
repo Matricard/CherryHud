@@ -51,6 +51,10 @@ public class LocalizationService : ObservableObject
     public string AutoModeTitle => IsFrench ? "Mode Auto" : "Auto Mode";
     public string AutoModeSubtitle => IsFrench ? "Affiche le HUD uniquement lorsqu'un jeu 3D tourne" : "Only show the HUD when a 3D game is running";
 
+    // Launch At Login Card
+    public string LaunchAtLoginTitle => IsFrench ? "Lancer au démarrage" : "Start at Login";
+    public string LaunchAtLoginSubtitle => IsFrench ? "Ouvrir CherryHud automatiquement à l'ouverture du Mac" : "Automatically open CherryHud when your Mac starts up";
+
     // Position Card
     public string PositionTitle => IsFrench ? "Emplacement de l'overlay" : "Overlay Position";
     public string PositionSubtitle => IsFrench ? "Coin de l'écran où ancrer le HUD" : "Screen corner where the HUD is anchored";

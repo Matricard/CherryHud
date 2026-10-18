@@ -38,7 +38,7 @@ if [[ -z "$VERSION" ]]; then
     # Extract version from CherryHud.csproj
     VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
     if [[ -z "$VERSION" ]]; then
-        VERSION="0.9.0"
+        VERSION="0.9.1"
     fi
 fi
 
@@ -66,6 +66,7 @@ clang -dynamiclib -O3 -arch arm64 -arch x86_64 \
     -framework CoreMedia \
     -framework CoreGraphics \
     -framework IOKit \
+    -framework ServiceManagement \
     "$REPO_ROOT/Native/fpsmonitor.m" \
     -o "$REPO_ROOT/Native/libfpsmonitor.dylib"
 
@@ -232,9 +233,11 @@ fi
 echo "⚡ Compressing read-only disk image (UDZO)..."
 hdiutil convert "$DMG_TMP" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG_PATH"
 
-# Cleanup everything in dist except the final .dmg
-echo "🧹 Cleaning up intermediate files in $DIST_DIR (keeping only .dmg)..."
-find "$DIST_DIR" -mindepth 1 ! -name "*.dmg" -exec rm -rf {} +
+rm -f "$DMG_TMP"
+
+# Cleanup everything in dist except the final target .dmg
+echo "🧹 Cleaning up intermediate files in $DIST_DIR (keeping only $DMG_NAME)..."
+find "$DIST_DIR" -mindepth 1 ! -name "$DMG_NAME" -exec rm -rf {} +
 
 echo ""
 echo "============================================================"

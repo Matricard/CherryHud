@@ -23,7 +23,7 @@
             <TrayIcon Icon="/Assets/tray-icon.png" ToolTipText="CherryHud">
                 <TrayIcon.Menu>
                     <NativeMenu>
-                        <NativeMenuItem Header="Hide" Click="ToggleVisibility_OnClick" />
+                        <NativeMenuItem Header="Show" Click="ToggleVisibility_OnClick" />
                         <NativeMenuItem Header="Auto Mode"
                                         ToggleType="CheckBox"
                                         IsChecked="True"

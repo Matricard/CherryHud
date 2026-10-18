@@ -53,6 +53,11 @@ public partial class App : Application
                 Settings_OnClick(null, EventArgs.Empty);
             }
 
+            if (vm.SettingsService.Current.LaunchAtLogin)
+            {
+                LaunchAtLoginService.SetLaunchAtLogin(true);
+            }
+
             if (vm.SettingsService.Current.AutoCheckUpdates)
             {
                 Task.Delay(3000).ContinueWith(async _ =>

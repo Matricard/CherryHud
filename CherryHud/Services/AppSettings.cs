@@ -14,6 +14,7 @@ public class AppSettings
 {
     public AppLanguage Language { get; set; } = AppLanguage.English;
     public bool AutoGameMode { get; set; } = true;
+    public bool LaunchAtLogin { get; set; } = false;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
     
     public bool ShowGpu { get; set; } = true;

@@ -313,8 +313,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _manualVisibilityOverride = !IsOverlayVisible;
         IsOverlayVisible = _manualVisibilityOverride.Value;
         IsAutoModeActive = false;
-        _settingsService.Current.AutoGameMode = false;
-        _settingsService.Save();
     }
 
     public void ToggleAutoGameMode()

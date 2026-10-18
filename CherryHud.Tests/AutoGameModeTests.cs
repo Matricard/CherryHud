@@ -61,7 +61,7 @@ public class AutoGameModeTests
 
         Assert.False(vm.IsAutoModeActive);
         Assert.True(vm.IsOverlayVisible);
-        Assert.False(settings.Current.AutoGameMode);
+        Assert.True(settings.Current.AutoGameMode);
     }
 
     [Fact]
