@@ -573,7 +573,6 @@ package-lock.json
 # Build Folders
 [Pp]ublish
 [Oo]utput
-[Ss]cripts
 [Tt]ests/[Rr]esults
 
 # LibraryManager
@@ -604,3 +603,9 @@ build/*.zip
 build/*.tar.gz
 build/*.deb
 build/*.rpm
+
+# CherryHud release packaging artifacts
+dist/
+[Dd]ist/
+*.dmg
+

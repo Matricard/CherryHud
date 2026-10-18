@@ -92,22 +92,40 @@ To calculate exact frame delivery times and FPS without display server throttle,
 
 ---
 
-## 🚀 Compilation & Running
+## 📦 Installation & Releases
+
+### Download Pre-built Installer
+1. Download the latest **`CherryHud-<version>-macOS-arm64.dmg`** from [GitHub Releases](https://github.com/Matricard/CherryHud/releases).
+2. Open the `.dmg` and drag **CherryHud** into your **Applications** folder.
+3. Launch CherryHud from Applications or Spotlight.
+
+---
+
+## 🚀 Compilation & Packaging
 
 ### Prerequisites
 - macOS 13.0+ (Ventura, Sonoma, Sequoia) on Apple Silicon (M1/M2/M3/M4) or Intel Mac.
 - [.NET 10.0+ SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 - Xcode Command Line Tools (`xcode-select --install`).
 
-### Build & Run
+### Development Run
 
 ```bash
 # Clone the repository
 git clone https://github.com/Matricard/CherryHud.git
 cd CherryHud
 
-# Build and launch CherryHud
+# Run directly in development mode
 dotnet run --project CherryHud/CherryHud.csproj
+```
+
+### Build Release Bundle & DMG Installer
+
+To generate a standalone, self-contained `CherryHud.app` along with a compressed `.dmg` installer and `.zip` archive:
+
+```bash
+# Build Release DMG & ZIP (stored in ./dist)
+./scripts/build_release.sh
 ```
 
 ---

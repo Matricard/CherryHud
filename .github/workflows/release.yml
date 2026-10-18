@@ -1,0 +1,48 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - 'Release-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version string (e.g. 0.9.0)'
+        required: true
+        default: '0.9.0'
+
+jobs:
+  build-macos:
+    runs-on: macos-14
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build Release Bundle & DMG Installer
+        run: |
+          chmod +x scripts/build_release.sh
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VER="${{ github.event.inputs.version }}"
+          else
+            TAG_NAME="${GITHUB_REF#refs/tags/}"
+            VER=$(echo "$TAG_NAME" | sed -e 's/^Release-//' -e 's/^v//')
+          fi
+          ./scripts/build_release.sh --version "$VER" --arch arm64
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.dmg
+          generate_release_notes: true
+          draft: false
+          prerelease: false
