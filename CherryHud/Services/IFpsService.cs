@@ -22,4 +22,5 @@ public interface IFpsService
     void Start();
     void Stop();
     void RequestPermission();
+    void CheckPermission();
 }

@@ -46,6 +46,9 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern bool FpsMonitor_HasPermission();
 
     [DllImport(LibraryName)]
+    private static extern void FpsMonitor_CheckPermission();
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_RequestPermission();
 
     [DllImport(LibraryName)]
@@ -246,6 +249,18 @@ public sealed class FpsService : IFpsService, IDisposable
         try
         {
             FpsMonitor_RequestPermission();
+        }
+        catch
+        {
+            // Ignore
+        }
+    }
+
+    public void CheckPermission()
+    {
+        try
+        {
+            FpsMonitor_CheckPermission();
         }
         catch
         {

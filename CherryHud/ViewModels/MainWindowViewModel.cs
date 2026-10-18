@@ -16,6 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private const int HistoryCapacity = 180; // 180 points @ 60 FPS = 3.0 seconds of history
     private readonly ITemperatureService _temperatureService;
     private readonly IFpsService _fpsService;
+    public IFpsService FpsService => _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
     private readonly CancellationTokenSource _cts = new();
     private readonly double[] _bufferA = new double[HistoryCapacity];
@@ -548,7 +549,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     }
                 }
 
-                if (fpsData.BatteryPercent.HasValue && FpsService.IsLaptop())
+                if (fpsData.BatteryPercent.HasValue && _fpsService.IsLaptop)
                 {
                     HasBattery = true;
                     IsBatteryCharging = fpsData.IsBatteryCharging;

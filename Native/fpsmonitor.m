@@ -15,6 +15,7 @@
 #define MAX_TIMESTAMPS 360
 
 static NSImage* g_updateBadgeImage = nil;
+static BOOL s_hasPermission = NO;
 
 static NSImage* GetUpdateBadgeImage(void) {
     if (g_updateBadgeImage) return g_updateBadgeImage;
@@ -505,6 +506,13 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
         return;
     }
 
+    // If Screen Recording permission has NOT been granted by the user yet,
+    // do NOT query ScreenCaptureKit! Querying it without permission triggers
+    // the macOS system permission dialog automatically.
+    if (!CGPreflightScreenCaptureAccess() && !s_hasPermission) {
+        return;
+    }
+
     // Prevent overlapping asynchronous queries to ScreenCaptureKit
     if (_isQueryingContent) {
         return;
@@ -517,6 +525,12 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
                                                 completionHandler:^(SCShareableContent *content, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             self->_isQueryingContent = NO;
+
+            if (!error && content != nil) {
+                s_hasPermission = YES;
+            } else if (error && error.code == -3801) {
+                s_hasPermission = NO;
+            }
 
             if (error || !content || !self->_isRunning) {
                 // Even if SCShareableContent fails or permission is missing,
@@ -670,11 +684,32 @@ static FpsMonitor *s_monitor = nil;
 static char s_appNameBuffer[256] = {0};
 
 bool FpsMonitor_HasPermission(void) {
-    return CGPreflightScreenCaptureAccess();
+    if (CGPreflightScreenCaptureAccess()) {
+        s_hasPermission = YES;
+        return true;
+    }
+    return s_hasPermission;
+}
+
+void FpsMonitor_CheckPermission(void) {
+    if (CGPreflightScreenCaptureAccess()) {
+        s_hasPermission = YES;
+    }
 }
 
 void FpsMonitor_RequestPermission(void) {
-    CGRequestScreenCaptureAccess();
+    dispatch_async(dispatch_get_main_queue(), ^{
+        CGRequestScreenCaptureAccess();
+        if (@available(macOS 12.3, *)) {
+            [SCShareableContent getShareableContentExcludingDesktopWindows:YES
+                                                      onScreenWindowsOnly:YES
+                                                        completionHandler:^(SCShareableContent * _Nullable content, NSError * _Nullable error) {
+                if (!error && content != nil) {
+                    s_hasPermission = YES;
+                }
+            }];
+        }
+    });
 }
 
 void FpsMonitor_Start(void) {

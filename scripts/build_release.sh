@@ -38,7 +38,7 @@ if [[ -z "$VERSION" ]]; then
     # Extract version from CherryHud.csproj
     VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
     if [[ -z "$VERSION" ]]; then
-        VERSION="0.9.1"
+        VERSION="1.0.0"
     fi
 fi
 
@@ -177,9 +177,16 @@ STAGING_SIZE_MB=$(du -sm "$DMG_STAGING" | awk '{print int($1 * 1.3) + 25}')
 DMG_TMP="$DIST_DIR/temp_rw.dmg"
 rm -f "$DMG_TMP"
 
+# Unmount previous volume if mounted
+while mount | grep -q "/Volumes/${APP_NAME}"; do
+    VOL=$(mount | grep "/Volumes/${APP_NAME}" | head -n1 | awk '{print $3}')
+    hdiutil detach "$VOL" -force 2>/dev/null || break
+done
+
 hdiutil create -size "${STAGING_SIZE_MB}m" -fs HFS+ -volname "${APP_NAME}" -ov "$DMG_TMP"
 
-MOUNT_DIR=$(hdiutil attach -readwrite -noverify -noautoopen "$DMG_TMP" | grep "/Volumes/${APP_NAME}" | head -n1 | awk '{print $NF}')
+ATTACH_OUTPUT=$(hdiutil attach -readwrite -noverify -noautoopen "$DMG_TMP")
+MOUNT_DIR=$(echo "$ATTACH_OUTPUT" | grep "/Volumes/" | tail -n1 | awk '{$1=$2=""; print $0}' | sed -e 's/^[[:space:]]*//')
 
 if [[ -n "$MOUNT_DIR" && -d "$MOUNT_DIR" ]]; then
     echo "Mounted staging image at: $MOUNT_DIR"

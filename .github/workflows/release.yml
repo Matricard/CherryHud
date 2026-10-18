@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version string (e.g. 0.9.1)'
+        description: 'Version string (e.g. 1.0.0)'
         required: true
-        default: '0.9.1'
+        default: '1.0.0'
 
 jobs:
   build-macos:

@@ -21,6 +21,10 @@ public partial class SettingsWindow : Window
         Activated += (_, _) =>
         {
             WindowBackgroundBorder.Background = ActiveBrush;
+            if (DataContext is ViewModels.SettingsViewModel vm)
+            {
+                vm.CheckPermissionStatus();
+            }
         };
 
         Deactivated += (_, _) =>
@@ -33,10 +37,19 @@ public partial class SettingsWindow : Window
             var handle = TryGetPlatformHandle()?.Handle;
             string iconPath = FpsService.EnsureIconPath();
             FpsService.ShowAboutWindow(handle ?? IntPtr.Zero, iconPath);
+            if (DataContext is ViewModels.SettingsViewModel vm)
+            {
+                vm.CheckPermissionStatus();
+                vm.StartPermissionMonitoring();
+            }
         };
 
         Closed += (_, _) =>
         {
+            if (DataContext is ViewModels.SettingsViewModel vm)
+            {
+                vm.StopPermissionMonitoring();
+            }
             FpsService.HideAboutWindow();
         };
 

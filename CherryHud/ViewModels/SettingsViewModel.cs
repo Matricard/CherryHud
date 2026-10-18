@@ -189,6 +189,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public void CheckPermissionStatus()
     {
+        _fpsService.CheckPermission();
         var data = _fpsService.GetFpsData();
         HasScreenCapturePermission = data.HasPermission;
         if (HasScreenCapturePermission)
@@ -201,6 +202,33 @@ public partial class SettingsViewModel : ViewModelBase
             PermissionStatusText = Loc.PermRequired;
             PermissionStatusColor = "#FFB300"; // Amber
         }
+    }
+
+    private Avalonia.Threading.DispatcherTimer? _permissionTimer;
+
+    public void StartPermissionMonitoring()
+    {
+        StopPermissionMonitoring();
+        _permissionTimer = new Avalonia.Threading.DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(1)
+        };
+        _permissionTimer.Tick += (_, _) =>
+        {
+            bool prev = HasScreenCapturePermission;
+            CheckPermissionStatus();
+            if (!prev && HasScreenCapturePermission)
+            {
+                _fpsService.Start();
+            }
+        };
+        _permissionTimer.Start();
+    }
+
+    public void StopPermissionMonitoring()
+    {
+        _permissionTimer?.Stop();
+        _permissionTimer = null;
     }
 
     partial void OnSelectedLanguageIndexChanged(int value)
@@ -304,12 +332,11 @@ public partial class SettingsViewModel : ViewModelBase
     {
         try
         {
-            Process.Start("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture");
+            _fpsService.RequestPermission();
         }
         catch
         {
-            // Fallback to opening system settings
-            Process.Start("open", "/System/Applications/System Settings.app");
+            Process.Start("open", "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture");
         }
     }
 

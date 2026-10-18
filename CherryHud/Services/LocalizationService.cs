@@ -75,7 +75,7 @@ public class LocalizationService : ObservableObject
     // Advanced
 
     public string ScreenCaptureTitle => IsFrench ? "Autorisation macOS ScreenCaptureKit" : "macOS ScreenCaptureKit Permission";
-    public string ScreenCaptureSubtitle => IsFrench ? "Requise par macOS pour mesurer les trames des jeux." : "Required by macOS to measure game frames.";
+    public string ScreenCaptureSubtitle => IsFrench ? "Requise par macOS pour mesurer les FPS des jeux (redémarrer CherryHud après activation)." : "Required by macOS to measure game FPS (restart CherryHud after enabling).";
     public string PermGranted => IsFrench ? "✓ Autorisation accordée" : "✓ Permission granted";
     public string PermRequired => IsFrench ? "⚠️ Enregistrement d'écran requis" : "⚠️ Screen recording required";
     public string RequestAccessButton => IsFrench ? "Demander l'accès" : "Request Access";
