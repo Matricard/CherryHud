@@ -104,7 +104,7 @@ To calculate exact frame delivery times and FPS without display server throttle,
 ## 🚀 Compilation & Packaging
 
 ### Prerequisites
-- macOS 13.0+ (Ventura, Sonoma, Sequoia) on Apple Silicon (M1/M2/M3/M4) or Intel Mac.
+- macOS 13.0+ (Ventura, Sonoma, Sequoia) on Apple Silicon or Intel Mac.
 - [.NET 10.0+ SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 - Xcode Command Line Tools (`xcode-select --install`).
 

@@ -493,8 +493,8 @@ public partial class SettingsViewModel : ViewModelBase
         ShowVram = true;
         ShowRam = true;
         ShowBattery = _fpsService.IsLaptop;
-        ShowFps = true;
-        ShowGraph = true;
+        ShowFps = false;
+        ShowGraph = false;
         UpdatePositionOptions();
         CheckPermissionStatus();
         RefreshUpdateCardText();

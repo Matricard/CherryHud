@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CherryHud — Native Gaming Performance Overlay for macOS</title>
+    <meta name="description" content="Ultra-lightweight, native gaming performance overlay for Apple Silicon macOS. Real-time FPS, Frametimes, GPU/CPU metrics, and battery tracking.">
+    
+    <!-- Open Graph / Meta -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="CherryHud — Native Gaming HUD for macOS">
+    <meta property="og:description" content="Monitor in-game Mac performance in real time: FPS, frametime graphs, GPU, CPU, thermals, and battery with virtually zero overhead.">
+    <meta property="og:image" content="assets/logo.png">
+    
+    <link rel="icon" type="image/png" href="assets/logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#07080C',
+                            800: '#0D0E15',
+                            700: '#141622',
+                            600: '#1C1F30',
+                            500: '#2A2E45'
+                        },
+                        cherry: {
+                            DEFAULT: '#FF2A55',
+                            dark: '#D81E43',
+                            light: '#FF4D73',
+                            glow: 'rgba(255, 42, 85, 0.35)'
+                        },
+                        emerald: {
+                            neon: '#00E676',
+                            glow: 'rgba(0, 230, 118, 0.35)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-cherry {
+            box-shadow: 0 0 35px rgba(255, 42, 85, 0.25);
+        }
+        .glow-cherry-lg {
+            box-shadow: 0 0 80px rgba(255, 42, 85, 0.2);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 30px rgba(0, 230, 118, 0.25);
+        }
+        .gradient-text-cherry {
+            background: linear-gradient(135deg, #FF4D73 0%, #FF2A55 50%, #FF6584 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .glass-card {
+            background: rgba(20, 22, 34, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-card:hover {
+            border-color: rgba(255, 42, 85, 0.3);
+        }
+        .mesh-gradient {
+            background-image: 
+                radial-gradient(circle at 20% 15%, rgba(255, 42, 85, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 80% 30%, rgba(0, 230, 118, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 50% 85%, rgba(255, 42, 85, 0.08) 0%, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-dark-900 text-gray-100 font-sans min-h-screen selection:bg-cherry selection:text-white mesh-gradient">
+
+    <!-- Navigation -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-dark-900/80 backdrop-blur-md border-b border-white/5">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-3.5 group">
+                <div class="w-10 h-10 rounded-xl overflow-hidden p-0.5 border border-cherry/40 shadow-sm group-hover:border-cherry transition-all duration-300">
+                    <img src="assets/logo.png" alt="CherryHud Logo" class="w-full h-full object-cover rounded-lg group-hover:scale-105 transition-transform duration-300">
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl font-extrabold tracking-tight text-white group-hover:text-cherry transition-colors">CherryHud</span>
+                    <span id="nav-version" class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-cherry/10 text-cherry border border-cherry/20">v0.9.1</span>
+                </div>
+            </a>
+
+            <nav class="flex items-center gap-6 sm:gap-8 text-sm font-medium text-gray-300">
+                <a href="#preview" class="hover:text-white transition-colors">Preview</a>
+                <a href="#features" class="hover:text-white transition-colors">Features</a>
+                <a href="#installation" class="hover:text-white transition-colors">Installation</a>
+                <a href="https://github.com/Matricard/CherryHud" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 hover:text-white transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+                    GitHub
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="pt-36 pb-20 md:pt-44 md:pb-28 relative overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 text-center relative z-10">
+            
+
+            <!-- Title -->
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-[1.1] mb-6">
+                The ultimate native gaming HUD for <span class="gradient-text-cherry">macOS</span>.
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Track your <strong class="text-gray-200 font-semibold">FPS</strong>, <strong class="text-gray-200 font-semibold">frametime sparklines</strong>, <strong class="text-gray-200 font-semibold">GPU/CPU thermals</strong>, and battery in real time — with virtually zero overhead.
+            </p>
+
+            <!-- CTA Button -->
+            <div id="download" class="flex items-center justify-center mb-6">
+                <a id="hero-download-btn" href="#" class="inline-flex items-center justify-center gap-3 px-8 py-4 text-base font-bold rounded-xl bg-gradient-to-r from-cherry to-cherry-dark text-white hover:from-cherry-light hover:to-cherry transition-all duration-300 shadow-xl shadow-cherry/30 hover:scale-[1.02] active:scale-[0.98]">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>Download for Mac (.dmg)</span>
+                </a>
+            </div>
+
+            <!-- Version metadata info -->
+            <p id="release-meta" class="text-xs text-gray-500 font-mono">
+                Latest version: <span id="meta-ver" class="text-gray-300 font-semibold">v0.9.1</span> • Requires macOS 13+ (Ventura, Sonoma, Sequoia) • Free & Open Source (MIT)
+            </p>
+
+            <!-- App Preview Showcase -->
+            <div id="preview" class="scroll-mt-28 mt-10 max-w-[340px] sm:max-w-[380px] mx-auto relative group">
+                <div class="absolute -inset-1 rounded-2xl bg-gradient-to-r from-cherry/30 to-emerald-neon/20 blur-xl opacity-50 group-hover:opacity-80 transition duration-500"></div>
+                <div class="relative rounded-2xl overflow-hidden glass-card p-2 border border-white/10 shadow-2xl">
+                    <img src="assets/preview.png" alt="CherryHud in-game overlay screenshot" class="w-full h-auto rounded-xl shadow-lg border border-white/5 object-contain">
+                </div>
+                <p class="mt-3 text-xs text-gray-400 font-medium text-center">
+                    <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-neon mr-1.5 align-middle"></span>Freely draggable anywhere or snap to any corner
+                </p>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 border-t border-white/5 relative">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-xs font-mono font-bold tracking-widest uppercase text-cherry mb-3">Key Features</h2>
+                <h3 class="text-3xl sm:text-4xl font-extrabold text-white">Everything a Mac gamer needs. Nothing more.</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                <!-- Feature 1 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-cherry/10 border border-cherry/20 flex items-center justify-center text-cherry mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">Frametime Sparkline</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Visualize gameplay smoothness in real time with a low-latency sparkline and instant micro-stutter detection.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-neon/10 border border-emerald-neon/20 flex items-center justify-center text-emerald-neon mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">Smart Auto Game Mode</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        The HUD appears seamlessly as soon as any 3D or Metal game launches, and fades away quietly when you return to your desktop.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-sky-400/10 border border-sky-400/20 flex items-center justify-center text-sky-400 mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">GPU, CPU & Thermals</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Track live chip utilization, unified VRAM & RAM consumption, battery stats, and thermal throttling in real time.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-purple-400/10 border border-purple-400/20 flex items-center justify-center text-purple-400 mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18m0 0l-4-4m4 4l4-4M7 8l-4 4m0 0l4 4m-4-4h18m0 0l-4-4m4 4l-4 4"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">Drag & Drop or Snap to Corners</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Freely drag and drop the overlay anywhere on your screen with your mouse, or snap it instantly to any of the 4 screen corners to stay out of your mini-map.
+                    </p>
+                </div>
+
+                <!-- Feature 5 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">1-Click Auto Updates</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Automatic background check, download, and instant restart directly within the app. Zero manual DMG downloads needed.
+                    </p>
+                </div>
+
+                <!-- Feature 6 -->
+                <div class="glass-card rounded-2xl p-7 transition-all duration-300 hover:-translate-y-1">
+                    <div class="w-12 h-12 rounded-xl bg-rose-400/10 border border-rose-400/20 flex items-center justify-center text-rose-400 mb-5">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">100% Private & Open Source</h4>
+                    <p class="text-sm text-gray-400 leading-relaxed">
+                        Zero telemetry, no trackers, no ads, no cloud logins. Clean, lightweight codebase fully open-source and auditable under the MIT license.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Steps -->
+    <section id="installation" class="py-24 border-t border-white/5 bg-dark-800/40">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-xs font-mono font-bold tracking-widest uppercase text-cherry mb-3">Quick Start</h2>
+                <h3 class="text-3xl font-extrabold text-white">Up and running in 30 seconds</h3>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-dark-600 border border-white/10 flex items-center justify-center font-mono font-bold text-cherry text-lg mb-4">1</div>
+                    <h4 class="font-bold text-white mb-1">Download the DMG</h4>
+                    <p class="text-xs text-gray-400">Click Download to get the latest pre-compiled build tailored for Apple Silicon.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-dark-600 border border-white/10 flex items-center justify-center font-mono font-bold text-cherry text-lg mb-4">2</div>
+                    <h4 class="font-bold text-white mb-1">Drag to Applications</h4>
+                    <p class="text-xs text-gray-400">Open the disk image and drag the CherryHud icon straight into your Applications folder.</p>
+                </div>
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-12 h-12 rounded-full bg-dark-600 border border-white/10 flex items-center justify-center font-mono font-bold text-cherry text-lg mb-4">3</div>
+                    <h4 class="font-bold text-white mb-1">Launch & Game!</h4>
+                    <p class="text-xs text-gray-400">Start CherryHud: it stays quietly in your menu bar and awakens automatically when your game starts.</p>
+                </div>
+            </div>
+
+            <div class="mt-14 text-center">
+                <a id="footer-download-btn" href="#" class="inline-flex items-center gap-2.5 px-7 py-3.5 text-sm font-bold rounded-xl bg-cherry text-white hover:bg-cherry-dark transition-all duration-200 shadow-lg shadow-cherry/25">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Download Latest Release (.dmg)
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/5 text-xs text-gray-500">
+        <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-3">
+                <img src="assets/logo.png" alt="CherryHud" class="w-6 h-6 rounded-md">
+                <span>CherryHud © 2026 • Created by <a href="https://github.com/Matricard" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors underline">Mathieu Ricard</a></span>
+            </div>
+            <div class="flex items-center gap-6">
+                <a href="https://github.com/Matricard/CherryHud" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors">GitHub Repository</a>
+                <a href="https://github.com/Matricard/CherryHud/releases" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors">Releases</a>
+                <a href="https://github.com/Matricard/CherryHud/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" class="hover:text-gray-300 transition-colors">MIT License</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Script: Fetch Latest Release Dynamically from GitHub -->
+    <script>
+        (function() {
+            const GITHUB_REPO = 'Matricard/CherryHud';
+            const FALLBACK_DMG_URL = `https://github.com/${GITHUB_REPO}/releases/latest`;
+            
+            const navBtn = document.getElementById('nav-download-btn');
+            const heroBtn = document.getElementById('hero-download-btn');
+            const footerBtn = document.getElementById('footer-download-btn');
+            const navVer = document.getElementById('nav-version');
+            const metaVer = document.getElementById('meta-ver');
+
+            // Default fallback link
+            let downloadUrl = FALLBACK_DMG_URL;
+
+            function applyUrl(url, tag, sizeStr) {
+                downloadUrl = url;
+                if (heroBtn) heroBtn.href = url;
+                if (footerBtn) footerBtn.href = url;
+                if (navBtn) navBtn.href = url;
+
+                if (tag) {
+                    const cleanTag = tag.replace(/^Release-/, '').replace(/^v/, '');
+                    if (navVer) navVer.textContent = 'v' + cleanTag;
+                    if (metaVer) metaVer.textContent = 'v' + cleanTag + (sizeStr ? ` (${sizeStr})` : '');
+                }
+            }
+
+            // Set initial hrefs
+            applyUrl(FALLBACK_DMG_URL, '0.9.1');
+
+            // Query GitHub API for the true latest release asset
+            fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=5`)
+                .then(res => {
+                    if (!res.ok) throw new Error('GitHub API ' + res.status);
+                    return res.json();
+                })
+                .then(releases => {
+                    if (!Array.isArray(releases) || releases.length === 0) return;
+
+                    // Find newest valid release
+                    const rel = releases[0];
+                    const tag = rel.tag_name || '0.9.1';
+                    let dmgAsset = null;
+
+                    if (rel.assets && Array.isArray(rel.assets)) {
+                        dmgAsset = rel.assets.find(a => a.name && a.name.endsWith('.dmg') && a.name.includes('arm64'))
+                                || rel.assets.find(a => a.name && a.name.endsWith('.dmg'))
+                                || rel.assets.find(a => a.name && a.name.endsWith('.zip'));
+                    }
+
+                    if (dmgAsset && dmgAsset.browser_download_url) {
+                        const sizeMb = (dmgAsset.size / (1024 * 1024)).toFixed(1) + ' MB';
+                        applyUrl(dmgAsset.browser_download_url, tag, sizeMb);
+                    } else if (rel.html_url) {
+                        applyUrl(rel.html_url, tag);
+                    }
+                })
+                .catch(err => {
+                    console.log('Using default release fallback:', err.message);
+                });
+        })();
+    </script>
+</body>
+</html>

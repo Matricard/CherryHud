@@ -23,8 +23,8 @@ public class AppSettings
     public bool ShowVram { get; set; } = true;
     public bool ShowRam { get; set; } = true;
     public bool ShowBattery { get; set; } = true;
-    public bool ShowFps { get; set; } = true;
-    public bool ShowGraph { get; set; } = true;
+    public bool ShowFps { get; set; } = false;
+    public bool ShowGraph { get; set; } = false;
 
     public bool AutoCheckUpdates { get; set; } = true;
     public string GitHubRepo { get; set; } = "Matricard/CherryHud";
