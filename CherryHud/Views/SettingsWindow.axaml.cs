@@ -44,6 +44,11 @@ public partial class SettingsWindow : Window
         {
             if (e.KeyModifiers.HasFlag(KeyModifiers.Meta) && e.Key == Key.M)
             {
+                var handle = TryGetPlatformHandle()?.Handle;
+                if (handle.HasValue)
+                {
+                    FpsService.MinimizeWindow(handle.Value);
+                }
                 WindowState = WindowState.Minimized;
                 e.Handled = true;
             }
@@ -57,9 +62,9 @@ public partial class SettingsWindow : Window
             {
                 var pt = e.GetCurrentPoint(this).Position;
 
-                // Zone des feux tricolores macOS en haut à gauche (x: 0..85, y: 0..36) :
+                // Zone des feux tricolores macOS en haut à gauche (x: 0..100, y: 0..44) :
                 // Laisser macOS gérer nativement les clics sur Fermer, Réduire et Agrandir
-                if (pt.Y <= 36 && pt.X <= 85)
+                if (pt.Y <= 44 && pt.X <= 100)
                 {
                     return;
                 }

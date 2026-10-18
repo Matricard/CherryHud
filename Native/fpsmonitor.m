@@ -40,41 +40,33 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     NSString *bundlePath = (app.bundleURL.path ?: @"").lowercaseString;
     NSString *execPath = (app.executableURL.path ?: @"").lowercaseString;
 
-    // 1. Explicit Exclusions: System apps, browsers, dev tools, productivity, communication
+    // 1. Explicit Exclusions: System apps, browsers, dev tools, productivity, launchers, stores
     static NSArray<NSString *> *excludedPrefixes = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         excludedPrefixes = @[
-            @"com.apple.finder",
-            @"com.apple.dock",
-            @"com.apple.systempreferences",
-            @"com.apple.activitymonitor",
-            @"com.apple.terminal",
-            @"com.apple.safari",
-            @"com.apple.preview",
-            @"com.apple.textedit",
-            @"com.apple.notes",
-            @"com.apple.reminders",
-            @"com.apple.mail",
-            @"com.apple.music",
-            @"com.apple.podcasts",
-            @"com.apple.tv",
-            @"com.apple.calculator",
-            @"com.apple.dt.xcode",
-            @"com.apple.quicktimeplayerx",
-            @"com.google.chrome",
+            @"com.apple.",
+            @"com.google.",
+            @"com.microsoft.",
+            @"com.jetbrains.",
+            @"com.danpristupov.fork",
+            @"dev.zed.zed",
+            @"com.sublimetext.",
+            @"com.sublimemerge",
+            @"com.valvesoftware.steam",
+            @"net.battle.app",
+            @"com.epicgames.epicgameslauncher",
+            @"com.gog.galaxy",
+            @"com.heroicgameslauncher",
+            @"com.isaacmarovitz.whisky",
             @"org.mozilla.firefox",
             @"com.brave.browser",
             @"company.thebrowser.arc",
-            @"com.microsoft.edgemac",
-            @"com.microsoft.vscode",
-            @"com.jetbrains.",
             @"com.tinyspeck.slackmacgap",
             @"com.hnc.discord",
             @"ru.keepcoder.telegram",
             @"net.whatsapp.whatsapp",
             @"com.spotify.client",
-            @"com.sublimetext.",
             @"com.postmanlabs.mac",
             @"com.github.wez.wezterm",
             @"com.mitchellh.ghostty",
@@ -82,13 +74,8 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         ];
     });
 
-    for (NSString *prefix in excludedPrefixes) {
-        if ([bundleId hasPrefix:prefix] || [bundleId containsString:prefix]) {
-            return NO;
-        }
-    }
-
     // 2. Check macOS Official App Category: public.app-category.games
+    // (Checked first so legitimate Apple Arcade / App Store games are recognized)
     if (app.bundleURL) {
         NSBundle *bundle = [NSBundle bundleWithURL:app.bundleURL];
         if (bundle) {
@@ -100,9 +87,14 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         }
     }
 
-    // 3. Known Game Stores, Launchers, and Game Folders
+    for (NSString *prefix in excludedPrefixes) {
+        if ([bundleId hasPrefix:prefix] || [bundleId containsString:prefix]) {
+            return NO;
+        }
+    }
+
+    // 3. Known Game Stores, Launchers, and Game Folders (specifically games, NOT the launchers themselves)
     if ([bundlePath containsString:@"/steamapps/"] ||
-        [bundlePath containsString:@"/steam/"] ||
         [bundlePath containsString:@"/epic games/"] ||
         [bundlePath containsString:@"/gog galaxy/"] ||
         [bundlePath containsString:@"/whisky/"] ||
@@ -139,20 +131,6 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     for (NSString *kw in gameKeywords) {
         if ([bundleId containsString:kw] || [appName containsString:kw] || [execPath containsString:kw]) {
             return YES;
-        }
-    }
-
-    // 5. Full-Screen Detection:
-    // If an application's window covers the entire main display screen and is NOT a desktop app
-    if (targetWindow) {
-        NSScreen *mainScreen = [NSScreen mainScreen];
-        if (mainScreen) {
-            NSRect screenFrame = mainScreen.frame;
-            CGRect winFrame = targetWindow.frame;
-            if (fabs(winFrame.size.width - screenFrame.size.width) <= 20 &&
-                fabs(winFrame.size.height - screenFrame.size.height) <= 40) {
-                return YES;
-            }
         }
     }
 
@@ -265,41 +243,45 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
     if (!app) return YES;
     if (app.processIdentifier == getpid()) return YES;
 
+    // If officially marked as a game, it is never excluded
+    if (app.bundleURL) {
+        NSBundle *bundle = [NSBundle bundleWithURL:app.bundleURL];
+        if (bundle) {
+            NSString *category = [bundle objectForInfoDictionaryKey:@"LSApplicationCategoryType"];
+            if ([category isKindOfClass:[NSString class]] &&
+                [category.lowercaseString containsString:@"games"]) {
+                return NO;
+            }
+        }
+    }
+
     NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
     static NSArray<NSString *> *excludedPrefixes = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         excludedPrefixes = @[
-            @"com.apple.finder",
-            @"com.apple.dock",
-            @"com.apple.systempreferences",
-            @"com.apple.activitymonitor",
-            @"com.apple.terminal",
-            @"com.apple.safari",
-            @"com.apple.preview",
-            @"com.apple.textedit",
-            @"com.apple.notes",
-            @"com.apple.reminders",
-            @"com.apple.mail",
-            @"com.apple.music",
-            @"com.apple.podcasts",
-            @"com.apple.tv",
-            @"com.apple.calculator",
-            @"com.apple.dt.xcode",
-            @"com.apple.quicktimeplayerx",
-            @"com.google.chrome",
+            @"com.apple.",
+            @"com.google.",
+            @"com.microsoft.",
+            @"com.jetbrains.",
+            @"com.danpristupov.fork",
+            @"dev.zed.zed",
+            @"com.sublimetext.",
+            @"com.sublimemerge",
+            @"com.valvesoftware.steam",
+            @"net.battle.app",
+            @"com.epicgames.epicgameslauncher",
+            @"com.gog.galaxy",
+            @"com.heroicgameslauncher",
+            @"com.isaacmarovitz.whisky",
             @"org.mozilla.firefox",
             @"com.brave.browser",
             @"company.thebrowser.arc",
-            @"com.microsoft.edgemac",
-            @"com.microsoft.vscode",
-            @"com.jetbrains.",
             @"com.tinyspeck.slackmacgap",
             @"com.hnc.discord",
             @"ru.keepcoder.telegram",
             @"net.whatsapp.whatsapp",
             @"com.spotify.client",
-            @"com.sublimetext.",
             @"com.postmanlabs.mac",
             @"com.github.wez.wezterm",
             @"com.mitchellh.ghostty",
@@ -753,9 +735,6 @@ void FpsMonitor_ConfigureOverlayWindow(void *viewOrWindowPtr) {
 
         // Do not hide when switching away from the widget
         [win setHidesOnDeactivate:NO];
-        [win setAlphaValue:1.0];
-        [win setIgnoresMouseEvents:NO];
-        [win orderFront:nil];
     });
 }
 
@@ -773,7 +752,7 @@ void FpsMonitor_SetOverlayVisible(void *viewOrWindowPtr, bool visible) {
 
         if (!win) {
             for (NSWindow *w in [NSApp windows]) {
-                if (w) {
+                if (w && w.level == NSScreenSaverWindowLevel) {
                     win = w;
                     break;
                 }
@@ -815,6 +794,7 @@ void FpsMonitor_SetApplicationIcon(const char *iconPathUtf8) {
 @property (nonatomic, assign) NSRect preZoomFrame;
 @property (nonatomic, assign) BOOL isZoomed;
 - (void)toggleZoom:(id)sender;
+- (void)toggleMiniaturize:(id)sender;
 @end
 
 @implementation CherryZoomHandler
@@ -848,6 +828,11 @@ void FpsMonitor_SetApplicationIcon(const char *iconPathUtf8) {
         [self.window setFrame:targetFrame display:YES animate:YES];
         self.isZoomed = YES;
     }
+}
+
+- (void)toggleMiniaturize:(id)sender {
+    if (!self.window) return;
+    [self.window miniaturize:sender];
 }
 @end
 
@@ -911,6 +896,11 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
         }
 
         if (win) {
+            if ([win isMiniaturized]) {
+                [win deminiaturize:nil];
+                [win makeKeyAndOrderFront:nil];
+            }
+
             // Barre de titre transparente intégrée avec boutons classiques macOS (Fermer, Réduire, Agrandir)
             win.titlebarAppearsTransparent = YES;
             win.titleVisibility = NSWindowTitleHidden;
@@ -925,7 +915,16 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
             [win setAspectRatio:baseRatio];
             [win setContentAspectRatio:baseRatio];
 
-            // Rétablir les 3 boutons classiques macOS avec leur comportement natif par défaut
+            CherryZoomHandler *handler = objc_getAssociatedObject(win, "cherry_zoom_handler");
+            if (!handler) {
+                handler = [[CherryZoomHandler alloc] init];
+                handler.window = win;
+                handler.preZoomFrame = [win frame];
+                handler.isZoomed = NO;
+                objc_setAssociatedObject(win, "cherry_zoom_handler", handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            }
+
+            // Rétablir les 3 boutons classiques macOS avec leur comportement natif
             NSButton *closeBtn = [win standardWindowButton:NSWindowCloseButton];
             if (closeBtn) {
                 [closeBtn setHidden:NO];
@@ -935,6 +934,8 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
             if (miniBtn) {
                 [miniBtn setHidden:NO];
                 [miniBtn setEnabled:YES];
+                [miniBtn setTarget:handler];
+                [miniBtn setAction:@selector(toggleMiniaturize:)];
             }
             NSButton *zoomBtn = [win standardWindowButton:NSWindowZoomButton];
             if (zoomBtn) {
@@ -945,11 +946,6 @@ void FpsMonitor_ShowAboutWindow(void *windowPtr, const char *iconPathUtf8) {
                 for (NSTrackingArea *ta in [[zoomBtn trackingAreas] copy]) {
                     [zoomBtn removeTrackingArea:ta];
                 }
-                CherryZoomHandler *handler = [[CherryZoomHandler alloc] init];
-                handler.window = win;
-                handler.preZoomFrame = [win frame];
-                handler.isZoomed = NO;
-                objc_setAssociatedObject(win, "cherry_zoom_handler", handler, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 [zoomBtn setTarget:handler];
                 [zoomBtn setAction:@selector(toggleZoom:)];
             }
@@ -1041,10 +1037,7 @@ void FpsMonitor_MinimizeWindow(void *windowPtr) {
             }
         }
         if (win) {
-            [win performMiniaturize:nil];
-            if (![win isMiniaturized]) {
-                [win miniaturize:nil];
-            }
+            [win miniaturize:nil];
         }
     });
 }

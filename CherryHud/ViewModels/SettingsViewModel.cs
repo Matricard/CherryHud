@@ -138,6 +138,23 @@ public partial class SettingsViewModel : ViewModelBase
                 OnPropertyChanged(nameof(Loc));
             });
         };
+
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(MainWindowViewModel.IsAutoModeActive))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        if (AutoGameMode != _mainViewModel.IsAutoModeActive)
+                        {
+                            AutoGameMode = _mainViewModel.IsAutoModeActive;
+                        }
+                    });
+                }
+            };
+        }
     }
 
 #pragma warning disable MVVMTK0034
@@ -198,16 +215,9 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settingsService.Current.AutoGameMode = value;
         _settingsService.Save();
-        if (_mainViewModel != null)
+        if (_mainViewModel != null && _mainViewModel.IsAutoModeActive != value)
         {
-            if (value)
-            {
-                _mainViewModel.ResetToAutoGameMode();
-            }
-            else
-            {
-                _mainViewModel.IsAutoModeActive = false;
-            }
+            _mainViewModel.SetAutoGameMode(value);
         }
     }
 

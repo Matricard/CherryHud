@@ -209,6 +209,13 @@ public partial class App : Application
     {
         if (_settingsWindow != null)
         {
+            if (_settingsWindow.WindowState == WindowState.Minimized)
+            {
+                _settingsWindow.WindowState = WindowState.Normal;
+            }
+            var handle = _settingsWindow.TryGetPlatformHandle()?.Handle;
+            string iconPath = FpsService.EnsureIconPath();
+            FpsService.ShowAboutWindow(handle ?? IntPtr.Zero, iconPath);
             _settingsWindow.Activate();
             return;
         }

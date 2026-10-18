@@ -153,12 +153,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isGameActive;
 
     [ObservableProperty]
-    private bool _isOverlayVisible = true;
+    private bool _isOverlayVisible = false;
 
     [ObservableProperty]
     private bool _isAutoModeActive = true;
 
-    private bool? _manualVisibilityOverride = true;
+    private bool? _manualVisibilityOverride = null;
 
     private readonly ISettingsService _settingsService;
     public ISettingsService SettingsService => _settingsService;
@@ -313,28 +313,34 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _manualVisibilityOverride = !IsOverlayVisible;
         IsOverlayVisible = _manualVisibilityOverride.Value;
         IsAutoModeActive = false;
+        _settingsService.Current.AutoGameMode = false;
+        _settingsService.Save();
     }
 
     public void ToggleAutoGameMode()
     {
-        if (IsAutoModeActive)
-        {
-            _manualVisibilityOverride = IsOverlayVisible;
-            IsAutoModeActive = false;
-        }
-        else
-        {
-            _manualVisibilityOverride = null;
-            IsOverlayVisible = IsGameActive;
-            IsAutoModeActive = true;
-        }
+        SetAutoGameMode(!IsAutoModeActive);
     }
 
     public void ResetToAutoGameMode()
     {
-        _manualVisibilityOverride = null;
-        IsOverlayVisible = IsGameActive;
-        IsAutoModeActive = true;
+        SetAutoGameMode(true);
+    }
+
+    public void SetAutoGameMode(bool enabled)
+    {
+        IsAutoModeActive = enabled;
+        if (enabled)
+        {
+            _manualVisibilityOverride = null;
+            IsOverlayVisible = IsGameActive;
+        }
+        else
+        {
+            _manualVisibilityOverride = IsOverlayVisible;
+        }
+        _settingsService.Current.AutoGameMode = enabled;
+        _settingsService.Save();
     }
 
     public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService())
@@ -387,6 +393,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
         IsAutoModeActive = s.AutoGameMode;
+        if (s.AutoGameMode)
+        {
+            _manualVisibilityOverride = null;
+            IsOverlayVisible = IsGameActive;
+        }
+        else
+        {
+            _manualVisibilityOverride ??= true;
+            IsOverlayVisible = _manualVisibilityOverride.Value;
+        }
         ApplyClassicTheme();
         LocalizationService.Instance.CurrentLanguage = s.Language;
     }
@@ -443,22 +459,26 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
-        bool targetVisibility = _manualVisibilityOverride ?? isGame;
+        if (IsGameActive != isGame)
+        {
+            IsGameActive = isGame;
+            // When a game becomes active, seamlessly re-align to auto mode
+            if (isGame && _manualVisibilityOverride.HasValue)
+            {
+                _manualVisibilityOverride = null;
+                IsAutoModeActive = true;
+                _settingsService.Current.AutoGameMode = true;
+                _settingsService.Save();
+            }
+        }
 
-        if (IsGameActive != isGame || IsOverlayVisible != targetVisibility)
+        bool targetVisibility = IsAutoModeActive ? isGame : (_manualVisibilityOverride ?? true);
+
+        if (IsOverlayVisible != targetVisibility)
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (IsGameActive != isGame)
-                {
-                    IsGameActive = isGame;
-                    if (isGame && _manualVisibilityOverride.HasValue)
-                    {
-                        _manualVisibilityOverride = null;
-                        IsAutoModeActive = true;
-                    }
-                }
-                IsOverlayVisible = _manualVisibilityOverride ?? isGame;
+                IsOverlayVisible = targetVisibility;
             }, DispatcherPriority.Input);
         }
 
