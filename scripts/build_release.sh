@@ -38,7 +38,7 @@ if [[ -z "$VERSION" ]]; then
     # Extract version from CherryHud.csproj
     VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
     if [[ -z "$VERSION" ]]; then
-        VERSION="1.0.0"
+        VERSION="1.0.1"
     fi
 fi
 

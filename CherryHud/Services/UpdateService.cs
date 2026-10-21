@@ -35,7 +35,7 @@ public class UpdateService
             int build = ver.Build >= 0 ? ver.Build : 0;
             return $"{ver.Major}.{ver.Minor}.{build}";
         }
-        return "1.0.0";
+        return "1.0.1";
     }
 
     public static bool IsUpdateAvailable { get; private set; }
