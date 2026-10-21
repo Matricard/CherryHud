@@ -63,17 +63,32 @@ public class LocalizationService : ObservableObject
     public string PositionBottomLeft => IsFrench ? "Bas Gauche" : "Bottom Left";
     public string PositionBottomRight => IsFrench ? "Bas Droite" : "Bottom Right";
 
+    // Theme Card
+    public string ThemeTitle => IsFrench ? "Thème de l'overlay" : "Overlay Theme";
+    public string ThemeSubtitle => IsFrench ? "Choisissez la densité d'affichage du HUD" : "Choose HUD display density";
+    public string ThemeNormal => IsFrench ? "Normal" : "Normal";
+    public string ThemeCompact => IsFrench ? "Compact" : "Compact";
+
     // Drag & Drop Card
     public string AllowDragTitle => IsFrench ? "Glisser-déposer de l'overlay" : "Overlay Drag & Drop";
     public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre de l'overlay à la souris" : "Allow moving the overlay freely with the mouse";
 
     // Metrics
+    public string MetricSocTemp => IsFrench ? "Température moyenne du processeur (CPU + GPU)" : "Processor average temperature (CPU + GPU)";
     public string MetricGpu => IsFrench ? "Charge GPU & Température" : "GPU Load & Temperature";
     public string MetricCpu => IsFrench ? "Charge CPU & Température" : "CPU Load & Temperature";
+    public string MetricGpuUsage => IsFrench ? "Charge GPU (%)" : "GPU Load (%)";
+    public string MetricGpuTemp => IsFrench ? "Température GPU (°C)" : "GPU Temperature (°C)";
+    public string MetricCpuUsage => IsFrench ? "Charge CPU (%)" : "CPU Load (%)";
+    public string MetricCpuTemp => IsFrench ? "Température CPU (°C)" : "CPU Temperature (°C)";
     public string MetricVram => IsFrench ? "Mémoire Graphique (VRAM)" : "Video Memory (VRAM)";
     public string MetricRam => IsFrench ? "Mémoire Vive Système" : "System RAM Memory";
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
+    public string HideBatteryWhenChargedTitle => IsFrench ? "Masquer la batterie si chargée" : "Hide battery when charged";
+    public string HideBatteryWhenChargedSubtitle => IsFrench ? "Masque la batterie lorsque le Mac est branché et a atteint le pourcentage défini" : "Hides the battery when the Mac is plugged in and has reached the specified percentage";
+    public string BatteryThresholdLabel => IsFrench ? "Seuil de masquage" : "Hide threshold";
     public string MetricFps => IsFrench ? "Images par seconde" : "Frames Per Second";
+    public string MetricFrametime => IsFrench ? "Temps de trame (Frametime)" : "Frametime";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
     public string BetaNoteText => IsFrench ? "Ces métriques sont en cours de développement." : "These metrics are currently under development.";
 
@@ -85,6 +100,14 @@ public class LocalizationService : ObservableObject
     public string PermRequired => IsFrench ? "⚠️ Enregistrement d'écran requis" : "⚠️ Screen recording required";
     public string RequestAccessButton => IsFrench ? "Demander l'accès" : "Request Access";
     public string OpenSystemSettingsButton => IsFrench ? "Ouvrir Réglages" : "Open Settings";
+    public string PermissionRequiredTitle => IsFrench ? "Autorisation requise" : "Permission Required";
+    public string PermissionRequiredForMetrics => IsFrench
+        ? "L'enregistrement d'écran macOS (ScreenCaptureKit) est requis pour mesurer et afficher les FPS ainsi que le frametime.\n\nVeuillez autoriser l'accès dans l'onglet Général."
+        : "macOS Screen Recording (ScreenCaptureKit) permission is required to measure and display FPS and frametimes.\n\nPlease enable it in the General tab.";
+    public string GoToGeneralButton => IsFrench ? "Aller dans Général" : "Go to General";
+    public string MetricsPermissionWarningBanner => IsFrench
+        ? "L'autorisation ScreenCaptureKit est requise pour activer le FPS et le Frametime."
+        : "ScreenCaptureKit permission is required to enable FPS and Frametime.";
 
     public string AutoCheckUpdatesTitle => IsFrench ? "Vérification automatique des mises à jour" : "Automatic Update Checks";
     public string AutoCheckUpdatesSubtitle => IsFrench ? "Vérifier la présence d'une nouvelle version au démarrage" : "Check for new versions on startup";

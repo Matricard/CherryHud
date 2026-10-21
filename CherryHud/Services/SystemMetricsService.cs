@@ -60,16 +60,23 @@ public sealed class SystemMetricsService : ISystemMetricsService
     [DllImport(LibSystem)]
     private static extern int sysctlbyname(string name, out ulong value, ref nuint size, IntPtr newp, nuint newsize);
 
+    [DllImport(LibSystem, EntryPoint = "sysctlbyname", CharSet = CharSet.Ansi)]
+    private static extern int sysctlbyname_string(string name, [Out] byte[]? oldp, ref nuint oldlenp, IntPtr newp, nuint newsize);
+
     private readonly uint _host;
     private readonly double _totalRamGb;
     private readonly nuint _pageSize;
+    private readonly string _cpuName;
     private HostCpuLoadInfo _previousCpu;
     private bool _hasPreviousCpu;
     private readonly object _lock = new();
 
+    public string CpuName => _cpuName;
+
     public SystemMetricsService()
     {
         _host = mach_host_self();
+        _cpuName = GetCpuBrandString();
 
         // Get total RAM once
         nuint size = (nuint)sizeof(ulong);
@@ -136,5 +143,58 @@ public sealed class SystemMetricsService : ISystemMetricsService
 
             return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent);
         }
+    }
+
+    private static string GetCpuBrandString()
+    {
+        try
+        {
+            nuint size = 0;
+            if (sysctlbyname_string("machdep.cpu.brand_string", null, ref size, IntPtr.Zero, 0) == 0 && size > 0)
+            {
+                var buffer = new byte[size];
+                if (sysctlbyname_string("machdep.cpu.brand_string", buffer, ref size, IntPtr.Zero, 0) == 0)
+                {
+                    var str = System.Text.Encoding.UTF8.GetString(buffer).TrimEnd('\0').Trim();
+                    if (!string.IsNullOrWhiteSpace(str))
+                    {
+                        return CleanCpuName(str);
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fallback
+        }
+
+        return "CPU";
+    }
+
+    public static string FormatSocName(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "SoC";
+        var cleaned = raw.Trim();
+        if (cleaned.StartsWith("Apple Inc. ", StringComparison.OrdinalIgnoreCase))
+        {
+            cleaned = cleaned[11..].Trim();
+        }
+        else if (cleaned.StartsWith("Apple ", StringComparison.OrdinalIgnoreCase))
+        {
+            cleaned = cleaned[6..].Trim();
+        }
+        return string.IsNullOrWhiteSpace(cleaned) ? "SoC" : cleaned;
+    }
+
+    private static string CleanCpuName(string raw)
+    {
+        var cleaned = raw.Replace("(R)", "").Replace("(TM)", "").Trim();
+        int atIdx = cleaned.IndexOf('@');
+        if (atIdx > 0)
+        {
+            cleaned = cleaned[..atIdx].Trim();
+        }
+        cleaned = cleaned.Replace(" CPU", "").Trim();
+        return string.IsNullOrWhiteSpace(cleaned) ? "CPU" : cleaned;
     }
 }

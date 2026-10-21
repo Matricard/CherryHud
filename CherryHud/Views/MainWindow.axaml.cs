@@ -83,7 +83,7 @@ public partial class MainWindow : Window
                             ApplyVisibility(vm.IsOverlayVisible);
                         });
                     }
-                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition))
+                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition) || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme))
                     {
                         Dispatcher.UIThread.Post(() =>
                         {

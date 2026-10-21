@@ -4,5 +4,6 @@ public record SystemResourceMetrics(double CpuUsagePercent, double RamUsedGb, do
 
 public interface ISystemMetricsService
 {
+    string CpuName { get; }
     SystemResourceMetrics ReadResourceMetrics();
 }

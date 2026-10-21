@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -51,6 +52,28 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private bool _hasBattery;
+
+    // SoC metrics
+    [ObservableProperty]
+    private bool _showSocTemp = true;
+
+    [ObservableProperty]
+    private string _socName = "SoC";
+
+    [ObservableProperty]
+    private string _socTempValue = "--";
+
+    [ObservableProperty]
+    private string _socTempUnit = "°C";
+
+    [ObservableProperty]
+    private string _socStatusColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _socBadgeBg = "#26FF7597";
+
+    [ObservableProperty]
+    private string _socBadgeFg = "#FF7597";
 
     // GPU metrics
     [ObservableProperty]
@@ -168,7 +191,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _showGpu = true;
 
     [ObservableProperty]
+    private bool _showGpuUsage = true;
+
+    [ObservableProperty]
+    private bool _showGpuTemp = true;
+
+    [ObservableProperty]
     private bool _showCpu = true;
+
+    [ObservableProperty]
+    private string _cpuBadgeText = "CPU";
+
+    [ObservableProperty]
+    private bool _showCpuUsage = true;
+
+    [ObservableProperty]
+    private bool _showCpuTemp = true;
 
     [ObservableProperty]
     private bool _showVram = true;
@@ -183,13 +221,124 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _showBatteryRow = true;
 
     [ObservableProperty]
+    private bool _hideBatteryWhenCharged = true;
+
+    [ObservableProperty]
+    private int _batteryHideThresholdPercent = 80;
+
+    partial void OnShowBatteryChanged(bool value)
+    {
+        UpdateBatteryVisibility();
+    }
+
+    partial void OnHideBatteryWhenChargedChanged(bool value)
+    {
+        UpdateBatteryVisibility();
+    }
+
+    partial void OnBatteryHideThresholdPercentChanged(int value)
+    {
+        UpdateBatteryVisibility();
+    }
+
+    public void UpdateBatteryVisibility(int? currentBatteryPercent = null)
+    {
+        if (!ShowBattery || !HasBattery)
+        {
+            ShowBatteryRow = false;
+            return;
+        }
+
+        if (HideBatteryWhenCharged && IsBatteryCharging)
+        {
+            int percent = currentBatteryPercent ?? (int.TryParse(BatteryValue, out int v) ? v : -1);
+            if (percent >= BatteryHideThresholdPercent)
+            {
+                ShowBatteryRow = false;
+                return;
+            }
+        }
+
+        ShowBatteryRow = true;
+    }
+
+    [ObservableProperty]
     private bool _showFps = true;
+
+    [ObservableProperty]
+    private bool _showFrametime;
 
     [ObservableProperty]
     private bool _showGraph = true;
 
     [ObservableProperty]
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
+
+    [ObservableProperty]
+    private OverlayTheme _overlayTheme = OverlayTheme.Normal;
+
+    [ObservableProperty]
+    private bool _isCompact;
+
+    [ObservableProperty]
+    private SizeToContent _windowSizeToContent = SizeToContent.Height;
+
+    [ObservableProperty]
+    private double _overlayWidth = 200;
+
+    [ObservableProperty]
+    private Thickness _cardPadding = new Thickness(12, 14, 12, 8);
+
+    [ObservableProperty]
+    private CornerRadius _cardCornerRadius = new CornerRadius(16);
+
+    [ObservableProperty]
+    private double _badgeFontSize = 14;
+
+    [ObservableProperty]
+    private double _valueFontSize = 16;
+
+    [ObservableProperty]
+    private double _unitFontSize = 10.5;
+
+    [ObservableProperty]
+    private Thickness _unitMargin = new Thickness(1.5, 1, 0, 0);
+
+    [ObservableProperty]
+    private double _usageColumnWidth = 44;
+
+    [ObservableProperty]
+    private double _valueColumnWidth = 60;
+
+    [ObservableProperty]
+    private Thickness _rowMargin = new Thickness(0, 0, 0, 5);
+
+    [ObservableProperty]
+    private double _batteryIconWidth = 24;
+
+    [ObservableProperty]
+    private double _batteryIconHeight = 14;
+
+    [ObservableProperty]
+    private Thickness _batteryMargin = new Thickness(0, 0, 16, 0);
+
+    [ObservableProperty]
+    private double _frametimeBadgeFontSize = 11;
+
+    [ObservableProperty]
+    private double _frametimeValueFontSize = 12;
+
+    [ObservableProperty]
+    private double _frametimeUnitFontSize = 9.5;
+
+    [ObservableProperty]
+    private Thickness _frametimeRowMargin = new Thickness(0, 2, 0, 6);
+
+    [ObservableProperty]
+    private double _graphHeight = 32;
+
+    [ObservableProperty]
+    private Thickness _graphMargin = new Thickness(0, 2, 0, 0);
 
     [ObservableProperty]
     private bool _allowOverlayDrag = true;
@@ -268,6 +417,64 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private Color _graphDotColor = Color.FromRgb(212, 22, 48);
 
+    partial void OnOverlayThemeChanged(OverlayTheme value)
+    {
+        ApplyTheme(value);
+    }
+
+    public void ApplyTheme(OverlayTheme theme)
+    {
+        if (OverlayTheme != theme)
+        {
+            OverlayTheme = theme;
+        }
+        if (theme == OverlayTheme.Compact)
+        {
+            IsCompact = true;
+            WindowSizeToContent = SizeToContent.WidthAndHeight;
+            OverlayWidth = double.NaN;
+            CardPadding = new Thickness(14, 7, 14, 7);
+            CardCornerRadius = new CornerRadius(12);
+
+            // Grosseur de police identique au défaut (Normal), disposition horizontale
+            BadgeFontSize = 14;
+            ValueFontSize = 16;
+            UnitFontSize = 10.5;
+            UnitMargin = new Thickness(1.5, 1, 0, 0);
+            BatteryIconWidth = 24;
+            BatteryIconHeight = 14;
+            BatteryMargin = new Thickness(0, 0, 0, 0);
+            FrametimeBadgeFontSize = 14;
+            FrametimeValueFontSize = 16;
+            FrametimeUnitFontSize = 10.5;
+            GraphHeight = 22;
+        }
+        else
+        {
+            IsCompact = false;
+            WindowSizeToContent = SizeToContent.Height;
+            OverlayWidth = 200;
+            CardPadding = new Thickness(12, 14, 12, 8);
+            CardCornerRadius = new CornerRadius(16);
+            BadgeFontSize = 14;
+            ValueFontSize = 16;
+            UnitFontSize = 10.5;
+            UnitMargin = new Thickness(1.5, 1, 0, 0);
+            UsageColumnWidth = 44;
+            ValueColumnWidth = 60;
+            RowMargin = new Thickness(0, 0, 0, 5);
+            BatteryIconWidth = 24;
+            BatteryIconHeight = 14;
+            BatteryMargin = new Thickness(0, 0, 16, 0);
+            FrametimeBadgeFontSize = 11;
+            FrametimeValueFontSize = 12;
+            FrametimeUnitFontSize = 9.5;
+            FrametimeRowMargin = new Thickness(0, 2, 0, 6);
+            GraphHeight = 32;
+            GraphMargin = new Thickness(0, 2, 0, 0);
+        }
+    }
+
     public void ApplyClassicTheme()
     {
         // Classic theme updated with exact colors from the official CherryHud logo
@@ -275,6 +482,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         CardBorderBrush = Brushes.Transparent;
         CardBorderThickness = new Thickness(0);
         CardBoxShadow = default;
+
+        // SoC: Soft pastel cherry pink
+        SocBadgeBg = "#26FF7597";
+        SocBadgeFg = "#FF7597";
+        SocStatusColor = "#FFFFFF";
 
         // GPU: Soft pastel coral
         GpuBadgeBg = "#26F28B82";
@@ -367,6 +579,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _systemMetricsService = systemMetricsService;
         _settingsService = settingsService;
 
+        SocName = SystemMetricsService.FormatSocName(_systemMetricsService.CpuName);
+
         ApplySettings(_settingsService.Current);
         _settingsService.SettingsChanged += (_, s) => ApplySettings(s);
 
@@ -385,15 +599,27 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     public void ApplySettings(AppSettings s)
     {
-        ShowGpu = s.ShowGpu;
-        ShowCpu = s.ShowCpu;
+        ShowSocTemp = s.ShowSocTemp;
+        ShowGpuUsage = s.ShowGpuUsage;
+        ShowGpuTemp = s.ShowGpuTemp;
+        ShowGpu = s.ShowGpuUsage || s.ShowGpuTemp;
+
+        ShowCpuUsage = s.ShowCpuUsage;
+        ShowCpuTemp = s.ShowCpuTemp;
+        ShowCpu = s.ShowCpuUsage || s.ShowCpuTemp;
+
         ShowVram = s.ShowVram;
         ShowRam = s.ShowRam;
         ShowBattery = s.ShowBattery;
-        ShowBatteryRow = s.ShowBattery && HasBattery;
+        HideBatteryWhenCharged = s.HideBatteryWhenCharged;
+        BatteryHideThresholdPercent = s.BatteryHideThresholdPercent;
+        UpdateBatteryVisibility();
         ShowFps = s.ShowFps;
+        ShowFrametime = s.ShowFrametime;
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
+        OverlayTheme = s.OverlayTheme;
+        ApplyTheme(s.OverlayTheme);
         AllowOverlayDrag = s.AllowOverlayDrag;
         IsAutoModeActive = s.AutoGameMode;
         if (s.AutoGameMode)
@@ -571,7 +797,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     BatteryUnit = "";
                     BatteryDisplay = "";
                 }
-                ShowBatteryRow = ShowBattery && HasBattery;
+                UpdateBatteryVisibility(fpsData.BatteryPercent);
 
                 // GPU load & VRAM
                 if (fpsData.GpuUsagePercent > 0.1)
@@ -629,6 +855,34 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     GpuTempUnit = "";
                     GpuTemp = "N/A";
                     GpuStatusColor = "#778899";
+                }
+
+                // SoC Average Temperature (CPU + GPU)
+                double? avgTemp = null;
+                if (cpuTemp.HasValue && gpuTemp.HasValue)
+                {
+                    avgTemp = (cpuTemp.Value + gpuTemp.Value) / 2.0;
+                }
+                else if (cpuTemp.HasValue)
+                {
+                    avgTemp = cpuTemp.Value;
+                }
+                else if (gpuTemp.HasValue)
+                {
+                    avgTemp = gpuTemp.Value;
+                }
+
+                if (avgTemp.HasValue)
+                {
+                    SocTempValue = $"{Math.Round(avgTemp.Value)}";
+                    SocTempUnit = "°C";
+                    SocStatusColor = "#FFFFFF";
+                }
+                else
+                {
+                    SocTempValue = "N/A";
+                    SocTempUnit = "";
+                    SocStatusColor = "#778899";
                 }
 
                 // CPU Load & RAM usage (Mach host statistics)

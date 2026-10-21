@@ -17,6 +17,7 @@ public partial class SettingsViewModel : ViewModelBase
     public LocalizationService Loc => LocalizationService.Instance;
 
     public ObservableCollection<string> PositionOptions { get; } = new();
+    public ObservableCollection<string> ThemeOptions { get; } = new();
 
     public void UpdatePositionOptions()
     {
@@ -28,6 +29,16 @@ public partial class SettingsViewModel : ViewModelBase
         PositionOptions.Add(Loc.PositionBottomRight);
         SelectedPositionIndex = -1;
         SelectedPositionIndex = prev >= 0 ? prev : 0;
+    }
+
+    public void UpdateThemeOptions()
+    {
+        int prev = SelectedThemeIndex;
+        ThemeOptions.Clear();
+        ThemeOptions.Add(Loc.ThemeNormal);
+        ThemeOptions.Add(Loc.ThemeCompact);
+        SelectedThemeIndex = -1;
+        SelectedThemeIndex = prev >= 0 ? prev : 0;
     }
 
     public void RefreshUpdateCardText()
@@ -53,6 +64,15 @@ public partial class SettingsViewModel : ViewModelBase
     }
 
     [ObservableProperty]
+    private int _selectedTabIndex;
+
+    [ObservableProperty]
+    private bool _isPermissionAlertVisible;
+
+    [ObservableProperty]
+    private string _permissionAlertMessage = "";
+
+    [ObservableProperty]
     private int _selectedLanguageIndex;
 
     [ObservableProperty]
@@ -65,13 +85,34 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedPositionIndex;
 
     [ObservableProperty]
+    private int _selectedThemeIndex;
+
+    [ObservableProperty]
     private bool _allowOverlayDrag = true;
+
+    [ObservableProperty]
+    private bool _showSocTemp = true;
+
+    [ObservableProperty]
+    private string _socName = "SoC";
 
     [ObservableProperty]
     private bool _showGpu;
 
     [ObservableProperty]
+    private bool _showGpuUsage = true;
+
+    [ObservableProperty]
+    private bool _showGpuTemp = true;
+
+    [ObservableProperty]
     private bool _showCpu;
+
+    [ObservableProperty]
+    private bool _showCpuUsage = true;
+
+    [ObservableProperty]
+    private bool _showCpuTemp = true;
 
     [ObservableProperty]
     private bool _showVram;
@@ -83,10 +124,22 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showBattery;
 
     [ObservableProperty]
+    private bool _hideBatteryWhenCharged = true;
+
+    [ObservableProperty]
+    private int _batteryHideThresholdPercent = 80;
+
+    public bool ShowBatterySubOptions => IsLaptop && ShowBattery;
+    public string BatteryThresholdDisplay => $"≥ {BatteryHideThresholdPercent} %";
+
+    [ObservableProperty]
     private bool _isLaptop;
 
     [ObservableProperty]
     private bool _showFps;
+
+    [ObservableProperty]
+    private bool _showFrametime;
 
     [ObservableProperty]
     private bool _showGraph;
@@ -127,6 +180,8 @@ public partial class SettingsViewModel : ViewModelBase
         _mainViewModel = mainViewModel;
         _fpsService = fpsService;
 
+        SocName = mainViewModel != null ? mainViewModel.SocName : SystemMetricsService.FormatSocName(new SystemMetricsService().CpuName);
+
         UpdateCardTitle = Loc.IsFrench ? "Mises à jour" : "Software Updates";
         UpdateCardSubtitle = Loc.IsFrench ? "Vérification en arrière-plan..." : "Checking in background...";
 
@@ -139,6 +194,7 @@ public partial class SettingsViewModel : ViewModelBase
             Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
                 UpdatePositionOptions();
+                UpdateThemeOptions();
                 CheckPermissionStatus();
                 RefreshUpdateCardText();
                 OnPropertyChanged(nameof(Loc));
@@ -174,16 +230,28 @@ public partial class SettingsViewModel : ViewModelBase
         _autoGameMode = s.AutoGameMode;
         _launchAtLogin = s.LaunchAtLogin || LaunchAtLoginService.IsLaunchAtLoginEnabled();
         _selectedPositionIndex = (int)s.Position;
+        _selectedThemeIndex = (int)s.OverlayTheme;
         _allowOverlayDrag = s.AllowOverlayDrag;
         UpdatePositionOptions();
+        UpdateThemeOptions();
 
+        _showSocTemp = s.ShowSocTemp;
         _showGpu = s.ShowGpu;
+        _showGpuUsage = s.ShowGpuUsage;
+        _showGpuTemp = s.ShowGpuTemp;
         _showCpu = s.ShowCpu;
+        _showCpuUsage = s.ShowCpuUsage;
+        _showCpuTemp = s.ShowCpuTemp;
         _showVram = s.ShowVram;
         _showRam = s.ShowRam;
         _showBattery = s.ShowBattery;
+        _hideBatteryWhenCharged = s.HideBatteryWhenCharged;
+        _batteryHideThresholdPercent = s.BatteryHideThresholdPercent;
         _isLaptop = _fpsService.IsLaptop;
+        OnPropertyChanged(nameof(ShowBatterySubOptions));
+        OnPropertyChanged(nameof(BatteryThresholdDisplay));
         _showFps = s.ShowFps;
+        _showFrametime = s.ShowFrametime;
         _showGraph = s.ShowGraph;
 
         _autoCheckUpdates = s.AutoCheckUpdates;
@@ -276,6 +344,18 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnSelectedThemeIndexChanged(int value)
+    {
+        if (value < 0) return;
+        var theme = (OverlayTheme)Math.Clamp(value, 0, 1);
+        _settingsService.Current.OverlayTheme = theme;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.OverlayTheme = theme;
+        }
+    }
+
     partial void OnAllowOverlayDragChanged(bool value)
     {
         _settingsService.Current.AllowOverlayDrag = value;
@@ -286,6 +366,13 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnShowSocTempChanged(bool value)
+    {
+        _settingsService.Current.ShowSocTemp = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowSocTemp = value;
+    }
+
     partial void OnShowGpuChanged(bool value)
     {
         _settingsService.Current.ShowGpu = value;
@@ -293,11 +380,55 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null) _mainViewModel.ShowGpu = value;
     }
 
+    partial void OnShowGpuUsageChanged(bool value)
+    {
+        _settingsService.Current.ShowGpuUsage = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.ShowGpuUsage = value;
+            _mainViewModel.ShowGpu = value || ShowGpuTemp;
+        }
+    }
+
+    partial void OnShowGpuTempChanged(bool value)
+    {
+        _settingsService.Current.ShowGpuTemp = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.ShowGpuTemp = value;
+            _mainViewModel.ShowGpu = ShowGpuUsage || value;
+        }
+    }
+
     partial void OnShowCpuChanged(bool value)
     {
         _settingsService.Current.ShowCpu = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowCpu = value;
+    }
+
+    partial void OnShowCpuUsageChanged(bool value)
+    {
+        _settingsService.Current.ShowCpuUsage = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.ShowCpuUsage = value;
+            _mainViewModel.ShowCpu = value || ShowCpuTemp;
+        }
+    }
+
+    partial void OnShowCpuTempChanged(bool value)
+    {
+        _settingsService.Current.ShowCpuTemp = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.ShowCpuTemp = value;
+            _mainViewModel.ShowCpu = ShowCpuUsage || value;
+        }
     }
 
     partial void OnShowVramChanged(bool value)
@@ -318,21 +449,105 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settingsService.Current.ShowBattery = value;
         _settingsService.Save();
+        OnPropertyChanged(nameof(ShowBatterySubOptions));
         if (_mainViewModel != null) _mainViewModel.ShowBattery = value;
+    }
+
+    partial void OnHideBatteryWhenChargedChanged(bool value)
+    {
+        _settingsService.Current.HideBatteryWhenCharged = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.HideBatteryWhenCharged = value;
+    }
+
+    partial void OnBatteryHideThresholdPercentChanged(int value)
+    {
+        _settingsService.Current.BatteryHideThresholdPercent = value;
+        _settingsService.Save();
+        OnPropertyChanged(nameof(BatteryThresholdDisplay));
+        if (_mainViewModel != null) _mainViewModel.BatteryHideThresholdPercent = value;
     }
 
     partial void OnShowFpsChanged(bool value)
     {
+        if (value)
+        {
+            CheckPermissionStatus();
+            if (!HasScreenCapturePermission)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _showFps = false;
+                    OnPropertyChanged(nameof(ShowFps));
+                });
+                PermissionAlertMessage = Loc.PermissionRequiredForMetrics;
+                IsPermissionAlertVisible = true;
+                return;
+            }
+        }
+
         _settingsService.Current.ShowFps = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowFps = value;
     }
 
+    partial void OnShowFrametimeChanged(bool value)
+    {
+        if (value)
+        {
+            CheckPermissionStatus();
+            if (!HasScreenCapturePermission)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _showFrametime = false;
+                    OnPropertyChanged(nameof(ShowFrametime));
+                });
+                PermissionAlertMessage = Loc.PermissionRequiredForMetrics;
+                IsPermissionAlertVisible = true;
+                return;
+            }
+        }
+
+        _settingsService.Current.ShowFrametime = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowFrametime = value;
+    }
+
     partial void OnShowGraphChanged(bool value)
     {
+        if (value)
+        {
+            CheckPermissionStatus();
+            if (!HasScreenCapturePermission)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _showGraph = false;
+                    OnPropertyChanged(nameof(ShowGraph));
+                });
+                PermissionAlertMessage = Loc.PermissionRequiredForMetrics;
+                IsPermissionAlertVisible = true;
+                return;
+            }
+        }
+
         _settingsService.Current.ShowGraph = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowGraph = value;
+    }
+
+    [RelayCommand]
+    public void GoToGeneralTab()
+    {
+        IsPermissionAlertVisible = false;
+        SelectedTabIndex = 0;
+    }
+
+    [RelayCommand]
+    public void DismissPermissionAlert()
+    {
+        IsPermissionAlertVisible = false;
     }
     [RelayCommand]
     public void RequestPermission()
@@ -485,17 +700,29 @@ public partial class SettingsViewModel : ViewModelBase
         AutoGameMode = true;
         LaunchAtLogin = false;
         SelectedPositionIndex = 0;
+        SelectedThemeIndex = 0;
         AllowOverlayDrag = true;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";
+        ShowSocTemp = true;
         ShowGpu = true;
+        ShowGpuUsage = true;
+        ShowGpuTemp = true;
         ShowCpu = true;
+        ShowCpuUsage = true;
+        ShowCpuTemp = true;
         ShowVram = true;
         ShowRam = true;
         ShowBattery = _fpsService.IsLaptop;
+        HideBatteryWhenCharged = true;
+        BatteryHideThresholdPercent = 80;
+        OnPropertyChanged(nameof(ShowBatterySubOptions));
+        OnPropertyChanged(nameof(BatteryThresholdDisplay));
         ShowFps = false;
+        ShowFrametime = false;
         ShowGraph = false;
         UpdatePositionOptions();
+        UpdateThemeOptions();
         CheckPermissionStatus();
         RefreshUpdateCardText();
         OnPropertyChanged(nameof(Loc));

@@ -25,6 +25,7 @@ public class AutoGameModeTests
 
     private class MockMetricsService : ISystemMetricsService
     {
+        public string CpuName => "Apple M5";
         public SystemResourceMetrics ReadResourceMetrics() => new(10.0, 4.0, 16.0, 25.0);
     }
 
