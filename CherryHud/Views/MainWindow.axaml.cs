@@ -127,6 +127,7 @@ public partial class MainWindow : Window
 
         int margin = 8;
         int targetX, targetY, targetW, targetH;
+        bool isWindowedGame = false;
 
         if (gameBounds.HasValue)
         {
@@ -134,6 +135,17 @@ public partial class MainWindow : Window
             targetY = gameBounds.Value.Y;
             targetW = gameBounds.Value.Width;
             targetH = gameBounds.Value.Height;
+
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen != null)
+            {
+                // Windowed mode if it does not cover the full display
+                isWindowedGame = targetW < screen.Bounds.Width || targetH < screen.Bounds.Height;
+            }
+            else
+            {
+                isWindowedGame = true;
+            }
         }
         else
         {
@@ -148,6 +160,9 @@ public partial class MainWindow : Window
         int winW = (int)(Bounds.Width > 0 ? Bounds.Width : (double.IsNaN(Width) ? 200 : Width));
         int winH = (int)(Bounds.Height > 0 ? Bounds.Height : (double.IsNaN(Height) ? 210 : Height));
 
+        // When tracking a windowed game with title bar and buttons, position below the 32pt title bar
+        int topOffset = isWindowedGame ? (32 + margin) : margin;
+
         int x = corner switch
         {
             OverlayCorner.TopRight => targetX + targetW - winW - margin,
@@ -160,7 +175,7 @@ public partial class MainWindow : Window
         {
             OverlayCorner.BottomLeft => targetY + targetH - winH - margin,
             OverlayCorner.BottomRight => targetY + targetH - winH - margin,
-            _ => targetY + margin
+            _ => targetY + topOffset
         };
 
         var newPos = new PixelPoint(x, y);

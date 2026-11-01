@@ -9,8 +9,10 @@ public class OverlayPositionTests
     private static PixelPoint CalculateCornerPosition(
         OverlayCorner corner,
         int screenX, int screenY, int screenW, int screenH,
-        int winW, int winH, int margin = 8)
+        int winW, int winH, int margin = 8, bool isWindowed = false)
     {
+        int topOffset = isWindowed ? (32 + margin) : margin;
+
         int x = corner switch
         {
             OverlayCorner.TopRight => screenX + screenW - winW - margin,
@@ -23,7 +25,7 @@ public class OverlayPositionTests
         {
             OverlayCorner.BottomLeft => screenY + screenH - winH - margin,
             OverlayCorner.BottomRight => screenY + screenH - winH - margin,
-            _ => screenY + margin
+            _ => screenY + topOffset
         };
 
         return new PixelPoint(x, y);
@@ -66,27 +68,28 @@ public class OverlayPositionTests
     }
 
     [Fact]
-    public void WindowedMode_TopLeft_PositionsInsideWindow()
+    public void WindowedMode_TopLeft_PositionsBelowTitleBar()
     {
         // Game running windowed at X=421, Y=57, 1600x928
+        // Title bar is 32pt tall, so Y = 57 + 32 + 8 = 97 (below window control buttons)
         var bounds = new GameWindowBounds(421, 57, 1600, 928);
-        var pos = CalculateCornerPosition(OverlayCorner.TopLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
-        Assert.Equal(new PixelPoint(421 + 8, 57 + 8), pos);
+        var pos = CalculateCornerPosition(OverlayCorner.TopLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8, isWindowed: true);
+        Assert.Equal(new PixelPoint(421 + 8, 57 + 32 + 8), pos);
     }
 
     [Fact]
-    public void WindowedMode_TopRight_PositionsInsideWindow()
+    public void WindowedMode_TopRight_PositionsBelowTitleBar()
     {
         var bounds = new GameWindowBounds(421, 57, 1600, 928);
-        var pos = CalculateCornerPosition(OverlayCorner.TopRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
-        Assert.Equal(new PixelPoint(421 + 1600 - 200 - 8, 57 + 8), pos);
+        var pos = CalculateCornerPosition(OverlayCorner.TopRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8, isWindowed: true);
+        Assert.Equal(new PixelPoint(421 + 1600 - 200 - 8, 57 + 32 + 8), pos);
     }
 
     [Fact]
     public void WindowedMode_BottomLeft_PositionsInsideWindow()
     {
         var bounds = new GameWindowBounds(421, 57, 1600, 928);
-        var pos = CalculateCornerPosition(OverlayCorner.BottomLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        var pos = CalculateCornerPosition(OverlayCorner.BottomLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8, isWindowed: true);
         Assert.Equal(new PixelPoint(421 + 8, 57 + 928 - 210 - 8), pos);
     }
 
@@ -94,7 +97,7 @@ public class OverlayPositionTests
     public void WindowedMode_BottomRight_PositionsInsideWindow()
     {
         var bounds = new GameWindowBounds(421, 57, 1600, 928);
-        var pos = CalculateCornerPosition(OverlayCorner.BottomRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        var pos = CalculateCornerPosition(OverlayCorner.BottomRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8, isWindowed: true);
         Assert.Equal(new PixelPoint(421 + 1600 - 200 - 8, 57 + 928 - 210 - 8), pos);
     }
 
@@ -105,11 +108,11 @@ public class OverlayPositionTests
         var initialBounds = new GameWindowBounds(421, 57, 1600, 928);
         var movedBounds = new GameWindowBounds(550, 120, 1600, 928);
 
-        var initialPos = CalculateCornerPosition(OverlayCorner.TopLeft, initialBounds.X, initialBounds.Y, initialBounds.Width, initialBounds.Height, 200, 210, 8);
-        var movedPos = CalculateCornerPosition(OverlayCorner.TopLeft, movedBounds.X, movedBounds.Y, movedBounds.Width, movedBounds.Height, 200, 210, 8);
+        var initialPos = CalculateCornerPosition(OverlayCorner.TopLeft, initialBounds.X, initialBounds.Y, initialBounds.Width, initialBounds.Height, 200, 210, 8, isWindowed: true);
+        var movedPos = CalculateCornerPosition(OverlayCorner.TopLeft, movedBounds.X, movedBounds.Y, movedBounds.Width, movedBounds.Height, 200, 210, 8, isWindowed: true);
 
-        Assert.Equal(new PixelPoint(429, 65), initialPos);
-        Assert.Equal(new PixelPoint(558, 128), movedPos);
+        Assert.Equal(new PixelPoint(429, 97), initialPos);
+        Assert.Equal(new PixelPoint(558, 160), movedPos);
         Assert.NotEqual(initialPos, movedPos);
     }
 }
