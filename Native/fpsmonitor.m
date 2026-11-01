@@ -801,6 +801,13 @@ bool FpsMonitor_IsGameActive(void) {
     return s_monitor.isGameActive;
 }
 
+static CGWindowID s_cachedGameWindowId = 0;
+static pid_t s_cachedGameWindowPid = 0;
+
+bool FpsMonitor_IsLeftMouseDown(void) {
+    return (bool)CGEventSourceButtonState(kCGEventSourceStateCombinedSessionState, kCGMouseButtonLeft);
+}
+
 bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *outH) {
     if (outX) *outX = 0;
     if (outY) *outY = 0;
@@ -808,6 +815,8 @@ bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *
     if (outH) *outH = 0;
 
     if (!s_monitor || !s_monitor.isGameActive) {
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
         return false;
     }
 
@@ -819,7 +828,40 @@ bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *
         }
     }
     if (targetPid <= 0) {
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
         return false;
+    }
+
+    // Fast-path: query single cached game window directly (microsecond query)
+    if (s_cachedGameWindowId > 0 && s_cachedGameWindowPid == targetPid) {
+        CFArrayRef singleList = CGWindowListCopyWindowInfo(kCGWindowListOptionIncludingWindow, s_cachedGameWindowId);
+        if (singleList) {
+            NSArray *arr = (NSArray *)singleList;
+            if (arr.count > 0) {
+                NSDictionary *info = arr[0];
+                NSNumber *pidNum = info[(id)kCGWindowOwnerPID];
+                NSNumber *layerNum = info[(id)kCGWindowLayer];
+                NSDictionary *boundsDict = info[(id)kCGWindowBounds];
+                if (pidNum && [pidNum intValue] == targetPid &&
+                    layerNum && [layerNum intValue] == 0 && boundsDict) {
+                    CGRect rect;
+                    if (CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)boundsDict, &rect)) {
+                        if (rect.size.width >= 200 && rect.size.height >= 150) {
+                            CFRelease(singleList);
+                            if (outX) *outX = (int)round(rect.origin.x);
+                            if (outY) *outY = (int)round(rect.origin.y);
+                            if (outW) *outW = (int)round(rect.size.width);
+                            if (outH) *outH = (int)round(rect.size.height);
+                            return true;
+                        }
+                    }
+                }
+            }
+            CFRelease(singleList);
+        }
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
     }
 
     CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
@@ -830,6 +872,7 @@ bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *
     NSArray *windows = (NSArray *)windowList;
     CGRect bestBounds = CGRectZero;
     CGFloat maxArea = 0;
+    CGWindowID bestId = 0;
 
     for (NSDictionary *info in windows) {
         NSNumber *pidNum = info[(id)kCGWindowOwnerPID];
@@ -854,6 +897,8 @@ bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *
                 if (area > maxArea) {
                     maxArea = area;
                     bestBounds = rect;
+                    NSNumber *wNum = info[(id)kCGWindowNumber];
+                    if (wNum) bestId = (CGWindowID)[wNum unsignedIntValue];
                 }
             }
         }
@@ -862,6 +907,8 @@ bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *
     CFRelease(windowList);
 
     if (maxArea > 0) {
+        s_cachedGameWindowId = bestId;
+        s_cachedGameWindowPid = targetPid;
         if (outX) *outX = (int)round(bestBounds.origin.x);
         if (outY) *outY = (int)round(bestBounds.origin.y);
         if (outW) *outW = (int)round(bestBounds.size.width);

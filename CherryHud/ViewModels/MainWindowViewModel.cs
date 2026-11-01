@@ -356,6 +356,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private GameWindowBounds? _activeGameBounds;
 
+    private bool _isDraggingGameWindow;
+
     [ObservableProperty]
     private OverlayTheme _overlayTheme = OverlayTheme.Normal;
 
@@ -749,14 +751,41 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         using var timer = new PeriodicTimer(TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60));
         int tickCounter = 0;
 
-        UpdateMetrics(isTextTick: true, isTrackTick: true);
+        UpdateMetrics(isTextTick: true);
 
         try
         {
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 tickCounter++;
-                bool isTrackTick = (tickCounter % 10 == 0);
+
+                bool isGame = _fpsService.IsGameActive;
+                bool isTracking = isGame && AutoTrackGameWindow;
+                bool shouldTrackFast = false;
+
+                if (isTracking)
+                {
+                    bool isMouseDown = _fpsService.IsLeftMouseDown;
+                    if (isMouseDown)
+                    {
+                        // Mouse button held down: user is actively dragging or interacting!
+                        // Track at full 60 FPS (every 16ms tick) for silky smooth zero-lag tracking!
+                        _isDraggingGameWindow = true;
+                        shouldTrackFast = true;
+                    }
+                    else if (_isDraggingGameWindow)
+                    {
+                        // Mouse button was JUST released:
+                        // Snap immediately to final resting position and stop fast tracking!
+                        _isDraggingGameWindow = false;
+                        shouldTrackFast = true;
+                    }
+                }
+                else
+                {
+                    _isDraggingGameWindow = false;
+                }
+
                 // Sync text metrics (FPS text, temps, CPU %, GPU %, RAM, battery, clock) every 500ms (every 30 ticks of 16.67ms)
                 // so they remain steady and readable without frantic jitter.
                 bool isTextTick = (tickCounter >= 30);
@@ -764,7 +793,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 {
                     tickCounter = 0;
                 }
-                UpdateMetrics(isTextTick, isTrackTick);
+                UpdateMetrics(isTextTick, shouldTrackFast);
             }
         }
         catch (OperationCanceledException)
@@ -773,7 +802,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void UpdateMetrics(bool isTextTick, bool isTrackTick = false)
+    private void UpdateMetrics(bool isTextTick, bool shouldTrackFast = false)
     {
         // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
@@ -800,7 +829,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             }, DispatcherPriority.Input);
         }
 
-        if (isTrackTick || isTextTick)
+        if (shouldTrackFast || isTextTick)
         {
             UpdateGameWindowBounds(isGame);
         }

@@ -20,6 +20,7 @@ public interface IFpsService
     (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample();
     bool IsGameActive { get; }
     bool IsLaptop { get; }
+    bool IsLeftMouseDown => false;
     int GetThermalState() => 0;
     bool GetActiveGameWindowBounds(out int x, out int y, out int width, out int height)
     {

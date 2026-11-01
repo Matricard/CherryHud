@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -13,6 +14,7 @@ namespace CherryHud.Views;
 public partial class MainWindow : Window
 {
     private IntPtr? _nativeHandle;
+    private int _isPositionUpdatePending = 0;
 
     public MainWindow()
     {
@@ -83,9 +85,19 @@ public partial class MainWindow : Window
                             ApplyVisibility(vm.IsOverlayVisible);
                         });
                     }
+                    else if (e.PropertyName == nameof(MainWindowViewModel.ActiveGameBounds))
+                    {
+                        if (Interlocked.Exchange(ref _isPositionUpdatePending, 1) == 0)
+                        {
+                            Dispatcher.UIThread.Post(() =>
+                            {
+                                _isPositionUpdatePending = 0;
+                                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
+                            }, DispatcherPriority.Send);
+                        }
+                    }
                     else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition)
                           || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme)
-                          || e.PropertyName == nameof(MainWindowViewModel.ActiveGameBounds)
                           || e.PropertyName == nameof(MainWindowViewModel.AutoTrackGameWindow))
                     {
                         Dispatcher.UIThread.Post(() =>
@@ -151,7 +163,11 @@ public partial class MainWindow : Window
             _ => targetY + margin
         };
 
-        Position = new PixelPoint(x, y);
+        var newPos = new PixelPoint(x, y);
+        if (Position != newPos)
+        {
+            Position = newPos;
+        }
     }
 
     private void ApplyVisibility(bool visible)

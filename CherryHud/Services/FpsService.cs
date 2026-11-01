@@ -96,6 +96,25 @@ public sealed class FpsService : IFpsService, IDisposable
     [return: MarshalAs(UnmanagedType.I1)]
     private static extern bool FpsMonitor_GetActiveGameWindowBounds(out int outX, out int outY, out int outW, out int outH);
 
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsLeftMouseDown();
+
+    public bool IsLeftMouseDown
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_IsLeftMouseDown();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
     public int GetThermalState()
     {
         try
