@@ -68,22 +68,31 @@ public partial class MainWindow : Window
                     return;
                 }
 
-                BeginMoveDrag(e);
-
                 if (DataContext is MainWindowViewModel currentVm)
                 {
-                    var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-                    int scrX = screen?.Bounds.X ?? 0;
-                    int scrY = screen?.Bounds.Y ?? 0;
-                    currentVm.SaveCustomPosition(Position.X, Position.Y, currentVm.ActiveGameBounds, scrX, scrY);
+                    currentVm.IsUserDraggingOverlay = true;
                 }
+
+                BeginMoveDrag(e);
             }
+        }, RoutingStrategies.Bubble);
+
+        AddHandler(PointerReleasedEvent, (sender, e) =>
+        {
+            FinishOverlayDrag();
+        }, RoutingStrategies.Bubble);
+
+        AddHandler(PointerCaptureLostEvent, (sender, e) =>
+        {
+            FinishOverlayDrag();
         }, RoutingStrategies.Bubble);
 
         DataContextChanged += (_, _) =>
         {
             if (DataContext is MainWindowViewModel vm)
             {
+                vm.NotifyOverlayDragFinished = () => Dispatcher.UIThread.Post(FinishOverlayDrag);
+
                 vm.PropertyChanged += (_, e) =>
                 {
                     if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible))
@@ -95,6 +104,8 @@ public partial class MainWindow : Window
                     }
                     else if (e.PropertyName == nameof(MainWindowViewModel.ActiveGameBounds))
                     {
+                        if (vm.IsUserDraggingOverlay) return;
+
                         if (Interlocked.Exchange(ref _isPositionUpdatePending, 1) == 0)
                         {
                             Dispatcher.UIThread.Post(() =>
@@ -108,6 +119,8 @@ public partial class MainWindow : Window
                           || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme)
                           || e.PropertyName == nameof(MainWindowViewModel.AutoTrackGameWindow))
                     {
+                        if (vm.IsUserDraggingOverlay) return;
+
                         Dispatcher.UIThread.Post(() =>
                         {
                             SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
@@ -129,9 +142,28 @@ public partial class MainWindow : Window
         };
     }
 
+    private void FinishOverlayDrag()
+    {
+        if (DataContext is MainWindowViewModel vm && vm.IsUserDraggingOverlay)
+        {
+            vm.IsUserDraggingOverlay = false;
+
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            int scrX = screen?.Bounds.X ?? 0;
+            int scrY = screen?.Bounds.Y ?? 0;
+            vm.SaveCustomPosition(Position.X, Position.Y, vm.ActiveGameBounds, scrX, scrY);
+        }
+    }
+
     public void SetOverlayPosition(OverlayCorner corner, GameWindowBounds? gameBounds = null)
     {
-        gameBounds ??= (DataContext as MainWindowViewModel)?.ActiveGameBounds;
+        var vm = DataContext as MainWindowViewModel;
+        if (vm != null && vm.IsUserDraggingOverlay)
+        {
+            return;
+        }
+
+        gameBounds ??= vm?.ActiveGameBounds;
 
         int margin = 8;
         int targetX, targetY, targetW, targetH;
@@ -176,7 +208,6 @@ public partial class MainWindow : Window
 
         if (corner == OverlayCorner.Custom)
         {
-            var vm = DataContext as MainWindowViewModel;
             if (gameBounds.HasValue)
             {
                 x = targetX + (vm?.CustomWindowOffsetX ?? margin);

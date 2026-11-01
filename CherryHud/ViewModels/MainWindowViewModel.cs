@@ -371,6 +371,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isDraggingGameWindow;
 
     [ObservableProperty]
+    private bool _isUserDraggingOverlay;
+
+    public Action? NotifyOverlayDragFinished { get; set; }
+
+    [ObservableProperty]
     private OverlayTheme _overlayTheme = OverlayTheme.Normal;
 
     [ObservableProperty]
@@ -774,6 +779,17 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 tickCounter++;
+
+                if (IsUserDraggingOverlay)
+                {
+                    bool isMouseDown = _fpsService.IsLeftMouseDown;
+                    if (!isMouseDown)
+                    {
+                        // User released the mouse button while dragging CherryHud!
+                        NotifyOverlayDragFinished?.Invoke();
+                    }
+                    continue;
+                }
 
                 bool isGame = _fpsService.IsGameActive;
                 bool isTracking = isGame && AutoTrackGameWindow;
