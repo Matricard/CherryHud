@@ -13,6 +13,7 @@ public class AppSettingsTests
         Assert.Equal(AppLanguage.English, settings.Language);
         Assert.True(settings.AutoGameMode);
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
+        Assert.True(settings.AutoTrackGameWindow);
         Assert.Equal(OverlayTheme.Normal, settings.OverlayTheme);
         Assert.True(settings.ShowSocTemp);
         Assert.True(settings.ShowThermalState);
@@ -51,6 +52,8 @@ public class AppSettingsTests
         Assert.Equal("General", loc.TabGeneral);
         Assert.Equal("Overlay Drag & Drop", loc.AllowDragTitle);
         Assert.Equal("Allow moving the overlay freely with the mouse", loc.AllowDragSubtitle);
+        Assert.Equal("Game Window Auto-Tracking", loc.AutoTrackGameWindowTitle);
+        Assert.Equal("Anchor overlay inside the game window's corner when running windowed", loc.AutoTrackGameWindowSubtitle);
         Assert.Equal("Overlay Theme", loc.ThemeTitle);
         Assert.Equal("Choose HUD display density", loc.ThemeSubtitle);
         Assert.Equal("Normal", loc.ThemeNormal);
@@ -73,6 +76,8 @@ public class AppSettingsTests
         Assert.Equal("Général", loc.TabGeneral);
         Assert.Equal("Glisser-déposer de l'overlay", loc.AllowDragTitle);
         Assert.Equal("Autoriser le déplacement libre de l'overlay à la souris", loc.AllowDragSubtitle);
+        Assert.Equal("Suivi de la fenêtre de jeu", loc.AutoTrackGameWindowTitle);
+        Assert.Equal("Ancre l'overlay directement dans le coin du jeu lorsqu'il est en mode fenêtré", loc.AutoTrackGameWindowSubtitle);
         Assert.Equal("Thème de l'overlay", loc.ThemeTitle);
         Assert.Equal("Choisissez la densité d'affichage du HUD", loc.ThemeSubtitle);
         Assert.Equal("Normal", loc.ThemeNormal);

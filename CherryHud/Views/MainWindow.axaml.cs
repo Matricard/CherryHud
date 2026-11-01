@@ -38,7 +38,7 @@ public partial class MainWindow : Window
 
             if (DataContext is MainWindowViewModel vm)
             {
-                SetOverlayPosition(vm.OverlayPosition);
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
         };
@@ -47,7 +47,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainWindowViewModel vm)
             {
-                SetOverlayPosition(vm.OverlayPosition);
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
             }
         };
 
@@ -83,16 +83,19 @@ public partial class MainWindow : Window
                             ApplyVisibility(vm.IsOverlayVisible);
                         });
                     }
-                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition) || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme))
+                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition)
+                          || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme)
+                          || e.PropertyName == nameof(MainWindowViewModel.ActiveGameBounds)
+                          || e.PropertyName == nameof(MainWindowViewModel.AutoTrackGameWindow))
                     {
                         Dispatcher.UIThread.Post(() =>
                         {
-                            SetOverlayPosition(vm.OverlayPosition);
+                            SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                         });
                     }
                 };
 
-                SetOverlayPosition(vm.OverlayPosition);
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
         };
@@ -106,32 +109,46 @@ public partial class MainWindow : Window
         };
     }
 
-    public void SetOverlayPosition(OverlayCorner corner)
+    public void SetOverlayPosition(OverlayCorner corner, GameWindowBounds? gameBounds = null)
     {
-        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-        if (screen == null) return;
+        gameBounds ??= (DataContext as MainWindowViewModel)?.ActiveGameBounds;
 
         int margin = 8;
-        int screenX = screen.Bounds.X;
-        int screenY = screen.Bounds.Y;
-        int screenW = screen.Bounds.Width;
-        int screenH = screen.Bounds.Height;
+        int targetX, targetY, targetW, targetH;
+
+        if (gameBounds.HasValue)
+        {
+            targetX = gameBounds.Value.X;
+            targetY = gameBounds.Value.Y;
+            targetW = gameBounds.Value.Width;
+            targetH = gameBounds.Value.Height;
+        }
+        else
+        {
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen == null) return;
+            targetX = screen.Bounds.X;
+            targetY = screen.Bounds.Y;
+            targetW = screen.Bounds.Width;
+            targetH = screen.Bounds.Height;
+        }
+
         int winW = (int)(Bounds.Width > 0 ? Bounds.Width : (double.IsNaN(Width) ? 200 : Width));
         int winH = (int)(Bounds.Height > 0 ? Bounds.Height : (double.IsNaN(Height) ? 210 : Height));
 
         int x = corner switch
         {
-            OverlayCorner.TopRight => screenX + screenW - winW - margin,
-            OverlayCorner.BottomLeft => screenX + margin,
-            OverlayCorner.BottomRight => screenX + screenW - winW - margin,
-            _ => screenX + margin
+            OverlayCorner.TopRight => targetX + targetW - winW - margin,
+            OverlayCorner.BottomLeft => targetX + margin,
+            OverlayCorner.BottomRight => targetX + targetW - winW - margin,
+            _ => targetX + margin
         };
 
         int y = corner switch
         {
-            OverlayCorner.BottomLeft => screenY + screenH - winH - margin,
-            OverlayCorner.BottomRight => screenY + screenH - winH - margin,
-            _ => screenY + margin
+            OverlayCorner.BottomLeft => targetY + targetH - winH - margin,
+            OverlayCorner.BottomRight => targetY + targetH - winH - margin,
+            _ => targetY + margin
         };
 
         Position = new PixelPoint(x, y);

@@ -228,6 +228,25 @@
                             </Grid>
                         </Border>
 
+                        <!-- Auto Track Game Window Card -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
+                                    <TextBlock Text="{Binding Loc.AutoTrackGameWindowTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.AutoTrackGameWindowSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1"
+                                              IsChecked="{Binding AutoTrackGameWindow}"
+                                              OnContent="" OffContent="" />
+                            </Grid>
+                        </Border>
+
                         <!-- Drag and Drop Card -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">

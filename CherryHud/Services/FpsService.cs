@@ -92,6 +92,10 @@ public sealed class FpsService : IFpsService, IDisposable
     [DllImport(LibraryName)]
     private static extern int FpsMonitor_GetThermalState();
 
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_GetActiveGameWindowBounds(out int outX, out int outY, out int outW, out int outH);
+
     public int GetThermalState()
     {
         try
@@ -101,6 +105,19 @@ public sealed class FpsService : IFpsService, IDisposable
         catch
         {
             return 0;
+        }
+    }
+
+    public bool GetActiveGameWindowBounds(out int x, out int y, out int width, out int height)
+    {
+        try
+        {
+            return FpsMonitor_GetActiveGameWindowBounds(out x, out y, out width, out height);
+        }
+        catch
+        {
+            x = 0; y = 0; width = 0; height = 0;
+            return false;
         }
     }
 

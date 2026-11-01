@@ -85,6 +85,9 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedPositionIndex;
 
     [ObservableProperty]
+    private bool _autoTrackGameWindow = true;
+
+    [ObservableProperty]
     private int _selectedThemeIndex;
 
     [ObservableProperty]
@@ -245,6 +248,7 @@ public partial class SettingsViewModel : ViewModelBase
         _autoGameMode = s.AutoGameMode;
         _launchAtLogin = s.LaunchAtLogin || LaunchAtLoginService.IsLaunchAtLoginEnabled();
         _selectedPositionIndex = (int)s.Position;
+        _autoTrackGameWindow = s.AutoTrackGameWindow;
         _selectedThemeIndex = (int)s.OverlayTheme;
         _allowOverlayDrag = s.AllowOverlayDrag;
         UpdatePositionOptions();
@@ -361,6 +365,16 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayPosition = corner;
+        }
+    }
+
+    partial void OnAutoTrackGameWindowChanged(bool value)
+    {
+        _settingsService.Current.AutoTrackGameWindow = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.AutoTrackGameWindow = value;
         }
     }
 
@@ -771,6 +785,7 @@ public partial class SettingsViewModel : ViewModelBase
         AutoGameMode = true;
         LaunchAtLogin = false;
         SelectedPositionIndex = 0;
+        AutoTrackGameWindow = true;
         SelectedThemeIndex = 0;
         AllowOverlayDrag = true;
         AutoCheckUpdates = true;

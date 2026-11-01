@@ -351,6 +351,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
 
     [ObservableProperty]
+    private bool _autoTrackGameWindow = true;
+
+    [ObservableProperty]
+    private GameWindowBounds? _activeGameBounds;
+
+    [ObservableProperty]
     private OverlayTheme _overlayTheme = OverlayTheme.Normal;
 
     [ObservableProperty]
@@ -699,6 +705,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ShowFrametime = s.ShowFrametime;
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
+        AutoTrackGameWindow = s.AutoTrackGameWindow;
         OverlayTheme = s.OverlayTheme;
         ApplyTheme(s.OverlayTheme);
         AllowOverlayDrag = s.AllowOverlayDrag;
@@ -742,13 +749,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         using var timer = new PeriodicTimer(TimeSpan.FromTicks(TimeSpan.TicksPerSecond / 60));
         int tickCounter = 0;
 
-        UpdateMetrics(isTextTick: true);
+        UpdateMetrics(isTextTick: true, isTrackTick: true);
 
         try
         {
             while (!token.IsCancellationRequested && await timer.WaitForNextTickAsync(token).ConfigureAwait(false))
             {
                 tickCounter++;
+                bool isTrackTick = (tickCounter % 10 == 0);
                 // Sync text metrics (FPS text, temps, CPU %, GPU %, RAM, battery, clock) every 500ms (every 30 ticks of 16.67ms)
                 // so they remain steady and readable without frantic jitter.
                 bool isTextTick = (tickCounter >= 30);
@@ -756,7 +764,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 {
                     tickCounter = 0;
                 }
-                UpdateMetrics(isTextTick);
+                UpdateMetrics(isTextTick, isTrackTick);
             }
         }
         catch (OperationCanceledException)
@@ -765,7 +773,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
     }
 
-    private void UpdateMetrics(bool isTextTick)
+    private void UpdateMetrics(bool isTextTick, bool isTrackTick = false)
     {
         // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
@@ -790,6 +798,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             {
                 IsOverlayVisible = targetVisibility;
             }, DispatcherPriority.Input);
+        }
+
+        if (isTrackTick || isTextTick)
+        {
+            UpdateGameWindowBounds(isGame);
         }
 
         if (isTextTick)
@@ -1153,6 +1166,39 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             >= 50.0 => "#00E676", // Vert menthe vif (normal / confort)
             _       => "#00E5FF"  // Cyan éclatant (frais / repos)
         };
+    }
+
+    private void UpdateGameWindowBounds(bool isGame)
+    {
+        if (isGame && AutoTrackGameWindow)
+        {
+            if (_fpsService.GetActiveGameWindowBounds(out int gx, out int gy, out int gw, out int gh))
+            {
+                var newBounds = new GameWindowBounds(gx, gy, gw, gh);
+                if (ActiveGameBounds != newBounds)
+                {
+                    ActiveGameBounds = newBounds;
+                }
+                return;
+            }
+        }
+
+        if (ActiveGameBounds != null)
+        {
+            ActiveGameBounds = null;
+        }
+    }
+
+    partial void OnAutoTrackGameWindowChanged(bool value)
+    {
+        if (!value)
+        {
+            ActiveGameBounds = null;
+        }
+        else if (IsGameActive)
+        {
+            UpdateGameWindowBounds(true);
+        }
     }
 
     public void Dispose()

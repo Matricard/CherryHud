@@ -179,6 +179,7 @@ static void FpsMonitor_LibraryInit(void) {
 @property (atomic) double currentFps;
 @property (atomic) double currentFrametime;
 @property (atomic) BOOL isGameActive;
+@property (atomic) pid_t currentPid;
 @property (nonatomic, copy) NSString *trackedAppName;
 - (void)start;
 - (void)stop;
@@ -505,6 +506,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
     } else {
         // Definitively a game (WoW, Steam games, etc.) - mark active IMMEDIATELY (0ms)!
         self.isGameActive = YES;
+        self->_currentPid = frontApp.processIdentifier;
     }
 
     // If we are already capturing this exact process and stream is healthy, NO NEED to re-query ScreenCaptureKit!
@@ -797,6 +799,77 @@ void FpsMonitor_Stop(void) {
 bool FpsMonitor_IsGameActive(void) {
     if (!s_monitor) return false;
     return s_monitor.isGameActive;
+}
+
+bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *outH) {
+    if (outX) *outX = 0;
+    if (outY) *outY = 0;
+    if (outW) *outW = 0;
+    if (outH) *outH = 0;
+
+    if (!s_monitor || !s_monitor.isGameActive) {
+        return false;
+    }
+
+    pid_t targetPid = s_monitor.currentPid;
+    if (targetPid <= 0) {
+        NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
+        if (frontApp && frontApp.processIdentifier != getpid()) {
+            targetPid = frontApp.processIdentifier;
+        }
+    }
+    if (targetPid <= 0) {
+        return false;
+    }
+
+    CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+    if (!windowList) {
+        return false;
+    }
+
+    NSArray *windows = (NSArray *)windowList;
+    CGRect bestBounds = CGRectZero;
+    CGFloat maxArea = 0;
+
+    for (NSDictionary *info in windows) {
+        NSNumber *pidNum = info[(id)kCGWindowOwnerPID];
+        if (!pidNum || [pidNum intValue] != targetPid) {
+            continue;
+        }
+
+        NSNumber *layerNum = info[(id)kCGWindowLayer];
+        if (!layerNum || [layerNum intValue] != 0) {
+            continue;
+        }
+
+        NSDictionary *boundsDict = info[(id)kCGWindowBounds];
+        if (!boundsDict) {
+            continue;
+        }
+
+        CGRect rect;
+        if (CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)boundsDict, &rect)) {
+            if (rect.size.width >= 200 && rect.size.height >= 150) {
+                CGFloat area = rect.size.width * rect.size.height;
+                if (area > maxArea) {
+                    maxArea = area;
+                    bestBounds = rect;
+                }
+            }
+        }
+    }
+
+    CFRelease(windowList);
+
+    if (maxArea > 0) {
+        if (outX) *outX = (int)round(bestBounds.origin.x);
+        if (outY) *outY = (int)round(bestBounds.origin.y);
+        if (outW) *outW = (int)round(bestBounds.size.width);
+        if (outH) *outH = (int)round(bestBounds.size.height);
+        return true;
+    }
+
+    return false;
 }
 
 double FpsMonitor_GetFps(void) {

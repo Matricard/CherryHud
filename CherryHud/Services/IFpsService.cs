@@ -21,6 +21,11 @@ public interface IFpsService
     bool IsGameActive { get; }
     bool IsLaptop { get; }
     int GetThermalState() => 0;
+    bool GetActiveGameWindowBounds(out int x, out int y, out int width, out int height)
+    {
+        x = 0; y = 0; width = 0; height = 0;
+        return false;
+    }
     void Start();
     void Stop();
     void RequestPermission();

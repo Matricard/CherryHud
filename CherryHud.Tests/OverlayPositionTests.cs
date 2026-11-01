@@ -64,4 +64,52 @@ public class OverlayPositionTests
         var pos = CalculateCornerPosition(OverlayCorner.TopRight, 1920, 0, 2560, 1440, 200, 210, 8);
         Assert.Equal(new PixelPoint(1920 + 2560 - 200 - 8, 8), pos);
     }
+
+    [Fact]
+    public void WindowedMode_TopLeft_PositionsInsideWindow()
+    {
+        // Game running windowed at X=421, Y=57, 1600x928
+        var bounds = new GameWindowBounds(421, 57, 1600, 928);
+        var pos = CalculateCornerPosition(OverlayCorner.TopLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        Assert.Equal(new PixelPoint(421 + 8, 57 + 8), pos);
+    }
+
+    [Fact]
+    public void WindowedMode_TopRight_PositionsInsideWindow()
+    {
+        var bounds = new GameWindowBounds(421, 57, 1600, 928);
+        var pos = CalculateCornerPosition(OverlayCorner.TopRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        Assert.Equal(new PixelPoint(421 + 1600 - 200 - 8, 57 + 8), pos);
+    }
+
+    [Fact]
+    public void WindowedMode_BottomLeft_PositionsInsideWindow()
+    {
+        var bounds = new GameWindowBounds(421, 57, 1600, 928);
+        var pos = CalculateCornerPosition(OverlayCorner.BottomLeft, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        Assert.Equal(new PixelPoint(421 + 8, 57 + 928 - 210 - 8), pos);
+    }
+
+    [Fact]
+    public void WindowedMode_BottomRight_PositionsInsideWindow()
+    {
+        var bounds = new GameWindowBounds(421, 57, 1600, 928);
+        var pos = CalculateCornerPosition(OverlayCorner.BottomRight, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8);
+        Assert.Equal(new PixelPoint(421 + 1600 - 200 - 8, 57 + 928 - 210 - 8), pos);
+    }
+
+    [Fact]
+    public void WindowedMode_WindowMoved_FollowsNewCoordinates()
+    {
+        // User dragged window from (421, 57) to (550, 120)
+        var initialBounds = new GameWindowBounds(421, 57, 1600, 928);
+        var movedBounds = new GameWindowBounds(550, 120, 1600, 928);
+
+        var initialPos = CalculateCornerPosition(OverlayCorner.TopLeft, initialBounds.X, initialBounds.Y, initialBounds.Width, initialBounds.Height, 200, 210, 8);
+        var movedPos = CalculateCornerPosition(OverlayCorner.TopLeft, movedBounds.X, movedBounds.Y, movedBounds.Width, movedBounds.Height, 200, 210, 8);
+
+        Assert.Equal(new PixelPoint(429, 65), initialPos);
+        Assert.Equal(new PixelPoint(558, 128), movedPos);
+        Assert.NotEqual(initialPos, movedPos);
+    }
 }
