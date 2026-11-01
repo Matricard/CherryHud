@@ -15,6 +15,7 @@ public class AppSettingsTests
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
         Assert.Equal(OverlayTheme.Normal, settings.OverlayTheme);
         Assert.True(settings.ShowSocTemp);
+        Assert.True(settings.ShowPower);
         Assert.True(settings.ShowGpu);
         Assert.True(settings.ShowGpuUsage);
         Assert.True(settings.ShowGpuTemp);
@@ -23,10 +24,12 @@ public class AppSettingsTests
         Assert.True(settings.ShowCpuTemp);
         Assert.True(settings.ShowVram);
         Assert.True(settings.ShowRam);
+        Assert.True(settings.ShowSwap);
         Assert.True(settings.ShowBattery);
         Assert.True(settings.HideBatteryWhenCharged);
         Assert.Equal(80, settings.BatteryHideThresholdPercent);
         Assert.False(settings.ShowFps);
+        Assert.False(settings.ShowOnePercentLowFps);
         Assert.False(settings.ShowFrametime);
         Assert.False(settings.ShowGraph);
         Assert.True(settings.AutoCheckUpdates);

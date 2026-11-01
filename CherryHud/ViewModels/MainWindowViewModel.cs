@@ -75,6 +75,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _socBadgeFg = "#FF7597";
 
+    // Power metrics
+    [ObservableProperty]
+    private bool _showPower = true;
+
+    [ObservableProperty]
+    private string _powerValue = "--";
+
+    [ObservableProperty]
+    private string _powerUnit = "W";
+
+    [ObservableProperty]
+    private string _powerDisplay = "-- W";
+
+    [ObservableProperty]
+    private string _powerStatusColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _powerBadgeFg = "#FFB300";
+
     // GPU metrics
     [ObservableProperty]
     private string _gpuTemp = "-- °C";
@@ -144,6 +163,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _ramStatusColor = "#FFFFFF";
 
+    // Swap metrics
+    [ObservableProperty]
+    private bool _showSwap = true;
+
+    [ObservableProperty]
+    private string _swapDisplay = "-- GB";
+
+    [ObservableProperty]
+    private string _swapValue = "--";
+
+    [ObservableProperty]
+    private string _swapUnit = "GB";
+
+    [ObservableProperty]
+    private string _swapStatusColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private string _swapBadgeFg = "#64D2FF";
+
     // FPS & Frametime metrics
     [ObservableProperty]
     private string _fpsDisplay = "-- FPS";
@@ -165,6 +203,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private string _fpsStatusColor = "#FFFFFF";
+
+    [ObservableProperty]
+    private bool _showOnePercentLowFps = false;
+
+    [ObservableProperty]
+    private string _onePercentLowFpsValue = "--";
+
+    [ObservableProperty]
+    private string _onePercentLowFpsDisplay = "";
 
     // frametime graph
     [ObservableProperty]
@@ -600,6 +647,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public void ApplySettings(AppSettings s)
     {
         ShowSocTemp = s.ShowSocTemp;
+        ShowPower = s.ShowPower;
         ShowGpuUsage = s.ShowGpuUsage;
         ShowGpuTemp = s.ShowGpuTemp;
         ShowGpu = s.ShowGpuUsage || s.ShowGpuTemp;
@@ -610,11 +658,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         ShowVram = s.ShowVram;
         ShowRam = s.ShowRam;
+        ShowSwap = s.ShowSwap;
         ShowBattery = s.ShowBattery;
         HideBatteryWhenCharged = s.HideBatteryWhenCharged;
         BatteryHideThresholdPercent = s.BatteryHideThresholdPercent;
         UpdateBatteryVisibility();
         ShowFps = s.ShowFps;
+        ShowOnePercentLowFps = s.ShowOnePercentLowFps;
         ShowFrametime = s.ShowFrametime;
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
@@ -715,7 +765,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             // Execute background queries (IOKit, AppleSMC, Mach host) off the UI thread
             var fpsData = _fpsService.GetFpsData();
-            var (cpuTemp, gpuTemp) = _temperatureService.ReadTemperatures();
+            var (cpuTemp, gpuTemp, powerWatts) = _temperatureService.ReadTemperatures();
             var res = _systemMetricsService.ReadResourceMetrics();
             string currentTime = DateTime.Now.ToString("HH:mm");
 
@@ -733,6 +783,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     FpsUnit = "";
                     FpsDisplay = "OFF";
 
+                    OnePercentLowFpsValue = "--";
+                    OnePercentLowFpsDisplay = "";
+
                     FrametimeValue = "";
                     FrametimeUnit = "";
                     FrametimeDisplay = "";
@@ -747,6 +800,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         FpsValue = $"{Math.Round(currentFps)}";
                         FpsUnit = "FPS";
                         FpsDisplay = $"{FpsValue} FPS";
+
+                        double lowFps = CalculateOnePercentLowFps();
+                        if (lowFps > 0.5)
+                        {
+                            OnePercentLowFpsValue = $"{Math.Round(lowFps)}";
+                            OnePercentLowFpsDisplay = $"({OnePercentLowFpsValue})";
+                        }
+                        else
+                        {
+                            OnePercentLowFpsValue = "--";
+                            OnePercentLowFpsDisplay = "";
+                        }
 
                         FrametimeValue = $"{1000.0 / currentFps:F1}";
                         FrametimeUnit = "ms";
@@ -771,6 +836,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                         FpsValue = "--";
                         FpsUnit = "FPS";
                         FpsDisplay = "-- FPS";
+
+                        OnePercentLowFpsValue = "--";
+                        OnePercentLowFpsDisplay = "";
 
                         FrametimeValue = "--";
                         FrametimeUnit = "ms";
@@ -885,6 +953,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     SocStatusColor = "#778899";
                 }
 
+                // Power (Watts)
+                if (powerWatts.HasValue && powerWatts.Value > 0.05)
+                {
+                    PowerValue = $"{powerWatts.Value:F1}";
+                    PowerUnit = "W";
+                    PowerDisplay = $"{PowerValue} W";
+                    PowerStatusColor = "#FFFFFF";
+                }
+                else
+                {
+                    PowerValue = "--";
+                    PowerUnit = "W";
+                    PowerDisplay = "-- W";
+                    PowerStatusColor = "#778899";
+                }
+
                 // CPU Load & RAM usage (Mach host statistics)
                 CpuUsageValue = $"{Math.Round(res.CpuUsagePercent)}";
                 CpuUsageUnit = "%";
@@ -894,6 +978,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 RamUnit = "GB";
                 RamDisplay = $"{RamValue} GB";
                 RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
+
+                // Swap Memory (sysctl vm.swapusage)
+                if (res.SwapUsedGb > 0.01)
+                {
+                    SwapValue = $"{res.SwapUsedGb:F1}";
+                    SwapUnit = "GB";
+                    SwapDisplay = $"{SwapValue} GB";
+                    SwapStatusColor = "#FFFFFF";
+                }
+                else
+                {
+                    SwapValue = "0.0";
+                    SwapUnit = "GB";
+                    SwapDisplay = "0.0 GB";
+                    SwapStatusColor = "#FFFFFF";
+                }
             }, DispatcherPriority.Normal);
 
             UpdateFrametimeGraph(fpsData.HasPermission, fpsData.Fps, fpsData.CurrentFrametimeMs, fpsData.PeakFrametimeMs);
@@ -904,6 +1004,31 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             var (hasPerm, fps, currentFt, peakFt) = _fpsService.GetFrametimeSample();
             UpdateFrametimeGraph(hasPerm, fps, currentFt, peakFt);
         }
+    }
+
+    private double CalculateOnePercentLowFps()
+    {
+        double[] buffer = _currentBuffer;
+        if (buffer == null || buffer.Length == 0) return 0.0;
+
+        List<double> validSamples = new(HistoryCapacity);
+        for (int i = 0; i < buffer.Length; i++)
+        {
+            double val = buffer[i];
+            if (val is > 1.0 and < 500.0)
+            {
+                validSamples.Add(val);
+            }
+        }
+
+        if (validSamples.Count < 10) return 0.0;
+
+        validSamples.Sort();
+        // 99th percentile slowest frame (1% worst frametimes)
+        int p99Index = (int)Math.Min(validSamples.Count - 1, Math.Floor(validSamples.Count * 0.99));
+        double p99FrametimeMs = validSamples[p99Index];
+
+        return p99FrametimeMs > 0.1 ? (1000.0 / p99FrametimeMs) : 0.0;
     }
 
     private void UpdateFrametimeGraph(bool hasPermission, double currentFps, double currentFrametimeMs, double peakFrametimeMs)

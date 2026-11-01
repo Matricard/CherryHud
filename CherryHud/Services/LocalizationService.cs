@@ -75,6 +75,7 @@ public class LocalizationService : ObservableObject
 
     // Metrics
     public string MetricSocTemp => IsFrench ? "Température moyenne du processeur (CPU + GPU)" : "Processor average temperature (CPU + GPU)";
+    public string MetricPower => IsFrench ? "Consommation (Watts)" : "Power Consumption (Watts)";
     public string MetricGpu => IsFrench ? "Charge GPU & Température" : "GPU Load & Temperature";
     public string MetricCpu => IsFrench ? "Charge CPU & Température" : "CPU Load & Temperature";
     public string MetricGpuUsage => IsFrench ? "Charge GPU (%)" : "GPU Load (%)";
@@ -83,11 +84,13 @@ public class LocalizationService : ObservableObject
     public string MetricCpuTemp => IsFrench ? "Température CPU (°C)" : "CPU Temperature (°C)";
     public string MetricVram => IsFrench ? "Mémoire Graphique (VRAM)" : "Video Memory (VRAM)";
     public string MetricRam => IsFrench ? "Mémoire Vive Système" : "System RAM Memory";
+    public string MetricSwap => IsFrench ? "Mémoire Swap" : "Swap Memory";
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
     public string HideBatteryWhenChargedTitle => IsFrench ? "Masquer la batterie si chargée" : "Hide battery when charged";
     public string HideBatteryWhenChargedSubtitle => IsFrench ? "Masque la batterie lorsque le Mac est branché et a atteint le pourcentage défini" : "Hides the battery when the Mac is plugged in and has reached the specified percentage";
     public string BatteryThresholdLabel => IsFrench ? "Seuil de masquage" : "Hide threshold";
     public string MetricFps => IsFrench ? "Images par seconde" : "Frames Per Second";
+    public string MetricOnePercentLowFps => IsFrench ? "1% Low FPS" : "1% Low FPS";
     public string MetricFrametime => IsFrench ? "Temps de trame (Frametime)" : "Frametime";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
     public string BetaNoteText => IsFrench ? "Ces métriques sont en cours de développement." : "These metrics are currently under development.";

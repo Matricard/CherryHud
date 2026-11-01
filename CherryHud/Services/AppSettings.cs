@@ -48,12 +48,15 @@ public class AppSettings
             ShowCpuTemp = value;
         }
     }
+    public bool ShowPower { get; set; } = true;
     public bool ShowVram { get; set; } = true;
     public bool ShowRam { get; set; } = true;
+    public bool ShowSwap { get; set; } = true;
     public bool ShowBattery { get; set; } = true;
     public bool HideBatteryWhenCharged { get; set; } = true;
     public int BatteryHideThresholdPercent { get; set; } = 80;
     public bool ShowFps { get; set; } = false;
+    public bool ShowOnePercentLowFps { get; set; } = false;
     public bool ShowFrametime { get; set; } = false;
     public bool ShowGraph { get; set; } = false;
 

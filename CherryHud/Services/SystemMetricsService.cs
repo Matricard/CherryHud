@@ -63,6 +63,19 @@ public sealed class SystemMetricsService : ISystemMetricsService
     [DllImport(LibSystem, EntryPoint = "sysctlbyname", CharSet = CharSet.Ansi)]
     private static extern int sysctlbyname_string(string name, [Out] byte[]? oldp, ref nuint oldlenp, IntPtr newp, nuint newsize);
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XswUsage
+    {
+        public ulong Total;
+        public ulong Avail;
+        public ulong Used;
+        public uint PageSize;
+        public int Encrypted;
+    }
+
+    [DllImport(LibSystem, EntryPoint = "sysctlbyname")]
+    private static extern int sysctlbyname_xsw(string name, ref XswUsage info, ref nuint size, IntPtr newp, nuint newsize);
+
     private readonly uint _host;
     private readonly double _totalRamGb;
     private readonly nuint _pageSize;
@@ -141,7 +154,18 @@ public sealed class SystemMetricsService : ISystemMetricsService
                 }
             }
 
-            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent);
+            // 3. Swap Memory Usage (sysctl vm.swapusage)
+            double swapUsedGb = 0.0;
+            double swapTotalGb = 0.0;
+            XswUsage xsw = default;
+            nuint xswSize = (nuint)Marshal.SizeOf<XswUsage>();
+            if (sysctlbyname_xsw("vm.swapusage", ref xsw, ref xswSize, IntPtr.Zero, 0) == 0)
+            {
+                swapUsedGb = xsw.Used / (1024.0 * 1024.0 * 1024.0);
+                swapTotalGb = xsw.Total / (1024.0 * 1024.0 * 1024.0);
+            }
+
+            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent, swapUsedGb, swapTotalGb);
         }
     }
 

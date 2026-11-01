@@ -366,6 +366,19 @@
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />
 
+                            <!-- Consommation (Watts) -->
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#5C4200" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="PWR" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricPower}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowPower}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
                             <!-- CPU Usage (%) -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
@@ -440,6 +453,19 @@
                                     <TextBlock Text="{Binding Loc.MetricRam}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowRam}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
+                            <!-- SWAP -->
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#0C3D59" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="SWAP" Foreground="#FFFFFF" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricSwap}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowSwap}" OnContent="" OffContent="" />
                             </Grid>
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />
@@ -520,6 +546,22 @@
                                     </Border>
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
+                            <!-- 1% Low FPS -->
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" VerticalAlignment="Center">
+                                    <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="LOW" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricOnePercentLowFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                        <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                    </Border>
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowOnePercentLowFps}" OnContent="" OffContent="" />
                             </Grid>
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />

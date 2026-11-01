@@ -94,6 +94,9 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showSocTemp = true;
 
     [ObservableProperty]
+    private bool _showPower = true;
+
+    [ObservableProperty]
     private string _socName = "SoC";
 
     [ObservableProperty]
@@ -121,6 +124,9 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showRam;
 
     [ObservableProperty]
+    private bool _showSwap;
+
+    [ObservableProperty]
     private bool _showBattery;
 
     [ObservableProperty]
@@ -137,6 +143,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showFps;
+
+    [ObservableProperty]
+    private bool _showOnePercentLowFps;
 
     [ObservableProperty]
     private bool _showFrametime;
@@ -236,6 +245,7 @@ public partial class SettingsViewModel : ViewModelBase
         UpdateThemeOptions();
 
         _showSocTemp = s.ShowSocTemp;
+        _showPower = s.ShowPower;
         _showGpu = s.ShowGpu;
         _showGpuUsage = s.ShowGpuUsage;
         _showGpuTemp = s.ShowGpuTemp;
@@ -244,6 +254,7 @@ public partial class SettingsViewModel : ViewModelBase
         _showCpuTemp = s.ShowCpuTemp;
         _showVram = s.ShowVram;
         _showRam = s.ShowRam;
+        _showSwap = s.ShowSwap;
         _showBattery = s.ShowBattery;
         _hideBatteryWhenCharged = s.HideBatteryWhenCharged;
         _batteryHideThresholdPercent = s.BatteryHideThresholdPercent;
@@ -251,6 +262,7 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowBatterySubOptions));
         OnPropertyChanged(nameof(BatteryThresholdDisplay));
         _showFps = s.ShowFps;
+        _showOnePercentLowFps = s.ShowOnePercentLowFps;
         _showFrametime = s.ShowFrametime;
         _showGraph = s.ShowGraph;
 
@@ -373,6 +385,13 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null) _mainViewModel.ShowSocTemp = value;
     }
 
+    partial void OnShowPowerChanged(bool value)
+    {
+        _settingsService.Current.ShowPower = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowPower = value;
+    }
+
     partial void OnShowGpuChanged(bool value)
     {
         _settingsService.Current.ShowGpu = value;
@@ -445,6 +464,13 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null) _mainViewModel.ShowRam = value;
     }
 
+    partial void OnShowSwapChanged(bool value)
+    {
+        _settingsService.Current.ShowSwap = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowSwap = value;
+    }
+
     partial void OnShowBatteryChanged(bool value)
     {
         _settingsService.Current.ShowBattery = value;
@@ -489,6 +515,29 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Current.ShowFps = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowFps = value;
+    }
+
+    partial void OnShowOnePercentLowFpsChanged(bool value)
+    {
+        if (value)
+        {
+            CheckPermissionStatus();
+            if (!HasScreenCapturePermission)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _showOnePercentLowFps = false;
+                    OnPropertyChanged(nameof(ShowOnePercentLowFps));
+                });
+                PermissionAlertMessage = Loc.PermissionRequiredForMetrics;
+                IsPermissionAlertVisible = true;
+                return;
+            }
+        }
+
+        _settingsService.Current.ShowOnePercentLowFps = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowOnePercentLowFps = value;
     }
 
     partial void OnShowFrametimeChanged(bool value)

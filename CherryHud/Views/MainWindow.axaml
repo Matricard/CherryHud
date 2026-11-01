@@ -34,7 +34,7 @@
 
         <Panel>
             <!-- Mode Normal (Disposition Verticale) -->
-            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding !IsCompact}">
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding !IsCompact}">
             <!-- SoC Temp Row (CPU + GPU Average) -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSocTemp}">
                 <TextBlock Grid.Column="0"
@@ -61,8 +61,34 @@
                 </StackPanel>
             </Grid>
 
+            <!-- Power Row (Watts) -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowPower}">
+                <TextBlock Grid.Column="0"
+                           Text="PWR"
+                           Foreground="{Binding PowerBadgeFg}"
+                           FontSize="{Binding BadgeFontSize}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+
+                <Panel Grid.Column="2" Width="{Binding UsageColumnWidth}" />
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Width="{Binding ValueColumnWidth}" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding PowerValue}"
+                               Foreground="{Binding PowerStatusColor}"
+                               FontSize="{Binding ValueFontSize}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding PowerUnit}"
+                               Foreground="{Binding PowerStatusColor}"
+                               FontSize="{Binding UnitFontSize}"
+                               FontWeight="Heavy"
+                               VerticalAlignment="Top"
+                               Margin="{Binding UnitMargin}" />
+                </StackPanel>
+            </Grid>
+
             <!-- CPU Row -->
-            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowCpu}">
+            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowCpu}">
                 <TextBlock Grid.Column="0"
                            Text="CPU"
                            Foreground="{Binding CpuBadgeFg}"
@@ -99,7 +125,7 @@
             </Grid>
 
             <!-- GPU Row -->
-            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowGpu}">
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowGpu}">
                 <TextBlock Grid.Column="0"
                            Text="GPU"
                            Foreground="{Binding GpuBadgeFg}"
@@ -136,7 +162,7 @@
             </Grid>
 
             <!-- VRAM Row -->
-            <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowVram}">
+            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowVram}">
                 <TextBlock Grid.Column="0"
                            Text="VRAM"
                            Foreground="{Binding VramBadgeFg}"
@@ -162,7 +188,7 @@
             </Grid>
 
             <!-- RAM Row -->
-            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowRam}">
+            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowRam}">
                 <TextBlock Grid.Column="0"
                            Text="RAM"
                            Foreground="{Binding RamBadgeFg}"
@@ -187,8 +213,34 @@
                 </StackPanel>
             </Grid>
 
+            <!-- SWAP Row -->
+            <Grid Grid.Row="6" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSwap}">
+                <TextBlock Grid.Column="0"
+                           Text="SWAP"
+                           Foreground="{Binding SwapBadgeFg}"
+                           FontSize="{Binding BadgeFontSize}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+
+                <Panel Grid.Column="2" Width="{Binding UsageColumnWidth}" />
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Width="{Binding ValueColumnWidth}" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SwapValue}"
+                               Foreground="{Binding SwapStatusColor}"
+                               FontSize="{Binding ValueFontSize}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding SwapUnit}"
+                               Foreground="{Binding SwapStatusColor}"
+                               FontSize="{Binding UnitFontSize}"
+                               FontWeight="Heavy"
+                               VerticalAlignment="Top"
+                               Margin="{Binding UnitMargin}" />
+                </StackPanel>
+            </Grid>
+
             <!-- BAT Row -->
-            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowBatteryRow}">
+            <Grid Grid.Row="7" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowBatteryRow}">
                 <TextBlock Grid.Column="0"
                            Text="BAT"
                            Foreground="{Binding BatBadgeFg}"
@@ -243,7 +295,7 @@
             </Grid>
 
             <!-- FPS Row -->
-            <Grid Grid.Row="6" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowFps}">
+            <Grid Grid.Row="8" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowFps}">
                 <TextBlock Grid.Column="0"
                            Text="FPS"
                            Foreground="{Binding FpsBadgeFg}"
@@ -251,7 +303,20 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center" />
 
-                <Panel Grid.Column="2" Width="{Binding UsageColumnWidth}" />
+                <!-- 1% Low FPS Column (in usage column position) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Width="{Binding UsageColumnWidth}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" IsVisible="{Binding ShowOnePercentLowFps}">
+                    <TextBlock Text="LOW"
+                               Foreground="#88FFFFFF"
+                               FontSize="{Binding UnitFontSize}"
+                               FontWeight="SemiBold"
+                               VerticalAlignment="Center"
+                               Margin="0,0,2,0" />
+                    <TextBlock Text="{Binding OnePercentLowFpsValue}"
+                               Foreground="{Binding FpsStatusColor}"
+                               FontSize="{Binding ValueFontSize}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Bottom" />
+                </StackPanel>
 
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Width="{Binding ValueColumnWidth}" VerticalAlignment="Center">
                     <TextBlock Text="{Binding FpsValue}"
@@ -288,7 +353,7 @@
             </Grid>
 
             <!-- Frametime Row (dédié au graphique, texte plus petit) -->
-            <Grid Grid.Row="7" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding FrametimeRowMargin}" IsVisible="{Binding ShowFrametime}">
+            <Grid Grid.Row="9" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding FrametimeRowMargin}" IsVisible="{Binding ShowFrametime}">
                 <TextBlock Grid.Column="0"
                            Text="Frametime"
                            Foreground="{Binding FpsBadgeFg}"
@@ -314,7 +379,7 @@
             </Grid>
 
             <!-- Graphique Frametime Sparkline (ms par trame) -->
-            <controls:FpsGraphControl Grid.Row="8"
+            <controls:FpsGraphControl Grid.Row="10"
                                       Height="{Binding GraphHeight}"
                                       Frametimes="{Binding FrametimeHistory}"
                                       TargetFrametimeMs="{Binding TargetFrametimeMs}"
@@ -346,6 +411,29 @@
                                    VerticalAlignment="Bottom" />
                         <TextBlock Text="{Binding SocTempUnit}"
                                    Foreground="{Binding SocStatusColor}"
+                                   FontSize="{Binding UnitFontSize}"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="{Binding UnitMargin}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Power (Horizontal) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowPower}">
+                    <TextBlock Text="PWR"
+                               Foreground="{Binding PowerBadgeFg}"
+                               FontSize="{Binding BadgeFontSize}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding PowerValue}"
+                                   Foreground="{Binding PowerStatusColor}"
+                                   FontSize="{Binding ValueFontSize}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding PowerUnit}"
+                                   Foreground="{Binding PowerStatusColor}"
                                    FontSize="{Binding UnitFontSize}"
                                    FontWeight="Heavy"
                                    VerticalAlignment="Top"
@@ -473,6 +561,29 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!-- SWAP (Horizontal) -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowSwap}">
+                    <TextBlock Text="SWAP"
+                               Foreground="{Binding SwapBadgeFg}"
+                               FontSize="{Binding BadgeFontSize}"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center" />
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding SwapValue}"
+                                   Foreground="{Binding SwapStatusColor}"
+                                   FontSize="{Binding ValueFontSize}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Bottom" />
+                        <TextBlock Text="{Binding SwapUnit}"
+                                   Foreground="{Binding SwapStatusColor}"
+                                   FontSize="{Binding UnitFontSize}"
+                                   FontWeight="Heavy"
+                                   VerticalAlignment="Top"
+                                   Margin="{Binding UnitMargin}" />
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- BAT (Horizontal) -->
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowBatteryRow}">
                     <TextBlock Text="BAT"
@@ -556,6 +667,13 @@
                                        FontWeight="Heavy"
                                        VerticalAlignment="Top"
                                        Margin="{Binding UnitMargin}" />
+                            <TextBlock Text="{Binding OnePercentLowFpsDisplay}"
+                                       Foreground="#AAFFFFFF"
+                                       FontSize="{Binding ValueFontSize}"
+                                       FontWeight="Medium"
+                                       VerticalAlignment="Bottom"
+                                       Margin="4,0,0,0"
+                                       IsVisible="{Binding ShowOnePercentLowFps}" />
                         </StackPanel>
                     </StackPanel>
                 </Button>

@@ -78,6 +78,30 @@ public class MetricsPermissionTests
     }
 
     [Fact]
+    public void WhenPermissionNotGranted_EnablingOnePercentLowFps_BlocksUserAndShowsAlert()
+    {
+        var fps = new TestFpsService { HasPermission = false };
+        var settings = new TestSettingsService();
+        settings.Current.ShowOnePercentLowFps = false;
+
+        var vm = new SettingsViewModel(settings, null, fps);
+
+        Assert.False(vm.HasScreenCapturePermission);
+        Assert.False(vm.ShowOnePercentLowFps);
+        Assert.False(vm.IsPermissionAlertVisible);
+
+        // Attempt to turn on 1% Low FPS
+        vm.ShowOnePercentLowFps = true;
+
+        Assert.True(vm.IsPermissionAlertVisible);
+        Assert.False(settings.Current.ShowOnePercentLowFps);
+
+        // Dismiss alert
+        vm.DismissPermissionAlert();
+        Assert.False(vm.IsPermissionAlertVisible);
+    }
+
+    [Fact]
     public void WhenPermissionNotGranted_EnablingGraph_BlocksUserAndShowsAlert()
     {
         var fps = new TestFpsService { HasPermission = false };
