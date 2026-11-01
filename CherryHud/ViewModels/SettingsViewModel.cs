@@ -27,6 +27,7 @@ public partial class SettingsViewModel : ViewModelBase
         PositionOptions.Add(Loc.PositionTopRight);
         PositionOptions.Add(Loc.PositionBottomLeft);
         PositionOptions.Add(Loc.PositionBottomRight);
+        PositionOptions.Add(Loc.PositionCustom);
         SelectedPositionIndex = -1;
         SelectedPositionIndex = prev >= 0 ? prev : 0;
     }
@@ -233,6 +234,16 @@ public partial class SettingsViewModel : ViewModelBase
                         }
                     });
                 }
+                else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        if (SelectedPositionIndex != (int)_mainViewModel.OverlayPosition)
+                        {
+                            SelectedPositionIndex = (int)_mainViewModel.OverlayPosition;
+                        }
+                    });
+                }
             };
         }
     }
@@ -359,7 +370,7 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnSelectedPositionIndexChanged(int value)
     {
         if (value < 0) return;
-        var corner = (OverlayCorner)Math.Clamp(value, 0, 3);
+        var corner = (OverlayCorner)Math.Clamp(value, 0, 4);
         _settingsService.Current.Position = corner;
         _settingsService.Save();
         if (_mainViewModel != null)

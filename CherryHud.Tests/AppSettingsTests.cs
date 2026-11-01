@@ -13,6 +13,10 @@ public class AppSettingsTests
         Assert.Equal(AppLanguage.English, settings.Language);
         Assert.True(settings.AutoGameMode);
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
+        Assert.Equal(8, settings.CustomWindowOffsetX);
+        Assert.Equal(40, settings.CustomWindowOffsetY);
+        Assert.Equal(8, settings.CustomScreenOffsetX);
+        Assert.Equal(8, settings.CustomScreenOffsetY);
         Assert.True(settings.AutoTrackGameWindow);
         Assert.Equal(OverlayTheme.Normal, settings.OverlayTheme);
         Assert.True(settings.ShowSocTemp);
@@ -52,6 +56,7 @@ public class AppSettingsTests
         Assert.Equal("General", loc.TabGeneral);
         Assert.Equal("Overlay Drag & Drop", loc.AllowDragTitle);
         Assert.Equal("Allow moving the overlay freely with the mouse", loc.AllowDragSubtitle);
+        Assert.Equal("Custom", loc.PositionCustom);
         Assert.Equal("Game Window Auto-Tracking", loc.AutoTrackGameWindowTitle);
         Assert.Equal("Anchor overlay inside the game window's corner when running windowed", loc.AutoTrackGameWindowSubtitle);
         Assert.Equal("Overlay Theme", loc.ThemeTitle);
@@ -76,6 +81,7 @@ public class AppSettingsTests
         Assert.Equal("Général", loc.TabGeneral);
         Assert.Equal("Glisser-déposer de l'overlay", loc.AllowDragTitle);
         Assert.Equal("Autoriser le déplacement libre de l'overlay à la souris", loc.AllowDragSubtitle);
+        Assert.Equal("Personnalisé", loc.PositionCustom);
         Assert.Equal("Suivi de la fenêtre de jeu", loc.AutoTrackGameWindowTitle);
         Assert.Equal("Ancre l'overlay directement dans le coin du jeu lorsqu'il est en mode fenêtré", loc.AutoTrackGameWindowSubtitle);
         Assert.Equal("Thème de l'overlay", loc.ThemeTitle);

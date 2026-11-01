@@ -69,6 +69,14 @@ public partial class MainWindow : Window
                 }
 
                 BeginMoveDrag(e);
+
+                if (DataContext is MainWindowViewModel currentVm)
+                {
+                    var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+                    int scrX = screen?.Bounds.X ?? 0;
+                    int scrY = screen?.Bounds.Y ?? 0;
+                    currentVm.SaveCustomPosition(Position.X, Position.Y, currentVm.ActiveGameBounds, scrX, scrY);
+                }
             }
         }, RoutingStrategies.Bubble);
 
@@ -163,20 +171,40 @@ public partial class MainWindow : Window
         // When tracking a windowed game with title bar and buttons, position below the 32pt title bar
         int topOffset = isWindowedGame ? (32 + margin) : margin;
 
-        int x = corner switch
-        {
-            OverlayCorner.TopRight => targetX + targetW - winW - margin,
-            OverlayCorner.BottomLeft => targetX + margin,
-            OverlayCorner.BottomRight => targetX + targetW - winW - margin,
-            _ => targetX + margin
-        };
+        int x;
+        int y;
 
-        int y = corner switch
+        if (corner == OverlayCorner.Custom)
         {
-            OverlayCorner.BottomLeft => targetY + targetH - winH - margin,
-            OverlayCorner.BottomRight => targetY + targetH - winH - margin,
-            _ => targetY + topOffset
-        };
+            var vm = DataContext as MainWindowViewModel;
+            if (gameBounds.HasValue)
+            {
+                x = targetX + (vm?.CustomWindowOffsetX ?? margin);
+                y = targetY + (vm?.CustomWindowOffsetY ?? topOffset);
+            }
+            else
+            {
+                x = targetX + (vm?.CustomScreenOffsetX ?? margin);
+                y = targetY + (vm?.CustomScreenOffsetY ?? margin);
+            }
+        }
+        else
+        {
+            x = corner switch
+            {
+                OverlayCorner.TopRight => targetX + targetW - winW - margin,
+                OverlayCorner.BottomLeft => targetX + margin,
+                OverlayCorner.BottomRight => targetX + targetW - winW - margin,
+                _ => targetX + margin
+            };
+
+            y = corner switch
+            {
+                OverlayCorner.BottomLeft => targetY + targetH - winH - margin,
+                OverlayCorner.BottomRight => targetY + targetH - winH - margin,
+                _ => targetY + topOffset
+            };
+        }
 
         var newPos = new PixelPoint(x, y);
         if (Position != newPos)

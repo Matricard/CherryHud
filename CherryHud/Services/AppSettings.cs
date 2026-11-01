@@ -7,7 +7,8 @@ public enum OverlayCorner
     TopLeft = 0,
     TopRight = 1,
     BottomLeft = 2,
-    BottomRight = 3
+    BottomRight = 3,
+    Custom = 4
 }
 
 public readonly record struct GameWindowBounds(int X, int Y, int Width, int Height);
@@ -24,6 +25,10 @@ public class AppSettings
     public bool AutoGameMode { get; set; } = true;
     public bool LaunchAtLogin { get; set; } = false;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
+    public int CustomWindowOffsetX { get; set; } = 8;
+    public int CustomWindowOffsetY { get; set; } = 40;
+    public int CustomScreenOffsetX { get; set; } = 8;
+    public int CustomScreenOffsetY { get; set; } = 8;
     public bool AutoTrackGameWindow { get; set; } = true;
     public OverlayTheme OverlayTheme { get; set; } = OverlayTheme.Normal;
     public bool AllowOverlayDrag { get; set; } = true;

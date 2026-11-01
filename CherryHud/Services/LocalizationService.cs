@@ -62,6 +62,7 @@ public class LocalizationService : ObservableObject
     public string PositionTopRight => IsFrench ? "Haut Droite" : "Top Right";
     public string PositionBottomLeft => IsFrench ? "Bas Gauche" : "Bottom Left";
     public string PositionBottomRight => IsFrench ? "Bas Droite" : "Bottom Right";
+    public string PositionCustom => IsFrench ? "Personnalisé" : "Custom";
     public string AutoTrackGameWindowTitle => IsFrench ? "Suivi de la fenêtre de jeu" : "Game Window Auto-Tracking";
     public string AutoTrackGameWindowSubtitle => IsFrench ? "Ancre l'overlay directement dans le coin du jeu lorsqu'il est en mode fenêtré" : "Anchor overlay inside the game window's corner when running windowed";
 

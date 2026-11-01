@@ -351,6 +351,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
 
     [ObservableProperty]
+    private int _customWindowOffsetX = 8;
+
+    [ObservableProperty]
+    private int _customWindowOffsetY = 40;
+
+    [ObservableProperty]
+    private int _customScreenOffsetX = 8;
+
+    [ObservableProperty]
+    private int _customScreenOffsetY = 8;
+
+    [ObservableProperty]
     private bool _autoTrackGameWindow = true;
 
     [ObservableProperty]
@@ -707,6 +719,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ShowFrametime = s.ShowFrametime;
         ShowGraph = s.ShowGraph;
         OverlayPosition = s.Position;
+        CustomWindowOffsetX = s.CustomWindowOffsetX;
+        CustomWindowOffsetY = s.CustomWindowOffsetY;
+        CustomScreenOffsetX = s.CustomScreenOffsetX;
+        CustomScreenOffsetY = s.CustomScreenOffsetY;
         AutoTrackGameWindow = s.AutoTrackGameWindow;
         OverlayTheme = s.OverlayTheme;
         ApplyTheme(s.OverlayTheme);
@@ -1228,6 +1244,28 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         {
             UpdateGameWindowBounds(true);
         }
+    }
+
+    public void SaveCustomPosition(int x, int y, GameWindowBounds? gameBounds, int screenX = 0, int screenY = 0)
+    {
+        if (gameBounds.HasValue)
+        {
+            CustomWindowOffsetX = x - gameBounds.Value.X;
+            CustomWindowOffsetY = y - gameBounds.Value.Y;
+            _settingsService.Current.CustomWindowOffsetX = CustomWindowOffsetX;
+            _settingsService.Current.CustomWindowOffsetY = CustomWindowOffsetY;
+        }
+        else
+        {
+            CustomScreenOffsetX = x - screenX;
+            CustomScreenOffsetY = y - screenY;
+            _settingsService.Current.CustomScreenOffsetX = CustomScreenOffsetX;
+            _settingsService.Current.CustomScreenOffsetY = CustomScreenOffsetY;
+        }
+
+        OverlayPosition = OverlayCorner.Custom;
+        _settingsService.Current.Position = OverlayCorner.Custom;
+        _settingsService.Save();
     }
 
     public void Dispose()

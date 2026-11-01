@@ -9,8 +9,14 @@ public class OverlayPositionTests
     private static PixelPoint CalculateCornerPosition(
         OverlayCorner corner,
         int screenX, int screenY, int screenW, int screenH,
-        int winW, int winH, int margin = 8, bool isWindowed = false)
+        int winW, int winH, int margin = 8, bool isWindowed = false,
+        int customOffsetX = 8, int customOffsetY = 40)
     {
+        if (corner == OverlayCorner.Custom)
+        {
+            return new PixelPoint(screenX + customOffsetX, screenY + customOffsetY);
+        }
+
         int topOffset = isWindowed ? (32 + margin) : margin;
 
         int x = corner switch
@@ -114,5 +120,31 @@ public class OverlayPositionTests
         Assert.Equal(new PixelPoint(429, 97), initialPos);
         Assert.Equal(new PixelPoint(558, 160), movedPos);
         Assert.NotEqual(initialPos, movedPos);
+    }
+
+    [Fact]
+    public void CustomPosition_WindowedMode_MaintainsCustomOffset()
+    {
+        // User dragged overlay to custom offset X=150, Y=80 within the game window
+        var bounds = new GameWindowBounds(421, 57, 1600, 928);
+        var pos = CalculateCornerPosition(OverlayCorner.Custom, bounds.X, bounds.Y, bounds.Width, bounds.Height, 200, 210, 8, isWindowed: true, customOffsetX: 150, customOffsetY: 80);
+
+        Assert.Equal(new PixelPoint(421 + 150, 57 + 80), pos);
+    }
+
+    [Fact]
+    public void CustomPosition_WindowMoved_FollowsWithCustomOffset()
+    {
+        // When MTGA window moves from (421, 57) to (600, 200), custom offset (150, 80) is preserved exactly
+        var initialBounds = new GameWindowBounds(421, 57, 1600, 928);
+        var movedBounds = new GameWindowBounds(600, 200, 1600, 928);
+
+        var initialPos = CalculateCornerPosition(OverlayCorner.Custom, initialBounds.X, initialBounds.Y, initialBounds.Width, initialBounds.Height, 200, 210, 8, isWindowed: true, customOffsetX: 150, customOffsetY: 80);
+        var movedPos = CalculateCornerPosition(OverlayCorner.Custom, movedBounds.X, movedBounds.Y, movedBounds.Width, movedBounds.Height, 200, 210, 8, isWindowed: true, customOffsetX: 150, customOffsetY: 80);
+
+        Assert.Equal(new PixelPoint(571, 137), initialPos);
+        Assert.Equal(new PixelPoint(750, 280), movedPos);
+        Assert.Equal(150, movedPos.X - movedBounds.X);
+        Assert.Equal(80, movedPos.Y - movedBounds.Y);
     }
 }
