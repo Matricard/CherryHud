@@ -366,6 +366,19 @@
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />
 
+                            <!-- État Thermique & Throttling -->
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#661430" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="THRM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricThermalState}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowThermalState}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
                             <!-- Consommation (Watts) -->
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
                                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
@@ -453,6 +466,19 @@
                                     <TextBlock Text="{Binding Loc.MetricRam}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowRam}" OnContent="" OffContent="" />
+                            </Grid>
+
+                            <Rectangle Height="1" Fill="#14FFFFFF" />
+
+                            <!-- Pression Mémoire -->
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" Margin="0,0,16,0">
+                                    <Border Background="#172F5E" CornerRadius="5" Width="48" Height="22">
+                                        <TextBlock Text="PRES" Foreground="#FFFFFF" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding Loc.MetricMemoryPressure}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch Grid.Column="1" IsChecked="{Binding ShowMemoryPressure}" OnContent="" OffContent="" />
                             </Grid>
 
                             <Rectangle Height="1" Fill="#14FFFFFF" />

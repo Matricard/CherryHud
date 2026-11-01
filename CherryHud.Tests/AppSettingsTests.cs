@@ -15,6 +15,7 @@ public class AppSettingsTests
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
         Assert.Equal(OverlayTheme.Normal, settings.OverlayTheme);
         Assert.True(settings.ShowSocTemp);
+        Assert.True(settings.ShowThermalState);
         Assert.True(settings.ShowPower);
         Assert.True(settings.ShowGpu);
         Assert.True(settings.ShowGpuUsage);
@@ -24,6 +25,7 @@ public class AppSettingsTests
         Assert.True(settings.ShowCpuTemp);
         Assert.True(settings.ShowVram);
         Assert.True(settings.ShowRam);
+        Assert.True(settings.ShowMemoryPressure);
         Assert.True(settings.ShowSwap);
         Assert.True(settings.ShowBattery);
         Assert.True(settings.HideBatteryWhenCharged);
@@ -157,7 +159,8 @@ public class AppSettingsTests
         public bool IsLaptop => false;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "Test", true, 0, 0, 100, false, false);
+        public FpsData GetFpsData() => new(0, 0, 0, "Test", true, 0, 0, 100, false, false, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
         public void RequestPermission() { }
         public void CheckPermission() { }

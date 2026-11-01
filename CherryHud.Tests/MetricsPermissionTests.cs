@@ -13,7 +13,8 @@ public class MetricsPermissionTests
         public bool IsLaptop => false;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "Test", HasPermission, 0, 0, 100, false, false);
+        public FpsData GetFpsData() => new(0, 0, 0, "Test", HasPermission, 0, 0, 100, false, false, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (HasPermission, 0, 0, 0);
         public void RequestPermission() { }
         public void CheckPermission() { }

@@ -75,6 +75,7 @@ public class LocalizationService : ObservableObject
 
     // Metrics
     public string MetricSocTemp => IsFrench ? "Température moyenne du processeur (CPU + GPU)" : "Processor average temperature (CPU + GPU)";
+    public string MetricThermalState => IsFrench ? "État thermique & Throttling" : "Thermal State & Throttling";
     public string MetricPower => IsFrench ? "Consommation (Watts)" : "Power Consumption (Watts)";
     public string MetricGpu => IsFrench ? "Charge GPU & Température" : "GPU Load & Temperature";
     public string MetricCpu => IsFrench ? "Charge CPU & Température" : "CPU Load & Temperature";
@@ -84,6 +85,7 @@ public class LocalizationService : ObservableObject
     public string MetricCpuTemp => IsFrench ? "Température CPU (°C)" : "CPU Temperature (°C)";
     public string MetricVram => IsFrench ? "Mémoire Graphique (VRAM)" : "Video Memory (VRAM)";
     public string MetricRam => IsFrench ? "Mémoire Vive Système" : "System RAM Memory";
+    public string MetricMemoryPressure => IsFrench ? "Pression Mémoire (Pastille RAM)" : "Memory Pressure (RAM Indicator)";
     public string MetricSwap => IsFrench ? "Mémoire Swap" : "Swap Memory";
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
     public string HideBatteryWhenChargedTitle => IsFrench ? "Masquer la batterie si chargée" : "Hide battery when charged";

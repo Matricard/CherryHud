@@ -1345,5 +1345,12 @@ int FpsMonitor_GetLaunchAtLogin(void) {
     return 0;
 }
 
+int FpsMonitor_GetThermalState(void) {
+    if (@available(macOS 10.10.3, *)) {
+        return (int)[[NSProcessInfo processInfo] thermalState];
+    }
+    return 0; // Nominal
+}
+
 
 

@@ -94,6 +94,9 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showSocTemp = true;
 
     [ObservableProperty]
+    private bool _showThermalState = true;
+
+    [ObservableProperty]
     private bool _showPower = true;
 
     [ObservableProperty]
@@ -122,6 +125,9 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showRam;
+
+    [ObservableProperty]
+    private bool _showMemoryPressure = true;
 
     [ObservableProperty]
     private bool _showSwap;
@@ -245,6 +251,7 @@ public partial class SettingsViewModel : ViewModelBase
         UpdateThemeOptions();
 
         _showSocTemp = s.ShowSocTemp;
+        _showThermalState = s.ShowThermalState;
         _showPower = s.ShowPower;
         _showGpu = s.ShowGpu;
         _showGpuUsage = s.ShowGpuUsage;
@@ -254,6 +261,7 @@ public partial class SettingsViewModel : ViewModelBase
         _showCpuTemp = s.ShowCpuTemp;
         _showVram = s.ShowVram;
         _showRam = s.ShowRam;
+        _showMemoryPressure = s.ShowMemoryPressure;
         _showSwap = s.ShowSwap;
         _showBattery = s.ShowBattery;
         _hideBatteryWhenCharged = s.HideBatteryWhenCharged;
@@ -385,6 +393,13 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null) _mainViewModel.ShowSocTemp = value;
     }
 
+    partial void OnShowThermalStateChanged(bool value)
+    {
+        _settingsService.Current.ShowThermalState = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowThermalState = value;
+    }
+
     partial void OnShowPowerChanged(bool value)
     {
         _settingsService.Current.ShowPower = value;
@@ -462,6 +477,13 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Current.ShowRam = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowRam = value;
+    }
+
+    partial void OnShowMemoryPressureChanged(bool value)
+    {
+        _settingsService.Current.ShowMemoryPressure = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowMemoryPressure = value;
     }
 
     partial void OnShowSwapChanged(bool value)

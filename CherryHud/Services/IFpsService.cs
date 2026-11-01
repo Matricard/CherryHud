@@ -10,7 +10,8 @@ public record FpsData(
     double GpuVramGb,
     int? BatteryPercent,
     bool IsBatteryCharging,
-    bool IsGameActive
+    bool IsGameActive,
+    int ThermalState = 0
 );
 
 public interface IFpsService
@@ -19,6 +20,7 @@ public interface IFpsService
     (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample();
     bool IsGameActive { get; }
     bool IsLaptop { get; }
+    int GetThermalState() => 0;
     void Start();
     void Stop();
     void RequestPermission();

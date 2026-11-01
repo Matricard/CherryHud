@@ -89,6 +89,21 @@ public sealed class FpsService : IFpsService, IDisposable
     [DllImport(LibraryName)]
     private static extern void FpsMonitor_SetOverlayVisible(IntPtr viewOrWindowPtr, [MarshalAs(UnmanagedType.I1)] bool visible);
 
+    [DllImport(LibraryName)]
+    private static extern int FpsMonitor_GetThermalState();
+
+    public int GetThermalState()
+    {
+        try
+        {
+            return FpsMonitor_GetThermalState();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     public static void ConfigureOverlayWindow(IntPtr viewOrWindowPtr)
     {
         try
@@ -334,11 +349,20 @@ public sealed class FpsService : IFpsService, IDisposable
             double vramGb = vramBytes / (1024.0 * 1024.0 * 1024.0);
             int? battery = batPercent >= 0 ? batPercent : null;
 
-            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging, isGameActive);
+            int thermalState = 0;
+            try
+            {
+                thermalState = FpsMonitor_GetThermalState();
+            }
+            catch
+            {
+            }
+
+            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging, isGameActive, thermalState);
         }
         catch
         {
-            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false, false);
+            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false, false, 0);
         }
     }
 

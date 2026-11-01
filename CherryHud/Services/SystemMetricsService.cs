@@ -76,6 +76,9 @@ public sealed class SystemMetricsService : ISystemMetricsService
     [DllImport(LibSystem, EntryPoint = "sysctlbyname")]
     private static extern int sysctlbyname_xsw(string name, ref XswUsage info, ref nuint size, IntPtr newp, nuint newsize);
 
+    [DllImport(LibSystem, EntryPoint = "sysctlbyname")]
+    private static extern int sysctlbyname_int(string name, out int value, ref nuint size, IntPtr newp, nuint newsize);
+
     private readonly uint _host;
     private readonly double _totalRamGb;
     private readonly nuint _pageSize;
@@ -165,7 +168,15 @@ public sealed class SystemMetricsService : ISystemMetricsService
                 swapTotalGb = xsw.Total / (1024.0 * 1024.0 * 1024.0);
             }
 
-            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent, swapUsedGb, swapTotalGb);
+            // 4. Memory Pressure Level (kern.memorystatus_vm_pressure_level)
+            int memoryPressure = 1;
+            nuint mpSize = (nuint)sizeof(int);
+            if (sysctlbyname_int("kern.memorystatus_vm_pressure_level", out int mp, ref mpSize, IntPtr.Zero, 0) == 0 && mp > 0)
+            {
+                memoryPressure = mp;
+            }
+
+            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent, swapUsedGb, swapTotalGb, memoryPressure);
         }
     }
 

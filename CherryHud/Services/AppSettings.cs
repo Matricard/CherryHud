@@ -26,6 +26,7 @@ public class AppSettings
     public bool AllowOverlayDrag { get; set; } = true;
     
     public bool ShowSocTemp { get; set; } = true;
+    public bool ShowThermalState { get; set; } = true;
     public bool ShowGpuUsage { get; set; } = true;
     public bool ShowGpuTemp { get; set; } = true;
     public bool ShowCpuUsage { get; set; } = true;
@@ -51,6 +52,7 @@ public class AppSettings
     public bool ShowPower { get; set; } = true;
     public bool ShowVram { get; set; } = true;
     public bool ShowRam { get; set; } = true;
+    public bool ShowMemoryPressure { get; set; } = true;
     public bool ShowSwap { get; set; } = true;
     public bool ShowBattery { get; set; } = true;
     public bool HideBatteryWhenCharged { get; set; } = true;

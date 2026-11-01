@@ -75,6 +75,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private string _socBadgeFg = "#FF7597";
 
+    // Thermal metrics
+    [ObservableProperty]
+    private bool _showThermalState = true;
+
+    [ObservableProperty]
+    private int _thermalState;
+
+    [ObservableProperty]
+    private string _thermalStatusText = "OK";
+
+    [ObservableProperty]
+    private string _thermalStatusColor = "#00E676";
+
+    [ObservableProperty]
+    private string _thermalBadgeFg = "#FF6B8B";
+
+    [ObservableProperty]
+    private bool _isThrottling;
+
     // Power metrics
     [ObservableProperty]
     private bool _showPower = true;
@@ -162,6 +181,16 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
     [ObservableProperty]
     private string _ramStatusColor = "#FFFFFF";
+
+    // Memory Pressure metrics (discrete RAM indicator)
+    [ObservableProperty]
+    private bool _showMemoryPressure = true;
+
+    [ObservableProperty]
+    private string _memoryPressureColor = "#00E676";
+
+    [ObservableProperty]
+    private string _memoryPressureStatus = "Normal";
 
     // Swap metrics
     [ObservableProperty]
@@ -647,6 +676,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public void ApplySettings(AppSettings s)
     {
         ShowSocTemp = s.ShowSocTemp;
+        ShowThermalState = s.ShowThermalState;
         ShowPower = s.ShowPower;
         ShowGpuUsage = s.ShowGpuUsage;
         ShowGpuTemp = s.ShowGpuTemp;
@@ -658,6 +688,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
 
         ShowVram = s.ShowVram;
         ShowRam = s.ShowRam;
+        ShowMemoryPressure = s.ShowMemoryPressure;
         ShowSwap = s.ShowSwap;
         ShowBattery = s.ShowBattery;
         HideBatteryWhenCharged = s.HideBatteryWhenCharged;
@@ -953,6 +984,37 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                     SocStatusColor = "#778899";
                 }
 
+                // Thermal State & Throttling
+                ThermalState = fpsData.ThermalState;
+                switch (fpsData.ThermalState)
+                {
+                    case 0:
+                        ThermalStatusText = "OK";
+                        ThermalStatusColor = "#00E676";
+                        IsThrottling = false;
+                        break;
+                    case 1:
+                        ThermalStatusText = "FAIR";
+                        ThermalStatusColor = "#00E5FF";
+                        IsThrottling = false;
+                        break;
+                    case 2:
+                        ThermalStatusText = "THROTTLE ⚠️";
+                        ThermalStatusColor = "#FF9500";
+                        IsThrottling = true;
+                        break;
+                    case 3:
+                        ThermalStatusText = "CRITICAL 🔥";
+                        ThermalStatusColor = "#FF2A6D";
+                        IsThrottling = true;
+                        break;
+                    default:
+                        ThermalStatusText = "OK";
+                        ThermalStatusColor = "#00E676";
+                        IsThrottling = false;
+                        break;
+                }
+
                 // Power (Watts)
                 if (powerWatts.HasValue && powerWatts.Value > 0.05)
                 {
@@ -978,6 +1040,27 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 RamUnit = "GB";
                 RamDisplay = $"{RamValue} GB";
                 RamPercent = $"{Math.Round(res.RamUsagePercent)}%";
+
+                // Memory Pressure (Discrete RAM health indicator)
+                switch (res.MemoryPressure)
+                {
+                    case 1:
+                        MemoryPressureColor = "#00E676"; // Normal
+                        MemoryPressureStatus = "Normal";
+                        break;
+                    case 2:
+                        MemoryPressureColor = "#FFD600"; // Warning
+                        MemoryPressureStatus = "Warning";
+                        break;
+                    case >= 4:
+                        MemoryPressureColor = "#FF2A6D"; // Critical
+                        MemoryPressureStatus = "Critical";
+                        break;
+                    default:
+                        MemoryPressureColor = "#00E676";
+                        MemoryPressureStatus = "Normal";
+                        break;
+                }
 
                 // Swap Memory (sysctl vm.swapusage)
                 if (res.SwapUsedGb > 0.01)

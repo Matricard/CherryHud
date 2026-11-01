@@ -12,7 +12,8 @@ public class AutoGameModeTests
         public bool IsLaptop => true;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "TestApp", true, 0, 0, 100, false, IsGameActive);
+        public FpsData GetFpsData() => new(0, 0, 0, "TestApp", true, 0, 0, 100, false, IsGameActive, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
         public void RequestPermission() { }
         public void CheckPermission() { }
