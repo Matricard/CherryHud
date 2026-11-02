@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CherryHud.Services;
 
@@ -23,6 +24,7 @@ public class AppSettings
 {
     public AppLanguage Language { get; set; } = AppLanguage.English;
     public bool AutoGameMode { get; set; } = true;
+    public List<string> AutoModeBlacklist { get; set; } = new();
     public bool LaunchAtLogin { get; set; } = false;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
     public int CustomWindowOffsetX { get; set; } = 8;

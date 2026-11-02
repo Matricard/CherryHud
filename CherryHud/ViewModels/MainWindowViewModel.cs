@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -28,6 +29,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     // Header info (style)
     [ObservableProperty]
     private string _trackedAppName = "";
+
+    [ObservableProperty]
+    private string _trackedAppBundleId = "";
 
     [ObservableProperty]
     private string _currentTime = "";
@@ -745,6 +749,48 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         }
         ApplyClassicTheme();
         LocalizationService.Instance.CurrentLanguage = s.Language;
+        _fpsService.SetBlacklist(s.AutoModeBlacklist);
+    }
+
+    public bool IsAppBlacklisted(string? appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return false;
+        var list = _settingsService.Current.AutoModeBlacklist;
+        return list != null && list.Any(x => string.Equals(x, appName.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void ToggleBlacklistApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        var list = _settingsService.Current.AutoModeBlacklist;
+        if (list == null)
+        {
+            list = new List<string>();
+            _settingsService.Current.AutoModeBlacklist = list;
+        }
+
+        int index = list.FindIndex(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase));
+        if (index >= 0)
+        {
+            list.RemoveAt(index);
+        }
+        else
+        {
+            list.Add(trimmed);
+        }
+
+        _settingsService.Save();
+        _fpsService.SetBlacklist(list);
+
+        if (IsAutoModeActive && list.Any(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            if (string.Equals(TrackedAppName, trimmed, StringComparison.OrdinalIgnoreCase))
+            {
+                IsGameActive = false;
+                IsOverlayVisible = false;
+            }
+        }
     }
 
     [RelayCommand]
@@ -881,6 +927,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 TrackedAppName = !string.IsNullOrWhiteSpace(fpsData.AppName) && fpsData.AppName != "None"
                     ? fpsData.AppName
                     : "";
+
+                TrackedAppBundleId = _fpsService.GetTrackedAppBundleId();
 
                 if (!fpsData.HasPermission)
                 {

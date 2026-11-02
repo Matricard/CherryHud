@@ -16,6 +16,7 @@ public partial class App : Application
 {
     private NativeMenuItem? _toggleVisibilityMenuItem;
     private NativeMenuItem? _autoModeMenuItem;
+    private NativeMenuItem? _blacklistMenuItem;
     private NativeMenuItem? _settingsMenuItem;
     private NativeMenuItem? _updateMenuItem;
     private NativeMenuItem? _quitMenuItem;
@@ -84,13 +85,14 @@ public partial class App : Application
         var icons = TrayIcon.GetIcons(this);
         if (icons != null && icons.Count > 0 && icons[0].Menu is NativeMenu menu)
         {
-            if (menu.Items.Count >= 7)
+            if (menu.Items.Count >= 8)
             {
                 _toggleVisibilityMenuItem = menu.Items[0] as NativeMenuItem;
                 _autoModeMenuItem = menu.Items[1] as NativeMenuItem;
-                _settingsMenuItem = menu.Items[3] as NativeMenuItem;
-                _updateMenuItem = menu.Items[4] as NativeMenuItem;
-                _quitMenuItem = menu.Items[6] as NativeMenuItem;
+                _blacklistMenuItem = menu.Items[2] as NativeMenuItem;
+                _settingsMenuItem = menu.Items[4] as NativeMenuItem;
+                _updateMenuItem = menu.Items[5] as NativeMenuItem;
+                _quitMenuItem = menu.Items[7] as NativeMenuItem;
             }
 
             // Sync menu state right before menu opens on macOS
@@ -98,6 +100,7 @@ public partial class App : Application
             {
                 UpdateAutoModeMenuItem(vm.IsAutoModeActive);
                 UpdateVisibilityMenuItem(vm.IsOverlayVisible);
+                UpdateBlacklistMenuItem();
                 UpdateTrayMenuLanguage();
                 UpdateTrayUpdateItem();
             };
@@ -137,6 +140,7 @@ public partial class App : Application
 
         UpdateAutoModeMenuItem(vm.IsAutoModeActive);
         UpdateVisibilityMenuItem(vm.IsOverlayVisible);
+        UpdateBlacklistMenuItem();
         UpdateTrayMenuLanguage();
         UpdateTrayUpdateItem();
     }
@@ -162,6 +166,32 @@ public partial class App : Application
         if (_settingsMenuItem != null) _settingsMenuItem.Header = loc.TraySettings;
         if (_updateMenuItem != null) _updateMenuItem.Header = loc.TrayUpdate;
         if (_quitMenuItem != null) _quitMenuItem.Header = loc.TrayQuit;
+        UpdateBlacklistMenuItem();
+    }
+
+    private void UpdateBlacklistMenuItem()
+    {
+        if (_blacklistMenuItem == null || _mainViewModel == null) return;
+        var loc = LocalizationService.Instance;
+        string appName = _mainViewModel.TrackedAppName;
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            appName = _mainViewModel.FpsService.GetTrackedAppName();
+        }
+
+        if (string.IsNullOrWhiteSpace(appName) || appName == "None")
+        {
+            _blacklistMenuItem.Header = loc.TrayBlacklistEmpty;
+            _blacklistMenuItem.IsEnabled = false;
+        }
+        else
+        {
+            bool isBlacklisted = _mainViewModel.IsAppBlacklisted(appName);
+            _blacklistMenuItem.Header = isBlacklisted
+                ? string.Format(loc.TrayUnblacklistFormat, appName)
+                : string.Format(loc.TrayBlacklistFormat, appName);
+            _blacklistMenuItem.IsEnabled = true;
+        }
     }
 
     private void UpdateTrayUpdateItem()
@@ -218,6 +248,21 @@ public partial class App : Application
             vm.ToggleAutoGameMode();
             UpdateAutoModeMenuItem(vm.IsAutoModeActive);
             UpdateVisibilityMenuItem(vm.IsOverlayVisible);
+        }
+    }
+
+    private void ToggleBlacklistCurrentApp_OnClick(object? sender, EventArgs e)
+    {
+        if (_mainViewModel == null) return;
+        string appName = _mainViewModel.TrackedAppName;
+        if (string.IsNullOrWhiteSpace(appName))
+        {
+            appName = _mainViewModel.FpsService.GetTrackedAppName();
+        }
+        if (!string.IsNullOrWhiteSpace(appName) && appName != "None")
+        {
+            _mainViewModel.ToggleBlacklistApp(appName);
+            UpdateBlacklistMenuItem();
         }
     }
 

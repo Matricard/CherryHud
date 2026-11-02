@@ -15,6 +15,8 @@ public class AutoGameModeTests
         public FpsData GetFpsData() => new(0, 0, 0, "TestApp", true, 0, 0, 100, false, IsGameActive, 0);
         public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
+        public List<string> LastBlacklist { get; private set; } = new();
+        public void SetBlacklist(System.Collections.Generic.IEnumerable<string> blacklist) => LastBlacklist = new List<string>(blacklist);
         public void RequestPermission() { }
         public void CheckPermission() { }
     }
@@ -109,5 +111,78 @@ public class AutoGameModeTests
         Assert.True(mainVm.IsAutoModeActive);
         Assert.False(mainVm.IsOverlayVisible);
         Assert.True(settings.Current.AutoGameMode);
+    }
+
+    [Fact]
+    public void ToggleBlacklistApp_AddsAndRemovesAppFromBlacklist()
+    {
+        var fps = new MockFpsService { IsGameActive = true };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        Assert.False(vm.IsAppBlacklisted("Unity Hub"));
+
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.True(vm.IsAppBlacklisted("Unity Hub"));
+        Assert.True(vm.IsAppBlacklisted("unity hub")); // Case-insensitive
+        Assert.Contains("Unity Hub", settings.Current.AutoModeBlacklist);
+        Assert.Contains("Unity Hub", fps.LastBlacklist);
+
+        // Toggling again should remove it
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.False(vm.IsAppBlacklisted("Unity Hub"));
+        Assert.DoesNotContain("Unity Hub", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Unity Hub", fps.LastBlacklist);
+    }
+
+    [Fact]
+    public void ToggleBlacklistApp_ImmediatelyHidesOverlay_IfAppCurrentlyTrackedInAutoMode()
+    {
+        var fps = new MockFpsService { IsGameActive = true };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        vm.TrackedAppName = "Unity Hub";
+        vm.IsGameActive = true;
+        vm.IsOverlayVisible = true;
+
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.False(vm.IsGameActive);
+        Assert.False(vm.IsOverlayVisible);
+    }
+
+    [Fact]
+    public void SettingsViewModel_BlacklistCollection_SyncsAndRemoves()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoModeBlacklist.Add("Blender");
+        settings.Current.AutoModeBlacklist.Add("Unity Hub");
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.HasBlacklistedApps);
+        Assert.Equal(2, settingsVm.BlacklistedApps.Count);
+        Assert.Contains("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Unity Hub", settingsVm.BlacklistedApps);
+
+        settingsVm.RemoveBlacklistedApp("Blender");
+
+        Assert.Single(settingsVm.BlacklistedApps);
+        Assert.DoesNotContain("Blender", settingsVm.BlacklistedApps);
+        Assert.DoesNotContain("Blender", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Blender", fps.LastBlacklist);
+
+        settingsVm.RemoveBlacklistedApp("Unity Hub");
+
+        Assert.Empty(settingsVm.BlacklistedApps);
+        Assert.False(settingsVm.HasBlacklistedApps);
     }
 }

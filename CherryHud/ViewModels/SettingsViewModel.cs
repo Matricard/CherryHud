@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +20,8 @@ public partial class SettingsViewModel : ViewModelBase
 
     public ObservableCollection<string> PositionOptions { get; } = new();
     public ObservableCollection<string> ThemeOptions { get; } = new();
+    public ObservableCollection<string> BlacklistedApps { get; } = new();
+    public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
 
     public void UpdatePositionOptions()
     {
@@ -246,6 +250,8 @@ public partial class SettingsViewModel : ViewModelBase
                 }
             };
         }
+
+        _settingsService.SettingsChanged += (_, s) => SyncBlacklistedApps(s);
     }
 
 #pragma warning disable MVVMTK0034
@@ -291,8 +297,45 @@ public partial class SettingsViewModel : ViewModelBase
 
         _autoCheckUpdates = s.AutoCheckUpdates;
         _gitHubRepo = s.GitHubRepo;
+        SyncBlacklistedApps(s);
     }
 #pragma warning restore MVVMTK0034
+
+    private void SyncBlacklistedApps(AppSettings s)
+    {
+        void Update()
+        {
+            var currentList = s.AutoModeBlacklist ?? new List<string>();
+            if (BlacklistedApps.SequenceEqual(currentList)) return;
+
+            BlacklistedApps.Clear();
+            foreach (var app in currentList)
+            {
+                BlacklistedApps.Add(app);
+            }
+            OnPropertyChanged(nameof(HasBlacklistedApps));
+        }
+
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
+    [RelayCommand]
+    public void RemoveBlacklistedApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        BlacklistedApps.Remove(appName);
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+    }
 
     public void CheckPermissionStatus()
     {
@@ -818,6 +861,11 @@ public partial class SettingsViewModel : ViewModelBase
         ShowFps = false;
         ShowFrametime = false;
         ShowGraph = false;
+        BlacklistedApps.Clear();
+        _settingsService.Current.AutoModeBlacklist = new List<string>();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(Array.Empty<string>());
+        OnPropertyChanged(nameof(HasBlacklistedApps));
         UpdatePositionOptions();
         UpdateThemeOptions();
         CheckPermissionStatus();

@@ -181,6 +181,7 @@ static void FpsMonitor_LibraryInit(void) {
 @property (atomic) BOOL isGameActive;
 @property (atomic) pid_t currentPid;
 @property (nonatomic, copy) NSString *trackedAppName;
+@property (nonatomic, copy) NSString *trackedAppBundleId;
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
@@ -320,6 +321,7 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _queue = dispatch_queue_create("com.cherryhud.fpsmonitor", attr);
         _lock = OS_UNFAIR_LOCK_INIT;
         _trackedAppName = @"";
+        _trackedAppBundleId = @"";
         _currentFps = 0.0;
         _currentFrametime = 0.0;
         _intervalPeakFrametime = 0.0;
@@ -399,9 +401,44 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     }
 }
 
+static NSMutableArray<NSString *> *s_customBlacklist = nil;
+static os_unfair_lock s_blacklistLock = OS_UNFAIR_LOCK_INIT;
+
+static BOOL IsInCustomBlacklist(NSRunningApplication *app) {
+    if (!app) return NO;
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
+    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
+
+    os_unfair_lock_lock(&s_blacklistLock);
+    if (!s_customBlacklist || s_customBlacklist.count == 0) {
+        os_unfair_lock_unlock(&s_blacklistLock);
+        return NO;
+    }
+
+    for (NSString *entry in s_customBlacklist) {
+        if (entry.length == 0) continue;
+        if ([bundleId isEqualToString:entry] ||
+            [appName isEqualToString:entry] ||
+            [execName isEqualToString:entry] ||
+            [bundleName isEqualToString:entry]) {
+            os_unfair_lock_unlock(&s_blacklistLock);
+            return YES;
+        }
+    }
+    os_unfair_lock_unlock(&s_blacklistLock);
+    return NO;
+}
+
 static BOOL IsExcludedApp(NSRunningApplication *app) {
     if (!app) return YES;
     if (app.processIdentifier == getpid()) return YES;
+
+    // 0. User custom blacklist ALWAYS takes precedence
+    if (IsInCustomBlacklist(app)) {
+        return YES;
+    }
 
     // If officially marked as a game, it is never excluded
     if (app.bundleURL) {
@@ -480,30 +517,30 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
     @synchronized (self) {
         self.trackedAppName = appName;
+        self.trackedAppBundleId = frontApp.bundleIdentifier ?: @"";
     }
 
     // 1. FAST-PATH: Synchronous check (0.001ms)
-    BOOL isKnownGame = IsGameApplication(frontApp, nil);
-
-    if (!isKnownGame) {
-        if (IsExcludedApp(frontApp)) {
-            // Definitively NOT a game (Finder, Safari, Rider, Terminal, etc.)
-            self.isGameActive = NO;
-            if (self->_stream != nil) {
-                [self->_stream stopCaptureWithCompletionHandler:nil];
-                self->_stream = nil;
-            }
-            self->_currentPid = 0;
-            os_unfair_lock_lock(&self->_lock);
-            self.currentFps = 0.0;
-            self.currentFrametime = 0.0;
-            self->_intervalPeakFrametime = 0.0;
-            self->_tsCount = 0;
-            self->_prevFrameTime = 0.0;
-            os_unfair_lock_unlock(&self->_lock);
-            return;
+    // Check exclusion first so blacklisted apps or system exclusions are ignored immediately
+    if (IsExcludedApp(frontApp)) {
+        self.isGameActive = NO;
+        if (self->_stream != nil) {
+            [self->_stream stopCaptureWithCompletionHandler:nil];
+            self->_stream = nil;
         }
-    } else {
+        self->_currentPid = 0;
+        os_unfair_lock_lock(&self->_lock);
+        self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        self->_intervalPeakFrametime = 0.0;
+        self->_tsCount = 0;
+        self->_prevFrameTime = 0.0;
+        os_unfair_lock_unlock(&self->_lock);
+        return;
+    }
+
+    BOOL isKnownGame = IsGameApplication(frontApp, nil);
+    if (isKnownGame) {
         // Definitively a game (WoW, Steam games, etc.) - mark active IMMEDIATELY (0ms)!
         self.isGameActive = YES;
         self->_currentPid = frontApp.processIdentifier;
@@ -558,7 +595,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
             }
 
             // Check if frontmost application is a game (verifying window geometry if needed)
-            BOOL isGame = isKnownGame || IsGameApplication(frontApp, targetWindow);
+            BOOL isGame = !IsExcludedApp(frontApp) && (isKnownGame || IsGameApplication(frontApp, targetWindow));
 
             if (!isGame) {
                 // NOT a game: Stop capture immediately
@@ -752,6 +789,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
 static FpsMonitor *s_monitor = nil;
 static char s_appNameBuffer[256] = {0};
+static char s_appBundleIdBuffer[256] = {0};
 
 bool FpsMonitor_HasPermission(void) {
     if (CGPreflightScreenCaptureAccess()) {
@@ -939,6 +977,40 @@ const char* FpsMonitor_GetTrackedAppName(void) {
     NSString *name = s_monitor.trackedAppName ?: @"";
     [name getCString:s_appNameBuffer maxLength:sizeof(s_appNameBuffer) encoding:NSUTF8StringEncoding];
     return s_appNameBuffer;
+}
+
+const char* FpsMonitor_GetTrackedAppBundleId(void) {
+    if (!s_monitor) return "";
+    NSString *bundleId = s_monitor.trackedAppBundleId ?: @"";
+    [bundleId getCString:s_appBundleIdBuffer maxLength:sizeof(s_appBundleIdBuffer) encoding:NSUTF8StringEncoding];
+    return s_appBundleIdBuffer;
+}
+
+void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
+    os_unfair_lock_lock(&s_blacklistLock);
+    if (!s_customBlacklist) {
+        s_customBlacklist = [[NSMutableArray alloc] init];
+    } else {
+        [s_customBlacklist removeAllObjects];
+    }
+
+    if (newlineSeparated != NULL && strlen(newlineSeparated) > 0) {
+        NSString *raw = [NSString stringWithUTF8String:newlineSeparated];
+        NSArray<NSString *> *lines = [raw componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        for (NSString *line in lines) {
+            NSString *trimmed = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].lowercaseString;
+            if (trimmed.length > 0) {
+                [s_customBlacklist addObject:trimmed];
+            }
+        }
+    }
+    os_unfair_lock_unlock(&s_blacklistLock);
+
+    if (s_monitor) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [s_monitor checkActiveWindow];
+        });
+    }
 }
 
 void FpsMonitor_GetGpuStats(double *outUtilization, double *outVramBytes) {

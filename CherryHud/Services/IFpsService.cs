@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CherryHud.Services;
 
 public record FpsData(
@@ -27,6 +29,9 @@ public interface IFpsService
         x = 0; y = 0; width = 0; height = 0;
         return false;
     }
+    string GetTrackedAppName() => "";
+    string GetTrackedAppBundleId() => "";
+    void SetBlacklist(IEnumerable<string> blacklist) { }
     void Start();
     void Stop();
     void RequestPermission();

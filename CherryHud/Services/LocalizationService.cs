@@ -161,8 +161,17 @@ public class LocalizationService : ObservableObject
     public string TrayShow => IsFrench ? "Afficher" : "Show";
     public string TrayHide => IsFrench ? "Masquer" : "Hide";
     public string TrayAutoMode => IsFrench ? "Mode Auto" : "Auto Mode";
+    public string TrayBlacklistFormat => IsFrench ? "Ignorer '{0}' (Mode Auto)" : "Ignore '{0}' (Auto Mode)";
+    public string TrayUnblacklistFormat => IsFrench ? "Ne plus ignorer '{0}'" : "Unblacklist '{0}'";
+    public string TrayBlacklistEmpty => IsFrench ? "Ignorer le logiciel actuel (Mode Auto)" : "Ignore Current App (Auto Mode)";
     public string TraySettings => IsFrench ? "Paramètres" : "Settings";
     public string TrayUpdate => IsFrench ? "Mettre à jour" : "Update";
     public string TrayCheckUpdates => TrayUpdate;
     public string TrayQuit => IsFrench ? "Quitter CherryHud" : "Quit CherryHud";
+
+    // Settings Blacklist Card
+    public string BlacklistTitle => IsFrench ? "Applications ignorées en mode auto" : "Ignored Apps in Auto Mode";
+    public string BlacklistSubtitle => IsFrench ? "CherryHud ne s'affichera pas automatiquement pour ces logiciels" : "CherryHud will not automatically show for these applications";
+    public string BlacklistEmptyText => IsFrench ? "Aucune application ignorée" : "No ignored applications";
+    public string RemoveButtonText => IsFrench ? "Supprimer" : "Remove";
 }

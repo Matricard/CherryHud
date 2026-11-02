@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -78,6 +79,12 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern IntPtr FpsMonitor_GetTrackedAppName();
 
     [DllImport(LibraryName)]
+    private static extern IntPtr FpsMonitor_GetTrackedAppBundleId();
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetBlacklist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_GetGpuStats(out double outUtilization, out double outVramBytes);
 
     [DllImport(LibraryName)]
@@ -124,6 +131,44 @@ public sealed class FpsService : IFpsService, IDisposable
         catch
         {
             return 0;
+        }
+    }
+
+    public string GetTrackedAppName()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetTrackedAppName();
+            return ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) ?? "" : "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    public string GetTrackedAppBundleId()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetTrackedAppBundleId();
+            return ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) ?? "" : "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    public void SetBlacklist(IEnumerable<string> blacklist)
+    {
+        try
+        {
+            string joined = string.Join("\n", blacklist ?? Array.Empty<string>());
+            FpsMonitor_SetBlacklist(joined);
+        }
+        catch
+        {
         }
     }
 
