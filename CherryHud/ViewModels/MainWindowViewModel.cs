@@ -750,6 +750,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ApplyClassicTheme();
         LocalizationService.Instance.CurrentLanguage = s.Language;
         _fpsService.SetBlacklist(s.AutoModeBlacklist);
+        _fpsService.SetWhitelist(s.AutoModeWhitelist);
     }
 
     public bool IsAppBlacklisted(string? appName)
@@ -759,16 +760,50 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         return list != null && list.Any(x => string.Equals(x, appName.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
+    public bool IsAppWhitelisted(string? appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return false;
+        var list = _settingsService.Current.AutoModeWhitelist;
+        return list != null && list.Any(x => string.Equals(x, appName.Trim(), StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void ToggleWhitelistApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        var whiteList = _settingsService.Current.AutoModeWhitelist ?? new List<string>();
+        _settingsService.Current.AutoModeWhitelist = whiteList;
+        var blackList = _settingsService.Current.AutoModeBlacklist ?? new List<string>();
+        _settingsService.Current.AutoModeBlacklist = blackList;
+
+        int whiteIdx = whiteList.FindIndex(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase));
+        if (whiteIdx >= 0)
+        {
+            whiteList.RemoveAt(whiteIdx);
+        }
+        else
+        {
+            whiteList.Add(trimmed);
+            int blackIdx = blackList.FindIndex(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase));
+            if (blackIdx >= 0)
+            {
+                blackList.RemoveAt(blackIdx);
+                _fpsService.SetBlacklist(blackList);
+            }
+        }
+
+        _settingsService.Save();
+        _fpsService.SetWhitelist(whiteList);
+    }
+
     public void ToggleBlacklistApp(string appName)
     {
         if (string.IsNullOrWhiteSpace(appName)) return;
         var trimmed = appName.Trim();
-        var list = _settingsService.Current.AutoModeBlacklist;
-        if (list == null)
-        {
-            list = new List<string>();
-            _settingsService.Current.AutoModeBlacklist = list;
-        }
+        var list = _settingsService.Current.AutoModeBlacklist ?? new List<string>();
+        _settingsService.Current.AutoModeBlacklist = list;
+        var whiteList = _settingsService.Current.AutoModeWhitelist ?? new List<string>();
+        _settingsService.Current.AutoModeWhitelist = whiteList;
 
         int index = list.FindIndex(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase));
         if (index >= 0)
@@ -778,6 +813,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         else
         {
             list.Add(trimmed);
+            int whiteIdx = whiteList.FindIndex(x => string.Equals(x, trimmed, StringComparison.OrdinalIgnoreCase));
+            if (whiteIdx >= 0)
+            {
+                whiteList.RemoveAt(whiteIdx);
+                _fpsService.SetWhitelist(whiteList);
+            }
         }
 
         _settingsService.Save();

@@ -190,9 +190,74 @@ static void FpsMonitor_LibraryInit(void) {
 - (double)consumePeakFrametime;
 @end
 
+static NSMutableArray<NSString *> *s_customBlacklist = nil;
+static os_unfair_lock s_blacklistLock = OS_UNFAIR_LOCK_INIT;
+
+static NSMutableArray<NSString *> *s_customWhitelist = nil;
+static os_unfair_lock s_whitelistLock = OS_UNFAIR_LOCK_INIT;
+
+static BOOL IsInCustomBlacklist(NSRunningApplication *app) {
+    if (!app) return NO;
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
+    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
+
+    os_unfair_lock_lock(&s_blacklistLock);
+    if (!s_customBlacklist || s_customBlacklist.count == 0) {
+        os_unfair_lock_unlock(&s_blacklistLock);
+        return NO;
+    }
+
+    for (NSString *entry in s_customBlacklist) {
+        if (entry.length == 0) continue;
+        if ([bundleId isEqualToString:entry] ||
+            [appName isEqualToString:entry] ||
+            [execName isEqualToString:entry] ||
+            [bundleName isEqualToString:entry]) {
+            os_unfair_lock_unlock(&s_blacklistLock);
+            return YES;
+        }
+    }
+    os_unfair_lock_unlock(&s_blacklistLock);
+    return NO;
+}
+
+static BOOL IsInCustomWhitelist(NSRunningApplication *app) {
+    if (!app) return NO;
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
+    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
+
+    os_unfair_lock_lock(&s_whitelistLock);
+    if (!s_customWhitelist || s_customWhitelist.count == 0) {
+        os_unfair_lock_unlock(&s_whitelistLock);
+        return NO;
+    }
+
+    for (NSString *entry in s_customWhitelist) {
+        if (entry.length == 0) continue;
+        if ([bundleId isEqualToString:entry] ||
+            [appName isEqualToString:entry] ||
+            [execName isEqualToString:entry] ||
+            [bundleName isEqualToString:entry]) {
+            os_unfair_lock_unlock(&s_whitelistLock);
+            return YES;
+        }
+    }
+    os_unfair_lock_unlock(&s_whitelistLock);
+    return NO;
+}
+
 static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow) {
     if (!app) return NO;
     if (app.processIdentifier == getpid()) return NO;
+
+    // 0. Whitelist check: If app is explicitly whitelisted by user, it is ALWAYS treated as a game!
+    if (IsInCustomWhitelist(app)) {
+        return YES;
+    }
 
     NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
     NSString *appName = (app.localizedName ?: @"").lowercaseString;
@@ -401,36 +466,6 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
     }
 }
 
-static NSMutableArray<NSString *> *s_customBlacklist = nil;
-static os_unfair_lock s_blacklistLock = OS_UNFAIR_LOCK_INIT;
-
-static BOOL IsInCustomBlacklist(NSRunningApplication *app) {
-    if (!app) return NO;
-    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
-    NSString *appName = (app.localizedName ?: @"").lowercaseString;
-    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
-    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
-
-    os_unfair_lock_lock(&s_blacklistLock);
-    if (!s_customBlacklist || s_customBlacklist.count == 0) {
-        os_unfair_lock_unlock(&s_blacklistLock);
-        return NO;
-    }
-
-    for (NSString *entry in s_customBlacklist) {
-        if (entry.length == 0) continue;
-        if ([bundleId isEqualToString:entry] ||
-            [appName isEqualToString:entry] ||
-            [execName isEqualToString:entry] ||
-            [bundleName isEqualToString:entry]) {
-            os_unfair_lock_unlock(&s_blacklistLock);
-            return YES;
-        }
-    }
-    os_unfair_lock_unlock(&s_blacklistLock);
-    return NO;
-}
-
 static BOOL IsExcludedApp(NSRunningApplication *app) {
     if (!app) return YES;
     if (app.processIdentifier == getpid()) return YES;
@@ -438,6 +473,11 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
     // 0. User custom blacklist ALWAYS takes precedence
     if (IsInCustomBlacklist(app)) {
         return YES;
+    }
+
+    // User custom whitelist overrides system exclusions
+    if (IsInCustomWhitelist(app)) {
+        return NO;
     }
 
     // If officially marked as a game, it is never excluded
@@ -1005,6 +1045,33 @@ void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
         }
     }
     os_unfair_lock_unlock(&s_blacklistLock);
+
+    if (s_monitor) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [s_monitor checkActiveWindow];
+        });
+    }
+}
+
+void FpsMonitor_SetWhitelist(const char *newlineSeparated) {
+    os_unfair_lock_lock(&s_whitelistLock);
+    if (!s_customWhitelist) {
+        s_customWhitelist = [[NSMutableArray alloc] init];
+    } else {
+        [s_customWhitelist removeAllObjects];
+    }
+
+    if (newlineSeparated != NULL && strlen(newlineSeparated) > 0) {
+        NSString *raw = [NSString stringWithUTF8String:newlineSeparated];
+        NSArray<NSString *> *lines = [raw componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        for (NSString *line in lines) {
+            NSString *trimmed = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].lowercaseString;
+            if (trimmed.length > 0) {
+                [s_customWhitelist addObject:trimmed];
+            }
+        }
+    }
+    os_unfair_lock_unlock(&s_whitelistLock);
 
     if (s_monitor) {
         dispatch_async(dispatch_get_main_queue(), ^{

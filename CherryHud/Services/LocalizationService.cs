@@ -40,6 +40,7 @@ public class LocalizationService : ObservableObject
     // Tabs
     public string TabGeneral => IsFrench ? "Général" : "General";
     public string TabDisplay => TabGeneral;
+    public string TabApplications => IsFrench ? "Applications" : "Applications";
     public string TabMetrics => IsFrench ? "Métriques" : "Metrics";
     public string TabAbout => IsFrench ? "À propos" : "About";
 
@@ -163,15 +164,31 @@ public class LocalizationService : ObservableObject
     public string TrayAutoMode => IsFrench ? "Mode Auto" : "Auto Mode";
     public string TrayBlacklistFormat => IsFrench ? "Ignorer '{0}' (Mode Auto)" : "Ignore '{0}' (Auto Mode)";
     public string TrayUnblacklistFormat => IsFrench ? "Ne plus ignorer '{0}'" : "Unblacklist '{0}'";
-    public string TrayBlacklistEmpty => IsFrench ? "Ignorer le logiciel actuel (Mode Auto)" : "Ignore Current App (Auto Mode)";
+    public string TrayWhitelistFormat => IsFrench ? "Ajouter '{0}' à la liste blanche" : "Whitelist '{0}' (Auto Mode)";
+    public string TrayUnwhitelistFormat => IsFrench ? "Retirer '{0}' de la liste blanche" : "Remove '{0}' from Whitelist";
+    public string TrayAppActionEmpty => IsFrench ? "Gérer le logiciel actuel (Mode Auto)" : "Manage Current App (Auto Mode)";
+    public string TrayBlacklistEmpty => TrayAppActionEmpty;
     public string TraySettings => IsFrench ? "Paramètres" : "Settings";
     public string TrayUpdate => IsFrench ? "Mettre à jour" : "Update";
     public string TrayCheckUpdates => TrayUpdate;
     public string TrayQuit => IsFrench ? "Quitter CherryHud" : "Quit CherryHud";
 
-    // Settings Blacklist Card
-    public string BlacklistTitle => IsFrench ? "Applications ignorées en mode auto" : "Ignored Apps in Auto Mode";
-    public string BlacklistSubtitle => IsFrench ? "CherryHud ne s'affichera pas automatiquement pour ces logiciels" : "CherryHud will not automatically show for these applications";
-    public string BlacklistEmptyText => IsFrench ? "Aucune application ignorée" : "No ignored applications";
+    // Applications Tab in Settings
+    public string ApplicationsPageTitle => IsFrench ? "Règles des applications" : "Application Rules";
+    public string ApplicationsPageSubtitle => IsFrench ? "Contrôlez précisément quelles applications activent ou non CherryHud en mode automatique" : "Precisely control which applications trigger CherryHud in auto mode";
+    public string BlacklistSectionTitle => IsFrench ? "Liste Noire (Ignorées)" : "Blacklist (Ignored)";
+    public string BlacklistSectionSubtitle => IsFrench ? "CherryHud ne s'affichera JAMAIS automatiquement pour ces applications" : "CherryHud will NEVER automatically show for these applications";
+    public string WhitelistSectionTitle => IsFrench ? "Liste Blanche (Forcées)" : "Whitelist (Forced)";
+    public string WhitelistSectionSubtitle => IsFrench ? "CherryHud s'affichera TOUJOURS pour ces applications en mode auto, même si macOS ne les détecte pas comme jeux" : "CherryHud will ALWAYS show for these applications in auto mode, even if not detected as games";
+    public string MoveToWhitelistButton => IsFrench ? "Passer en liste blanche" : "Move to Whitelist";
+    public string MoveToBlacklistButton => IsFrench ? "Passer en liste noire" : "Move to Blacklist";
+    public string AddAppPlaceholder => IsFrench ? "Nom de l'application (ex: Unity Hub, Hades, Blender...)" : "Application name (e.g. Unity Hub, Hades, Blender...)";
+    public string AddToBlacklistButton => IsFrench ? "+ Liste Noire" : "+ Blacklist";
+    public string AddToWhitelistButton => IsFrench ? "+ Liste Blanche" : "+ Whitelist";
+    public string CurrentAppDetectedFormat => IsFrench ? "Application active : {0}" : "Active application: {0}";
+    public string AddCurrentToBlacklistButton => IsFrench ? "+ Ignorer l'actuelle" : "+ Ignore Current";
+    public string AddCurrentToWhitelistButton => IsFrench ? "+ Forcer l'actuelle" : "+ Whitelist Current";
+    public string BlacklistEmptyText => IsFrench ? "Aucune application dans la liste noire" : "No applications in blacklist";
+    public string WhitelistEmptyText => IsFrench ? "Aucune application dans la liste blanche" : "No applications in whitelist";
     public string RemoveButtonText => IsFrench ? "Supprimer" : "Remove";
 }

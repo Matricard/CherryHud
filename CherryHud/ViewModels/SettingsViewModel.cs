@@ -22,6 +22,27 @@ public partial class SettingsViewModel : ViewModelBase
     public ObservableCollection<string> ThemeOptions { get; } = new();
     public ObservableCollection<string> BlacklistedApps { get; } = new();
     public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
+    public ObservableCollection<string> WhitelistedApps { get; } = new();
+    public bool HasWhitelistedApps => WhitelistedApps.Count > 0;
+
+    [ObservableProperty]
+    private string _newAppNameInput = "";
+
+    public string DetectedCurrentAppName
+    {
+        get
+        {
+            string name = _mainViewModel?.TrackedAppName ?? "";
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = _fpsService.GetTrackedAppName();
+            }
+            return !string.IsNullOrWhiteSpace(name) && name != "None" ? name : "";
+        }
+    }
+
+    public bool HasDetectedCurrentApp => !string.IsNullOrWhiteSpace(DetectedCurrentAppName);
+    public string DetectedCurrentAppDisplay => string.Format(Loc.CurrentAppDetectedFormat, DetectedCurrentAppName);
 
     public void UpdatePositionOptions()
     {
@@ -251,7 +272,11 @@ public partial class SettingsViewModel : ViewModelBase
             };
         }
 
-        _settingsService.SettingsChanged += (_, s) => SyncBlacklistedApps(s);
+        _settingsService.SettingsChanged += (_, s) =>
+        {
+            SyncBlacklistedApps(s);
+            SyncWhitelistedApps(s);
+        };
     }
 
 #pragma warning disable MVVMTK0034
@@ -298,6 +323,7 @@ public partial class SettingsViewModel : ViewModelBase
         _autoCheckUpdates = s.AutoCheckUpdates;
         _gitHubRepo = s.GitHubRepo;
         SyncBlacklistedApps(s);
+        SyncWhitelistedApps(s);
     }
 #pragma warning restore MVVMTK0034
 
@@ -326,6 +352,31 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    private void SyncWhitelistedApps(AppSettings s)
+    {
+        void Update()
+        {
+            var currentList = s.AutoModeWhitelist ?? new List<string>();
+            if (WhitelistedApps.SequenceEqual(currentList)) return;
+
+            WhitelistedApps.Clear();
+            foreach (var app in currentList)
+            {
+                WhitelistedApps.Add(app);
+            }
+            OnPropertyChanged(nameof(HasWhitelistedApps));
+        }
+
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
     [RelayCommand]
     public void RemoveBlacklistedApp(string appName)
     {
@@ -335,6 +386,133 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Save();
         _fpsService.SetBlacklist(BlacklistedApps);
         OnPropertyChanged(nameof(HasBlacklistedApps));
+    }
+
+    [RelayCommand]
+    public void RemoveWhitelistedApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        WhitelistedApps.Remove(appName);
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void MoveToWhitelist(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        BlacklistedApps.Remove(trimmed);
+        if (!WhitelistedApps.Contains(trimmed))
+        {
+            WhitelistedApps.Add(trimmed);
+        }
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void MoveToBlacklist(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        WhitelistedApps.Remove(trimmed);
+        if (!BlacklistedApps.Contains(trimmed))
+        {
+            BlacklistedApps.Add(trimmed);
+        }
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetWhitelist(WhitelistedApps);
+        _fpsService.SetBlacklist(BlacklistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCustomBlacklist()
+    {
+        if (string.IsNullOrWhiteSpace(NewAppNameInput)) return;
+        var trimmed = NewAppNameInput.Trim();
+        WhitelistedApps.Remove(trimmed);
+        if (!BlacklistedApps.Contains(trimmed))
+        {
+            BlacklistedApps.Add(trimmed);
+        }
+        NewAppNameInput = "";
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCustomWhitelist()
+    {
+        if (string.IsNullOrWhiteSpace(NewAppNameInput)) return;
+        var trimmed = NewAppNameInput.Trim();
+        BlacklistedApps.Remove(trimmed);
+        if (!WhitelistedApps.Contains(trimmed))
+        {
+            WhitelistedApps.Add(trimmed);
+        }
+        NewAppNameInput = "";
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCurrentAppToBlacklist()
+    {
+        string current = DetectedCurrentAppName;
+        if (string.IsNullOrWhiteSpace(current)) return;
+        WhitelistedApps.Remove(current);
+        if (!BlacklistedApps.Contains(current))
+        {
+            BlacklistedApps.Add(current);
+        }
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCurrentAppToWhitelist()
+    {
+        string current = DetectedCurrentAppName;
+        if (string.IsNullOrWhiteSpace(current)) return;
+        BlacklistedApps.Remove(current);
+        if (!WhitelistedApps.Contains(current))
+        {
+            WhitelistedApps.Add(current);
+        }
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
     }
 
     public void CheckPermissionStatus()
@@ -862,10 +1040,14 @@ public partial class SettingsViewModel : ViewModelBase
         ShowFrametime = false;
         ShowGraph = false;
         BlacklistedApps.Clear();
+        WhitelistedApps.Clear();
         _settingsService.Current.AutoModeBlacklist = new List<string>();
+        _settingsService.Current.AutoModeWhitelist = new List<string>();
         _settingsService.Save();
         _fpsService.SetBlacklist(Array.Empty<string>());
+        _fpsService.SetWhitelist(Array.Empty<string>());
         OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
         UpdatePositionOptions();
         UpdateThemeOptions();
         CheckPermissionStatus();

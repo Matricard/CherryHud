@@ -181,15 +181,34 @@ public partial class App : Application
 
         if (string.IsNullOrWhiteSpace(appName) || appName == "None")
         {
-            _blacklistMenuItem.Header = loc.TrayBlacklistEmpty;
+            _blacklistMenuItem.Header = loc.TrayAppActionEmpty;
             _blacklistMenuItem.IsEnabled = false;
+            return;
+        }
+
+        bool isBlacklisted = _mainViewModel.IsAppBlacklisted(appName);
+        bool isWhitelisted = _mainViewModel.IsAppWhitelisted(appName);
+
+        if (isBlacklisted)
+        {
+            _blacklistMenuItem.Header = string.Format(loc.TrayUnblacklistFormat, appName);
+            _blacklistMenuItem.IsEnabled = true;
+        }
+        else if (isWhitelisted)
+        {
+            _blacklistMenuItem.Header = string.Format(loc.TrayUnwhitelistFormat, appName);
+            _blacklistMenuItem.IsEnabled = true;
+        }
+        else if (_mainViewModel.IsOverlayVisible)
+        {
+            // CherryHud affiche : bouton pour ignorer (Blacklist)
+            _blacklistMenuItem.Header = string.Format(loc.TrayBlacklistFormat, appName);
+            _blacklistMenuItem.IsEnabled = true;
         }
         else
         {
-            bool isBlacklisted = _mainViewModel.IsAppBlacklisted(appName);
-            _blacklistMenuItem.Header = isBlacklisted
-                ? string.Format(loc.TrayUnblacklistFormat, appName)
-                : string.Format(loc.TrayBlacklistFormat, appName);
+            // CherryHud n'affiche pas : bouton pour rajouter à la whitelist
+            _blacklistMenuItem.Header = string.Format(loc.TrayWhitelistFormat, appName);
             _blacklistMenuItem.IsEnabled = true;
         }
     }
@@ -259,11 +278,31 @@ public partial class App : Application
         {
             appName = _mainViewModel.FpsService.GetTrackedAppName();
         }
-        if (!string.IsNullOrWhiteSpace(appName) && appName != "None")
+        if (string.IsNullOrWhiteSpace(appName) || appName == "None") return;
+
+        bool isBlacklisted = _mainViewModel.IsAppBlacklisted(appName);
+        bool isWhitelisted = _mainViewModel.IsAppWhitelisted(appName);
+
+        if (isBlacklisted)
         {
             _mainViewModel.ToggleBlacklistApp(appName);
-            UpdateBlacklistMenuItem();
         }
+        else if (isWhitelisted)
+        {
+            _mainViewModel.ToggleWhitelistApp(appName);
+        }
+        else if (_mainViewModel.IsOverlayVisible)
+        {
+            // CherryHud affiche : on ajoute à la blacklist
+            _mainViewModel.ToggleBlacklistApp(appName);
+        }
+        else
+        {
+            // CherryHud n'affiche pas : on ajoute à la whitelist
+            _mainViewModel.ToggleWhitelistApp(appName);
+        }
+
+        UpdateBlacklistMenuItem();
     }
 
     private SettingsWindow? _settingsWindow;

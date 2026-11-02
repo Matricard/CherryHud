@@ -167,60 +167,6 @@
                             </Grid>
                         </Border>
 
-                        <!-- Applications ignorées en mode auto Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <StackPanel Spacing="8">
-                                <StackPanel Spacing="2">
-                                    <TextBlock Text="{Binding Loc.BlacklistTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.BlacklistSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-
-                                <TextBlock Text="{Binding Loc.BlacklistEmptyText}"
-                                           Foreground="#60FFFFFF"
-                                           FontSize="11"
-                                           FontStyle="Italic"
-                                           IsVisible="{Binding !HasBlacklistedApps}"
-                                           Margin="0,2,0,2" />
-
-                                <ItemsControl ItemsSource="{Binding BlacklistedApps}"
-                                              IsVisible="{Binding HasBlacklistedApps}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#12FFFFFF"
-                                                    BorderBrush="#10FFFFFF"
-                                                    BorderThickness="1"
-                                                    CornerRadius="6"
-                                                    Padding="10,6"
-                                                    Margin="0,2">
-                                                <Grid ColumnDefinitions="*,Auto">
-                                                    <TextBlock Text="{Binding}"
-                                                               Foreground="#E0E6ED"
-                                                               FontSize="11"
-                                                               VerticalAlignment="Center" />
-                                                    <Button Grid.Column="1"
-                                                            Content="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).Loc.RemoveButtonText}"
-                                                            Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).RemoveBlacklistedAppCommand}"
-                                                            CommandParameter="{Binding}"
-                                                            Background="#2AEC5555"
-                                                            Foreground="#FFAAAA"
-                                                            FontSize="10"
-                                                            FontWeight="SemiBold"
-                                                            Padding="10,3"
-                                                            CornerRadius="4" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Border>
-
                         <!-- Lancer au démarrage Card -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -370,7 +316,247 @@
                 </ScrollViewer>
             </TabItem>
 
-            <!-- Onglet 2 : Métriques -->
+            <!-- Onglet 2 : Applications -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Path Width="15" Height="15"
+                              Stretch="Uniform"
+                              Fill="#FF7597"
+                              VerticalAlignment="Center"
+                              Data="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9 0h7v7h-7v-7z" />
+                        <TextBlock Text="{Binding Loc.TabApplications}"
+                                   FontSize="12"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <ScrollViewer Margin="0" Padding="0,0,10,0">
+                    <StackPanel Spacing="9">
+                        <!-- En-tête description -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{Binding Loc.ApplicationsPageTitle}"
+                                           Foreground="#FFFFFF"
+                                           FontSize="13"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Loc.ApplicationsPageSubtitle}"
+                                           Foreground="#8A8D9F"
+                                           FontSize="11"
+                                           TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Barre d'ajout manuel / détection actuelle -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                    <TextBox Text="{Binding NewAppNameInput, Mode=TwoWay}"
+                                             Watermark="{Binding Loc.AddAppPlaceholder}"
+                                             FontSize="11"
+                                             Background="#1AFFFFFF"
+                                             Foreground="#FFFFFF"
+                                             CornerRadius="6"
+                                             Padding="8,5"
+                                             Margin="0,0,8,0" />
+                                    <Button Grid.Column="1"
+                                            Content="{Binding Loc.AddToBlacklistButton}"
+                                            Command="{Binding AddCustomBlacklistCommand}"
+                                            Background="#2AF28B82"
+                                            Foreground="#FF8585"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Padding="10,5"
+                                            CornerRadius="6"
+                                            Margin="0,0,6,0" />
+                                    <Button Grid.Column="2"
+                                            Content="{Binding Loc.AddToWhitelistButton}"
+                                            Command="{Binding AddCustomWhitelistCommand}"
+                                            Background="#2A7ED884"
+                                            Foreground="#7ED884"
+                                            FontSize="11"
+                                            FontWeight="SemiBold"
+                                            Padding="10,5"
+                                            CornerRadius="6" />
+                                </Grid>
+
+                                <!-- Raccourci app actuelle détectée -->
+                                <Border Background="#12FFFFFF"
+                                        CornerRadius="6"
+                                        Padding="10,6"
+                                        IsVisible="{Binding HasDetectedCurrentApp}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto">
+                                        <TextBlock Text="{Binding DetectedCurrentAppDisplay}"
+                                                   Foreground="#CCD0E0"
+                                                   FontSize="11"
+                                                   VerticalAlignment="Center" />
+                                        <Button Grid.Column="1"
+                                                Content="{Binding Loc.AddCurrentToBlacklistButton}"
+                                                Command="{Binding AddCurrentAppToBlacklistCommand}"
+                                                Background="#20F28B82"
+                                                Foreground="#FFA5A5"
+                                                FontSize="10"
+                                                FontWeight="Medium"
+                                                Padding="8,3"
+                                                CornerRadius="4"
+                                                Margin="8,0,6,0" />
+                                        <Button Grid.Column="2"
+                                                Content="{Binding Loc.AddCurrentToWhitelistButton}"
+                                                Command="{Binding AddCurrentAppToWhitelistCommand}"
+                                                Background="#207ED884"
+                                                Foreground="#9BEAA1"
+                                                FontSize="10"
+                                                FontWeight="Medium"
+                                                Padding="8,3"
+                                                CornerRadius="4" />
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 1 : Liste Noire (Ignorées) -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Background="#2AF28B82" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <TextBlock Text="⛔" FontSize="11" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{Binding Loc.BlacklistSectionTitle}"
+                                                   Foreground="#FFFFFF"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Loc.BlacklistSectionSubtitle}"
+                                                   Foreground="#8A8D9F"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="{Binding Loc.BlacklistEmptyText}"
+                                           Foreground="#60FFFFFF"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           IsVisible="{Binding !HasBlacklistedApps}"
+                                           Margin="4,4,0,2" />
+
+                                <ItemsControl ItemsSource="{Binding BlacklistedApps}"
+                                              IsVisible="{Binding HasBlacklistedApps}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#12FFFFFF"
+                                                    BorderBrush="#10FFFFFF"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="10,6"
+                                                    Margin="0,2">
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <TextBlock Text="{Binding}"
+                                                               Foreground="#E0E6ED"
+                                                               FontSize="11"
+                                                               FontWeight="Medium"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Grid.Column="1"
+                                                            Content="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).Loc.MoveToWhitelistButton}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).MoveToWhitelistCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#1A7ED884"
+                                                            Foreground="#7ED884"
+                                                            FontSize="10"
+                                                            Padding="8,3"
+                                                            CornerRadius="4"
+                                                            Margin="0,0,6,0" />
+                                                    <Button Grid.Column="2"
+                                                            Content="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).Loc.RemoveButtonText}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).RemoveBlacklistedAppCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#2AEC5555"
+                                                            Foreground="#FFAAAA"
+                                                            FontSize="10"
+                                                            FontWeight="SemiBold"
+                                                            Padding="8,3"
+                                                            CornerRadius="4" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Card 2 : Liste Blanche (Forcées) -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
+                            <StackPanel Spacing="8">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Background="#2A7ED884" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <TextBlock Text="⭐" FontSize="11" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{Binding Loc.WhitelistSectionTitle}"
+                                                   Foreground="#FFFFFF"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Loc.WhitelistSectionSubtitle}"
+                                                   Foreground="#8A8D9F"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="{Binding Loc.WhitelistEmptyText}"
+                                           Foreground="#60FFFFFF"
+                                           FontSize="11"
+                                           FontStyle="Italic"
+                                           IsVisible="{Binding !HasWhitelistedApps}"
+                                           Margin="4,4,0,2" />
+
+                                <ItemsControl ItemsSource="{Binding WhitelistedApps}"
+                                              IsVisible="{Binding HasWhitelistedApps}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#12FFFFFF"
+                                                    BorderBrush="#10FFFFFF"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="10,6"
+                                                    Margin="0,2">
+                                                <Grid ColumnDefinitions="*,Auto,Auto">
+                                                    <TextBlock Text="{Binding}"
+                                                               Foreground="#E0E6ED"
+                                                               FontSize="11"
+                                                               FontWeight="Medium"
+                                                               VerticalAlignment="Center" />
+                                                    <Button Grid.Column="1"
+                                                            Content="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).Loc.MoveToBlacklistButton}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).MoveToBlacklistCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#1AF28B82"
+                                                            Foreground="#F28B82"
+                                                            FontSize="10"
+                                                            Padding="8,3"
+                                                            CornerRadius="4"
+                                                            Margin="0,0,6,0" />
+                                                    <Button Grid.Column="2"
+                                                            Content="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).Loc.RemoveButtonText}"
+                                                            Command="{Binding $parent[ItemsControl].((vm:SettingsViewModel)DataContext).RemoveWhitelistedAppCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#2AEC5555"
+                                                            Foreground="#FFAAAA"
+                                                            FontSize="10"
+                                                            FontWeight="SemiBold"
+                                                            Padding="8,3"
+                                                            CornerRadius="4" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- Onglet 3 : Métriques -->
             <TabItem>
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal" Spacing="9" VerticalAlignment="Center">

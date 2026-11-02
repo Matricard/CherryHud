@@ -85,6 +85,9 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern void FpsMonitor_SetBlacklist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
 
     [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetWhitelist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_GetGpuStats(out double outUtilization, out double outVramBytes);
 
     [DllImport(LibraryName)]
@@ -166,6 +169,18 @@ public sealed class FpsService : IFpsService, IDisposable
         {
             string joined = string.Join("\n", blacklist ?? Array.Empty<string>());
             FpsMonitor_SetBlacklist(joined);
+        }
+        catch
+        {
+        }
+    }
+
+    public void SetWhitelist(IEnumerable<string> whitelist)
+    {
+        try
+        {
+            string joined = string.Join("\n", whitelist ?? Array.Empty<string>());
+            FpsMonitor_SetWhitelist(joined);
         }
         catch
         {

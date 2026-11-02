@@ -32,6 +32,7 @@ public interface IFpsService
     string GetTrackedAppName() => "";
     string GetTrackedAppBundleId() => "";
     void SetBlacklist(IEnumerable<string> blacklist) { }
+    void SetWhitelist(IEnumerable<string> whitelist) { }
     void Start();
     void Stop();
     void RequestPermission();

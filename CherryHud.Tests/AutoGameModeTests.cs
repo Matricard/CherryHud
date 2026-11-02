@@ -17,6 +17,8 @@ public class AutoGameModeTests
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
         public List<string> LastBlacklist { get; private set; } = new();
         public void SetBlacklist(System.Collections.Generic.IEnumerable<string> blacklist) => LastBlacklist = new List<string>(blacklist);
+        public List<string> LastWhitelist { get; private set; } = new();
+        public void SetWhitelist(System.Collections.Generic.IEnumerable<string> whitelist) => LastWhitelist = new List<string>(whitelist);
         public void RequestPermission() { }
         public void CheckPermission() { }
     }
@@ -184,5 +186,102 @@ public class AutoGameModeTests
 
         Assert.Empty(settingsVm.BlacklistedApps);
         Assert.False(settingsVm.HasBlacklistedApps);
+    }
+
+    [Fact]
+    public void ToggleWhitelistApp_AddsAndRemovesAppFromWhitelist()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        Assert.False(vm.IsAppWhitelisted("Factorio"));
+
+        vm.ToggleWhitelistApp("Factorio");
+
+        Assert.True(vm.IsAppWhitelisted("Factorio"));
+        Assert.True(vm.IsAppWhitelisted("factorio"));
+        Assert.Contains("Factorio", settings.Current.AutoModeWhitelist);
+        Assert.Contains("Factorio", fps.LastWhitelist);
+
+        // Toggling again should remove it
+        vm.ToggleWhitelistApp("Factorio");
+
+        Assert.False(vm.IsAppWhitelisted("Factorio"));
+        Assert.DoesNotContain("Factorio", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("Factorio", fps.LastWhitelist);
+    }
+
+    [Fact]
+    public void ToggleBlacklist_RemovesFromWhitelist_AndViceVersa()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        // Whitelist app first
+        vm.ToggleWhitelistApp("MyCustomGame");
+        Assert.True(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.False(vm.IsAppBlacklisted("MyCustomGame"));
+
+        // Now blacklist it - should automatically be removed from whitelist
+        vm.ToggleBlacklistApp("MyCustomGame");
+        Assert.False(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.True(vm.IsAppBlacklisted("MyCustomGame"));
+        Assert.DoesNotContain("MyCustomGame", settings.Current.AutoModeWhitelist);
+        Assert.Contains("MyCustomGame", settings.Current.AutoModeBlacklist);
+
+        // Whitelist it again - should automatically be removed from blacklist
+        vm.ToggleWhitelistApp("MyCustomGame");
+        Assert.True(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.False(vm.IsAppBlacklisted("MyCustomGame"));
+        Assert.Contains("MyCustomGame", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("MyCustomGame", settings.Current.AutoModeBlacklist);
+    }
+
+    [Fact]
+    public void SettingsViewModel_WhitelistAndMoveOperations_WorkCorrectly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoModeBlacklist.Add("Blender");
+        settings.Current.AutoModeWhitelist.Add("Celeste");
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.HasBlacklistedApps);
+        Assert.True(settingsVm.HasWhitelistedApps);
+        Assert.Contains("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Celeste", settingsVm.WhitelistedApps);
+
+        // Move Blender from Blacklist to Whitelist
+        settingsVm.MoveToWhitelist("Blender");
+        Assert.DoesNotContain("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Blender", settingsVm.WhitelistedApps);
+        Assert.Contains("Blender", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("Blender", settings.Current.AutoModeBlacklist);
+
+        // Move Celeste from Whitelist to Blacklist
+        settingsVm.MoveToBlacklist("Celeste");
+        Assert.DoesNotContain("Celeste", settingsVm.WhitelistedApps);
+        Assert.Contains("Celeste", settingsVm.BlacklistedApps);
+        Assert.Contains("Celeste", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Celeste", settings.Current.AutoModeWhitelist);
+
+        // Test custom input adds
+        settingsVm.NewAppNameInput = "CustomApp1";
+        settingsVm.AddCustomBlacklist();
+        Assert.Contains("CustomApp1", settingsVm.BlacklistedApps);
+        Assert.Equal("", settingsVm.NewAppNameInput);
+
+        settingsVm.NewAppNameInput = "CustomApp2";
+        settingsVm.AddCustomWhitelist();
+        Assert.Contains("CustomApp2", settingsVm.WhitelistedApps);
+        Assert.Equal("", settingsVm.NewAppNameInput);
     }
 }

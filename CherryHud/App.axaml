@@ -28,7 +28,7 @@
                                         ToggleType="CheckBox"
                                         IsChecked="True"
                                         Click="ResetAutoMode_OnClick" />
-                        <NativeMenuItem Header="Ignore Current App" Click="ToggleBlacklistCurrentApp_OnClick" />
+                        <NativeMenuItem Header="Manage Current App" Click="ToggleBlacklistCurrentApp_OnClick" />
                         <NativeMenuItemSeparator />
                         <NativeMenuItem Header="Settings" Click="Settings_OnClick" />
                         <NativeMenuItem Header="Update" Icon="/Assets/update-icon.png" Click="Update_OnClick" IsVisible="False" />
