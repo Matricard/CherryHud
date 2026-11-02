@@ -180,6 +180,7 @@ static void FpsMonitor_LibraryInit(void) {
 @property (atomic) double currentFrametime;
 @property (atomic) BOOL isGameActive;
 @property (atomic) pid_t currentPid;
+@property (atomic) BOOL fpsCaptureEnabled;
 @property (nonatomic, copy) NSString *trackedAppName;
 @property (nonatomic, copy) NSString *trackedAppBundleId;
 - (void)start;
@@ -377,7 +378,10 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
 
     BOOL _isRunning;
     BOOL _isQueryingContent;
+    BOOL _fpsCaptureEnabled;
 }
+
+static BOOL s_initialFpsCaptureEnabled = NO;
 
 - (instancetype)init {
     self = [super init];
@@ -397,8 +401,39 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _lastFrameWallTime = 0.0;
         _isGameActive = NO;
         _isQueryingContent = NO;
+        _fpsCaptureEnabled = s_initialFpsCaptureEnabled;
     }
     return self;
+}
+
+- (BOOL)fpsCaptureEnabled {
+    @synchronized (self) {
+        return _fpsCaptureEnabled;
+    }
+}
+
+- (void)setFpsCaptureEnabled:(BOOL)enabled {
+    @synchronized (self) {
+        if (_fpsCaptureEnabled == enabled) return;
+        _fpsCaptureEnabled = enabled;
+        if (!enabled) {
+            if (_stream != nil) {
+                [_stream stopCaptureWithCompletionHandler:nil];
+                _stream = nil;
+            }
+            os_unfair_lock_lock(&_lock);
+            self.currentFps = 0.0;
+            self.currentFrametime = 0.0;
+            _intervalPeakFrametime = 0.0;
+            _tsCount = 0;
+            _prevFrameTime = 0.0;
+            os_unfair_lock_unlock(&_lock);
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self checkActiveWindow];
+            });
+        }
+    }
 }
 
 - (void)start {
@@ -586,6 +621,25 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
         self->_currentPid = frontApp.processIdentifier;
     }
 
+    // ------------------------------------------------------------------
+    // If FPS capture is DISABLED, DO NOT record the screen!
+    // Never query ScreenCaptureKit and never start SCStream.
+    // ------------------------------------------------------------------
+    if (!self.fpsCaptureEnabled) {
+        if (self->_stream != nil) {
+            [self->_stream stopCaptureWithCompletionHandler:nil];
+            self->_stream = nil;
+        }
+        os_unfair_lock_lock(&self->_lock);
+        self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        self->_intervalPeakFrametime = 0.0;
+        self->_tsCount = 0;
+        self->_prevFrameTime = 0.0;
+        os_unfair_lock_unlock(&self->_lock);
+        return;
+    }
+
     // If we are already capturing this exact process and stream is healthy, NO NEED to re-query ScreenCaptureKit!
     if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
         return;
@@ -616,7 +670,11 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
                 s_hasPermission = NO;
             }
 
-            if (error || !content || !self->_isRunning) {
+            if (!self.fpsCaptureEnabled || error || !content || !self->_isRunning) {
+                if (!self.fpsCaptureEnabled && self->_stream != nil) {
+                    [self->_stream stopCaptureWithCompletionHandler:nil];
+                    self->_stream = nil;
+                }
                 // Even if SCShareableContent fails or permission is missing,
                 // we PRESERVE self.isGameActive = isKnownGame so the HUD stays visible over the game!
                 return;
@@ -1051,6 +1109,20 @@ void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
             [s_monitor checkActiveWindow];
         });
     }
+}
+
+void FpsMonitor_SetFpsCaptureEnabled(bool enabled) {
+    s_initialFpsCaptureEnabled = (BOOL)enabled;
+    if (s_monitor) {
+        s_monitor.fpsCaptureEnabled = (BOOL)enabled;
+    }
+}
+
+bool FpsMonitor_GetFpsCaptureEnabled(void) {
+    if (s_monitor) {
+        return (bool)s_monitor.fpsCaptureEnabled;
+    }
+    return (bool)s_initialFpsCaptureEnabled;
 }
 
 void FpsMonitor_SetWhitelist(const char *newlineSeparated) {

@@ -88,6 +88,13 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern void FpsMonitor_SetWhitelist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
 
     [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetFpsCaptureEnabled([MarshalAs(UnmanagedType.I1)] bool enabled);
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_GetFpsCaptureEnabled();
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_GetGpuStats(out double outUtilization, out double outVramBytes);
 
     [DllImport(LibraryName)]
@@ -184,6 +191,32 @@ public sealed class FpsService : IFpsService, IDisposable
         }
         catch
         {
+        }
+    }
+
+    public void SetFpsCaptureEnabled(bool enabled)
+    {
+        try
+        {
+            FpsMonitor_SetFpsCaptureEnabled(enabled);
+        }
+        catch
+        {
+        }
+    }
+
+    public bool IsFpsCaptureEnabled
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_GetFpsCaptureEnabled();
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 

@@ -351,6 +351,17 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     [ObservableProperty]
     private bool _showGraph = true;
 
+    partial void OnShowFpsChanged(bool value) => UpdateFpsCaptureState();
+    partial void OnShowOnePercentLowFpsChanged(bool value) => UpdateFpsCaptureState();
+    partial void OnShowFrametimeChanged(bool value) => UpdateFpsCaptureState();
+    partial void OnShowGraphChanged(bool value) => UpdateFpsCaptureState();
+
+    private void UpdateFpsCaptureState()
+    {
+        bool fpsCaptureEnabled = ShowFps || ShowOnePercentLowFps || ShowFrametime || ShowGraph;
+        _fpsService.SetFpsCaptureEnabled(fpsCaptureEnabled);
+    }
+
     [ObservableProperty]
     private OverlayCorner _overlayPosition = OverlayCorner.TopLeft;
 
@@ -751,6 +762,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         LocalizationService.Instance.CurrentLanguage = s.Language;
         _fpsService.SetBlacklist(s.AutoModeBlacklist);
         _fpsService.SetWhitelist(s.AutoModeWhitelist);
+        UpdateFpsCaptureState();
     }
 
     public bool IsAppBlacklisted(string? appName)

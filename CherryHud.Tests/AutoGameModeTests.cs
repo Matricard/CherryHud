@@ -19,6 +19,8 @@ public class AutoGameModeTests
         public void SetBlacklist(System.Collections.Generic.IEnumerable<string> blacklist) => LastBlacklist = new List<string>(blacklist);
         public List<string> LastWhitelist { get; private set; } = new();
         public void SetWhitelist(System.Collections.Generic.IEnumerable<string> whitelist) => LastWhitelist = new List<string>(whitelist);
+        public bool IsFpsCaptureEnabled { get; set; } = false;
+        public void SetFpsCaptureEnabled(bool enabled) => IsFpsCaptureEnabled = enabled;
         public void RequestPermission() { }
         public void CheckPermission() { }
     }
@@ -283,5 +285,36 @@ public class AutoGameModeTests
         settingsVm.AddCustomWhitelist();
         Assert.Contains("CustomApp2", settingsVm.WhitelistedApps);
         Assert.Equal("", settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void FpsCapture_DisabledWhenAllFpsMetricsDisabled_AndEnabledWhenAnyFpsMetricEnabled()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.ShowFps = false;
+        settings.Current.ShowOnePercentLowFps = false;
+        settings.Current.ShowFrametime = false;
+        settings.Current.ShowGraph = false;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        // When all FPS metrics are false, FPS screen capture is disabled!
+        Assert.False(fps.IsFpsCaptureEnabled);
+
+        // Enabling ShowFps enables FPS screen capture
+        vm.ShowFps = true;
+        Assert.True(fps.IsFpsCaptureEnabled);
+
+        // Disabling it disables screen capture again
+        vm.ShowFps = false;
+        Assert.False(fps.IsFpsCaptureEnabled);
+
+        // Enabling graph enables screen capture
+        vm.ShowGraph = true;
+        Assert.True(fps.IsFpsCaptureEnabled);
+
+        vm.ShowGraph = false;
+        Assert.False(fps.IsFpsCaptureEnabled);
     }
 }

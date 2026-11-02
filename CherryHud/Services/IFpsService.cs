@@ -33,6 +33,8 @@ public interface IFpsService
     string GetTrackedAppBundleId() => "";
     void SetBlacklist(IEnumerable<string> blacklist) { }
     void SetWhitelist(IEnumerable<string> whitelist) { }
+    void SetFpsCaptureEnabled(bool enabled) { }
+    bool IsFpsCaptureEnabled => false;
     void Start();
     void Stop();
     void RequestPermission();
