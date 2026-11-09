@@ -696,6 +696,10 @@ public partial class SettingsViewModel : ViewModelBase
     {
         _settingsService.Current.BetterDisplayEnabled = value;
         _settingsService.Save();
+        if (!value && _betterDisplayService.IsResolutionSwapped)
+        {
+            Task.Run(() => _betterDisplayService.RestoreDesktop(_settingsService.Current));
+        }
     }
 
     partial void OnBetterDisplayRestoreOnExitChanged(bool value)

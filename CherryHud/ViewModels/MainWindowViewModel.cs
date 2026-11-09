@@ -265,6 +265,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isAutoModeActive = true;
 
     private bool? _manualVisibilityOverride = null;
+    private int _trackedGamePid = 0;
+    private string _trackedGameName = "";
 
     private readonly ISettingsService _settingsService;
     public ISettingsService SettingsService => _settingsService;
@@ -949,17 +951,10 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
-        if (IsGameActive != isGame)
+        bool gameActiveChanged = (IsGameActive != isGame);
+        if (gameActiveChanged)
         {
             IsGameActive = isGame;
-            if (isGame)
-            {
-                Task.Run(() => _betterDisplayService.OnGameStarted(_settingsService.Current));
-            }
-            else
-            {
-                Task.Run(() => _betterDisplayService.OnGameEnded(_settingsService.Current));
-            }
 
             // When a game becomes active, seamlessly re-align to auto mode
             if (isGame && _manualVisibilityOverride.HasValue)
@@ -968,6 +963,48 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 IsAutoModeActive = true;
                 _settingsService.Current.AutoGameMode = true;
                 _settingsService.Save();
+            }
+        }
+
+        // BetterDisplay resolution handling:
+        // When game is active, switch to game resolution and remember the game process.
+        // As long as the game remains open (even if in background / Alt-Tabbed), DO NOT revert resolution.
+        // Only restore default desktop resolution when the game is completely closed.
+        if (isGame)
+        {
+            int currentPid = _fpsService.TrackedAppPid;
+            if (currentPid > 0)
+            {
+                _trackedGamePid = currentPid;
+            }
+            string currentName = _fpsService.GetTrackedAppName();
+            if (!string.IsNullOrWhiteSpace(currentName))
+            {
+                _trackedGameName = currentName;
+            }
+
+            if (!_betterDisplayService.IsResolutionSwapped)
+            {
+                Task.Run(() => _betterDisplayService.OnGameStarted(_settingsService.Current));
+            }
+        }
+        else if (_betterDisplayService.IsResolutionSwapped && (gameActiveChanged || isTextTick))
+        {
+            bool isStillOpen = false;
+            if (_trackedGamePid > 0)
+            {
+                isStillOpen = _fpsService.IsProcessAlive(_trackedGamePid);
+            }
+            if (!isStillOpen && !string.IsNullOrWhiteSpace(_trackedGameName))
+            {
+                isStillOpen = _fpsService.IsAppRunning(_trackedGameName);
+            }
+
+            if (!isStillOpen)
+            {
+                _trackedGamePid = 0;
+                _trackedGameName = "";
+                Task.Run(() => _betterDisplayService.OnGameEnded(_settingsService.Current));
             }
         }
 

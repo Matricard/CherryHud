@@ -28,6 +28,11 @@ public class BetterDisplayTests
         public string GetTrackedAppName() => "TestApp";
         public string GetTrackedAppBundleId() => "com.test.app";
         public GameWindowBounds? GetActiveGameWindowBounds() => null;
+        public int TrackedAppPid { get; set; } = 1234;
+        public bool IsProcessAliveResult { get; set; } = true;
+        public bool IsProcessAlive(int pid) => IsProcessAliveResult;
+        public bool IsAppRunningResult { get; set; } = true;
+        public bool IsAppRunning(string appName) => IsAppRunningResult;
     }
 
     private class MockSettingsService : ISettingsService
@@ -301,6 +306,68 @@ public class BetterDisplayTests
         mockBetterDisplay.OnGameEnded(mockSettings.Current);
         Assert.False(mockBetterDisplay.IsResolutionSwapped);
         Assert.Contains(commandsExecuted, c => c.Contains("set -displayWithMainStatus -displayModeNumber=39"));
+    }
+
+    [Fact]
+    public void MainWindowViewModel_ResolutionStaysUntilGameCompletelyClosed()
+    {
+        var settings = new AppSettings
+        {
+            BetterDisplayEnabled = true,
+            BetterDisplayRestoreOnExit = true,
+            BetterDisplaySavedDesktopModeNumber = 39,
+            BetterDisplaySavedDesktopResolution = "2580x1080"
+        };
+        var mockSettings = new MockSettingsService(settings);
+        var mockFps = new MockFpsService
+        {
+            IsGameActive = true,
+            TrackedAppPid = 5555,
+            IsProcessAliveResult = true,
+            IsAppRunningResult = true
+        };
+        var commandsExecuted = new List<string>();
+        var mockBetterDisplay = new BetterDisplayService("/fake/path", cmd =>
+        {
+            commandsExecuted.Add(cmd);
+            if (cmd.Contains("-displayModeList")) return SampleDisplayModeList;
+            if (cmd.Contains("-displayModeNumber")) return "39";
+            if (cmd.Contains("-resolution")) return "2580x1080";
+            return "";
+        });
+
+        using var vm = new MainWindowViewModel(
+            new MockTempService(),
+            mockFps,
+            new MockMetricsService(),
+            mockSettings,
+            mockBetterDisplay);
+
+        var updateMetricsMethod = typeof(MainWindowViewModel).GetMethod("UpdateMetrics",
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        Assert.NotNull(updateMetricsMethod);
+
+        // 1. Game is active: should swap resolution
+        updateMetricsMethod.Invoke(vm, new object[] { true, false });
+        System.Threading.Thread.Sleep(50); // allow Task.Run to finish
+        Assert.True(mockBetterDisplay.IsResolutionSwapped);
+
+        // 2. User Alt-tabs to desktop (IsGameActive = false), BUT game process (PID 5555) is still alive:
+        // Resolution must NOT revert!
+        mockFps.IsGameActive = false;
+        mockFps.IsProcessAliveResult = true;
+        mockFps.IsAppRunningResult = true;
+        updateMetricsMethod.Invoke(vm, new object[] { true, false });
+        System.Threading.Thread.Sleep(50);
+        Assert.True(mockBetterDisplay.IsResolutionSwapped);
+
+        // 3. Game process terminates completely (IsProcessAlive = false and IsAppRunning = false):
+        // Resolution MUST now revert to desktop!
+        mockFps.IsProcessAliveResult = false;
+        mockFps.IsAppRunningResult = false;
+        updateMetricsMethod.Invoke(vm, new object[] { true, false });
+        System.Threading.Thread.Sleep(50);
+        Assert.False(mockBetterDisplay.IsResolutionSwapped);
     }
 
     private class MockTempService : ITemperatureService

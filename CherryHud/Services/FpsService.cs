@@ -82,6 +82,17 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern IntPtr FpsMonitor_GetTrackedAppBundleId();
 
     [DllImport(LibraryName)]
+    private static extern int FpsMonitor_GetTrackedAppPid();
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsProcessAlive(int pid);
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsAppRunning([MarshalAs(UnmanagedType.LPUTF8Str)] string appName);
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_SetBlacklist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
 
     [DllImport(LibraryName)]
@@ -167,6 +178,62 @@ public sealed class FpsService : IFpsService, IDisposable
         catch
         {
             return "";
+        }
+    }
+
+    public int TrackedAppPid
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_GetTrackedAppPid();
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+    }
+
+    public bool IsProcessAlive(int pid)
+    {
+        if (pid <= 0) return false;
+        try
+        {
+            return FpsMonitor_IsProcessAlive(pid);
+        }
+        catch
+        {
+            try
+            {
+                var p = System.Diagnostics.Process.GetProcessById(pid);
+                return !p.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public bool IsAppRunning(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return false;
+        try
+        {
+            return FpsMonitor_IsAppRunning(appName);
+        }
+        catch
+        {
+            try
+            {
+                return System.Diagnostics.Process.GetProcessesByName(appName).Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 

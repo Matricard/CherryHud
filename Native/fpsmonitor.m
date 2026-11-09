@@ -180,9 +180,11 @@ static void FpsMonitor_LibraryInit(void) {
 @property (atomic) double currentFrametime;
 @property (atomic) BOOL isGameActive;
 @property (atomic) pid_t currentPid;
+@property (atomic) pid_t lastGamePid;
 @property (atomic) BOOL fpsCaptureEnabled;
 @property (nonatomic, copy) NSString *trackedAppName;
 @property (nonatomic, copy) NSString *trackedAppBundleId;
+@property (nonatomic, copy) NSString *lastGameName;
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
@@ -395,6 +397,8 @@ static BOOL s_initialFpsCaptureEnabled = NO;
         _currentFrametime = 0.0;
         _intervalPeakFrametime = 0.0;
         _currentPid = 0;
+        _lastGamePid = 0;
+        _lastGameName = @"";
         _tsHead = 0;
         _tsCount = 0;
         _prevFrameTime = 0.0;
@@ -452,6 +456,10 @@ static BOOL s_initialFpsCaptureEnabled = NO;
                                                                    selector:@selector(onAppActivated:)
                                                                        name:NSWorkspaceDidActivateApplicationNotification
                                                                      object:nil];
+            [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+                                                                   selector:@selector(onAppTerminated:)
+                                                                       name:NSWorkspaceDidTerminateApplicationNotification
+                                                                     object:nil];
 
             [self checkActiveWindow];
 
@@ -472,6 +480,13 @@ static BOOL s_initialFpsCaptureEnabled = NO;
         [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(checkActiveWindow) object:nil];
         [self performSelector:@selector(checkActiveWindow) withObject:nil afterDelay:0.15];
     });
+}
+
+- (void)onAppTerminated:(NSNotification *)note {
+    NSRunningApplication *app = note.userInfo[NSWorkspaceApplicationKey];
+    if (app && app.processIdentifier == self.lastGamePid) {
+        self.lastGamePid = 0;
+    }
 }
 
 - (void)stop {
@@ -619,6 +634,8 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
         // Definitively a game (WoW, Steam games, etc.) - mark active IMMEDIATELY (0ms)!
         self.isGameActive = YES;
         self->_currentPid = frontApp.processIdentifier;
+        self.lastGamePid = frontApp.processIdentifier;
+        self.lastGameName = appName;
     }
 
     // ------------------------------------------------------------------
@@ -715,6 +732,8 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
             // Active game confirmed
             self.isGameActive = YES;
+            self.lastGamePid = frontApp.processIdentifier;
+            self.lastGameName = appName;
 
             if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
                 return; // Already tracking this game stream
@@ -1082,6 +1101,34 @@ const char* FpsMonitor_GetTrackedAppBundleId(void) {
     NSString *bundleId = s_monitor.trackedAppBundleId ?: @"";
     [bundleId getCString:s_appBundleIdBuffer maxLength:sizeof(s_appBundleIdBuffer) encoding:NSUTF8StringEncoding];
     return s_appBundleIdBuffer;
+}
+
+int FpsMonitor_GetTrackedAppPid(void) {
+    if (!s_monitor) return 0;
+    if (s_monitor.lastGamePid > 0) return (int)s_monitor.lastGamePid;
+    return (int)s_monitor.currentPid;
+}
+
+bool FpsMonitor_IsProcessAlive(int pid) {
+    if (pid <= 0) return false;
+    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+    if (app) {
+        return !app.isTerminated;
+    }
+    return (kill(pid, 0) == 0 || errno == EPERM);
+}
+
+bool FpsMonitor_IsAppRunning(const char *appNameUtf8) {
+    if (!appNameUtf8 || strlen(appNameUtf8) == 0) return false;
+    NSString *targetName = [NSString stringWithUTF8String:appNameUtf8];
+    if (!targetName || targetName.length == 0) return false;
+
+    for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+        if (!app.isTerminated && app.localizedName && [app.localizedName isEqualToString:targetName]) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
