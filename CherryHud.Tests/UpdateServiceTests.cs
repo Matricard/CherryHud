@@ -31,6 +31,12 @@ public class UpdateServiceTests
     [InlineData("PreRelease-0.9.0", "0.9.1", false)]
     [InlineData("1.0.0", "0.9.1", true)]
     [InlineData("0.10.0", "0.9.5", true)]
+    [InlineData("1.0.2.2", "1.0.2.1", true)]
+    [InlineData("1.0.2.1", "1.0.2.2", false)]
+    [InlineData("1.0.2.1", "1.0.2", true)]
+    [InlineData("1.0.2", "1.0.2.1", false)]
+    [InlineData("1.0.3", "1.0.2.9", true)]
+    [InlineData("1.0.2.10", "1.0.2.2", true)]
     public void IsNewerVersion_ComparesCorrectly(string latest, string current, bool expected)
     {
         bool actual = UpdateService.IsNewerVersion(latest, current);
@@ -50,7 +56,7 @@ public class UpdateServiceTests
         }
 
         Assert.False(info.HasError, info.ErrorMessage);
-        Assert.Equal("1.0.2", info.CurrentVersion);
+        Assert.Equal("1.0.2.1", info.CurrentVersion);
         Assert.NotNull(info.LatestVersion);
         Assert.False(info.IsUpdateAvailable);
     }

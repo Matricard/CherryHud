@@ -10,9 +10,9 @@
     <AssemblyName>CherryHud</AssemblyName>
     <RootNamespace>CherryHud</RootNamespace>
     <RollForward>Major</RollForward>
-    <Version>1.0.2</Version>
-    <AssemblyVersion>1.0.2</AssemblyVersion>
-    <FileVersion>1.0.2</FileVersion>
+    <Version>1.0.2.1</Version>
+    <AssemblyVersion>1.0.2.1</AssemblyVersion>
+    <FileVersion>1.0.2.1</FileVersion>
     <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
