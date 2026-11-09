@@ -20,8 +20,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IFpsService _fpsService;
     public IFpsService FpsService => _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
-    private readonly IBetterDisplayService _betterDisplayService;
-    public IBetterDisplayService BetterDisplayService => _betterDisplayService;
     private readonly CancellationTokenSource _cts = new();
     private readonly double[] _bufferA = new double[HistoryCapacity];
     private readonly double[] _bufferB = new double[HistoryCapacity];
@@ -265,8 +263,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private bool _isAutoModeActive = true;
 
     private bool? _manualVisibilityOverride = null;
-    private int _trackedGamePid = 0;
-    private string _trackedGameName = "";
 
     private readonly ISettingsService _settingsService;
     public ISettingsService SettingsService => _settingsService;
@@ -685,22 +681,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _settingsService.Save();
     }
 
-    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService(), new BetterDisplayService())
+    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService())
     {
     }
 
     public MainWindowViewModel(
         ITemperatureService temperatureService,
         IFpsService fpsService,
-        ISystemMetricsService systemMetricsService) : this(temperatureService, fpsService, systemMetricsService, new SettingsService(), new BetterDisplayService())
-    {
-    }
-
-    public MainWindowViewModel(
-        ITemperatureService temperatureService,
-        IFpsService fpsService,
-        ISystemMetricsService systemMetricsService,
-        ISettingsService settingsService) : this(temperatureService, fpsService, systemMetricsService, settingsService, new BetterDisplayService())
+        ISystemMetricsService systemMetricsService) : this(temperatureService, fpsService, systemMetricsService, new SettingsService())
     {
     }
 
@@ -708,14 +696,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ITemperatureService temperatureService,
         IFpsService fpsService,
         ISystemMetricsService systemMetricsService,
-        ISettingsService settingsService,
-        IBetterDisplayService betterDisplayService)
+        ISettingsService settingsService)
     {
         _temperatureService = temperatureService;
         _fpsService = fpsService;
         _systemMetricsService = systemMetricsService;
         _settingsService = settingsService;
-        _betterDisplayService = betterDisplayService;
 
         SocName = SystemMetricsService.FormatSocName(_systemMetricsService.CpuName);
 
@@ -960,8 +946,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     {
         // 1. Instant response (16ms): evaluate game state
         bool isGame = _fpsService.IsGameActive;
-        bool gameActiveChanged = (IsGameActive != isGame);
-        if (gameActiveChanged)
+        if (IsGameActive != isGame)
         {
             IsGameActive = isGame;
 
@@ -972,48 +957,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
                 IsAutoModeActive = true;
                 _settingsService.Current.AutoGameMode = true;
                 _settingsService.Save();
-            }
-        }
-
-        // BetterDisplay resolution handling:
-        // When game is active, switch to game resolution and remember the game process.
-        // As long as the game remains open (even if in background / Alt-Tabbed), DO NOT revert resolution.
-        // Only restore default desktop resolution when the game is completely closed.
-        if (isGame)
-        {
-            int currentPid = _fpsService.TrackedAppPid;
-            if (currentPid > 0)
-            {
-                _trackedGamePid = currentPid;
-            }
-            string currentName = _fpsService.GetTrackedAppName();
-            if (!string.IsNullOrWhiteSpace(currentName))
-            {
-                _trackedGameName = currentName;
-            }
-
-            if (!_betterDisplayService.IsResolutionSwapped)
-            {
-                Task.Run(() => _betterDisplayService.OnGameStarted(_settingsService.Current));
-            }
-        }
-        else if (_betterDisplayService.IsResolutionSwapped && (gameActiveChanged || isTextTick))
-        {
-            bool isStillOpen = false;
-            if (_trackedGamePid > 0)
-            {
-                isStillOpen = _fpsService.IsProcessAlive(_trackedGamePid);
-            }
-            if (!isStillOpen && !string.IsNullOrWhiteSpace(_trackedGameName))
-            {
-                isStillOpen = _fpsService.IsAppRunning(_trackedGameName);
-            }
-
-            if (!isStillOpen)
-            {
-                _trackedGamePid = 0;
-                _trackedGameName = "";
-                Task.Run(() => _betterDisplayService.OnGameEnded(_settingsService.Current));
             }
         }
 
@@ -1471,11 +1414,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (_fpsService is IDisposable disposableFps)
         {
             disposableFps.Dispose();
-        }
-
-        if (_betterDisplayService.IsResolutionSwapped)
-        {
-            _betterDisplayService.RestoreDesktop(_settingsService.Current);
         }
 
         GC.SuppressFinalize(this);

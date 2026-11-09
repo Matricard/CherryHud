@@ -15,16 +15,11 @@ public partial class SettingsViewModel : ViewModelBase
     private readonly ISettingsService _settingsService;
     private readonly MainWindowViewModel? _mainViewModel;
     private readonly IFpsService _fpsService;
-    private readonly IBetterDisplayService _betterDisplayService;
 
     public LocalizationService Loc => LocalizationService.Instance;
 
     public ObservableCollection<string> PositionOptions { get; } = new();
     public ObservableCollection<string> ThemeOptions { get; } = new();
-    public ObservableCollection<string> BetterDisplayTargetOptions { get; } = new();
-    private readonly List<int?> _targetModeNumbers = new();
-    public ObservableCollection<string> BetterDisplayDesktopOptions { get; } = new();
-    private readonly List<int?> _desktopModeNumbers = new();
     public ObservableCollection<string> BlacklistedApps { get; } = new();
     public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
     public ObservableCollection<string> WhitelistedApps { get; } = new();
@@ -229,60 +224,14 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string _updateCardSubtitle = "";
 
-    // BetterDisplay Observable Properties
-    [ObservableProperty]
-    private bool _betterDisplayEnabled;
-
-    [ObservableProperty]
-    private bool _betterDisplayRestoreOnExit = true;
-
-    [ObservableProperty]
-    private bool _isBetterDisplayAvailable;
-
-    [ObservableProperty]
-    private bool _isBetterDisplayRunning;
-
-    [ObservableProperty]
-    private string _betterDisplayStatusText = "";
-
-    [ObservableProperty]
-    private string _betterDisplayStatusColor = "#7ED884";
-
-    [ObservableProperty]
-    private string _betterDisplayMonitorName = "--";
-
-    [ObservableProperty]
-    private string _betterDisplayCurrentResolution = "--";
-
-    [ObservableProperty]
-    private string _betterDisplaySavedResolution = "--";
-
-    [ObservableProperty]
-    private int _selectedBetterDisplayTargetIndex;
-
-    [ObservableProperty]
-    private int _selectedBetterDisplayDesktopIndex;
-
-    [ObservableProperty]
-    private string _betterDisplayFeedbackNotice = "";
-
-    partial void OnBetterDisplayFeedbackNoticeChanged(string value)
-    {
-        OnPropertyChanged(nameof(HasBetterDisplayFeedbackNotice));
-    }
-
-    public bool HasBetterDisplayFeedbackNotice => !string.IsNullOrWhiteSpace(BetterDisplayFeedbackNotice);
-
     public SettingsViewModel(
         ISettingsService settingsService,
-        MainWindowViewModel? mainViewModel,
-        IFpsService fpsService,
-        IBetterDisplayService? betterDisplayService = null)
+        MainWindowViewModel? mainViewModel = null,
+        IFpsService? fpsService = null)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
-        _fpsService = fpsService;
-        _betterDisplayService = betterDisplayService ?? mainViewModel?.BetterDisplayService ?? new BetterDisplayService();
+        _fpsService = fpsService ?? mainViewModel?.FpsService ?? new FpsService();
 
         SocName = mainViewModel != null ? mainViewModel.SocName : SystemMetricsService.FormatSocName(new SystemMetricsService().CpuName);
 
@@ -299,8 +248,6 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 UpdatePositionOptions();
                 UpdateThemeOptions();
-                UpdateBetterDisplayTargetOptions();
-                RefreshBetterDisplayState();
                 CheckPermissionStatus();
                 RefreshUpdateCardText();
                 OnPropertyChanged(nameof(Loc));
@@ -389,10 +336,6 @@ public partial class SettingsViewModel : ViewModelBase
         _gitHubRepo = s.GitHubRepo;
         SyncBlacklistedApps(s);
         SyncWhitelistedApps(s);
-
-        _betterDisplayEnabled = s.BetterDisplayEnabled;
-        _betterDisplayRestoreOnExit = s.BetterDisplayRestoreOnExit;
-        RefreshBetterDisplayState();
     }
 #pragma warning restore MVVMTK0034
 
@@ -719,268 +662,6 @@ public partial class SettingsViewModel : ViewModelBase
     public void ResetOverlayScale()
     {
         OverlayScalePercent = 100;
-    }
-
-    partial void OnBetterDisplayEnabledChanged(bool value)
-    {
-        _settingsService.Current.BetterDisplayEnabled = value;
-        _settingsService.Save();
-        if (!value && _betterDisplayService.IsResolutionSwapped)
-        {
-            Task.Run(() => _betterDisplayService.RestoreDesktop(_settingsService.Current));
-        }
-    }
-
-    partial void OnBetterDisplayRestoreOnExitChanged(bool value)
-    {
-        _settingsService.Current.BetterDisplayRestoreOnExit = value;
-        _settingsService.Save();
-    }
-
-    partial void OnSelectedBetterDisplayTargetIndexChanged(int value)
-    {
-        if (value < 0 || value >= _targetModeNumbers.Count) return;
-        int? targetNum = _targetModeNumbers[value];
-        _settingsService.Current.BetterDisplayTargetModeNumber = targetNum;
-        _settingsService.Save();
-    }
-
-    partial void OnSelectedBetterDisplayDesktopIndexChanged(int value)
-    {
-        if (value < 0 || value >= _desktopModeNumbers.Count) return;
-        int? desktopNum = _desktopModeNumbers[value];
-        if (desktopNum.HasValue)
-        {
-            _settingsService.Current.BetterDisplaySavedDesktopModeNumber = desktopNum.Value;
-            var modes = _betterDisplayService.GetAvailableModes();
-            var modeObj = modes.FirstOrDefault(m => m.ModeNumber == desktopNum.Value);
-            _settingsService.Current.BetterDisplaySavedDesktopResolution = modeObj?.DisplayText ?? "";
-            _settingsService.Save();
-            BetterDisplaySavedResolution = _settingsService.Current.BetterDisplaySavedDesktopResolution;
-        }
-    }
-
-    public void RefreshBetterDisplayState()
-    {
-        IsBetterDisplayAvailable = _betterDisplayService.IsAvailable;
-        IsBetterDisplayRunning = _betterDisplayService.IsRunning;
-
-        if (!IsBetterDisplayAvailable)
-        {
-            BetterDisplayStatusText = Loc.BetterDisplayStatusNotFound;
-            BetterDisplayStatusColor = "#FFB300"; // Amber
-        }
-        else if (!IsBetterDisplayRunning)
-        {
-            BetterDisplayStatusText = Loc.BetterDisplayStatusNotRunning;
-            BetterDisplayStatusColor = "#FFB300"; // Amber
-        }
-        else
-        {
-            BetterDisplayStatusText = Loc.BetterDisplayStatusActive;
-            BetterDisplayStatusColor = "#7ED884"; // Green
-        }
-
-        if (IsBetterDisplayAvailable && IsBetterDisplayRunning)
-        {
-            string name = _betterDisplayService.GetMainDisplayName();
-            BetterDisplayMonitorName = !string.IsNullOrWhiteSpace(name) ? name : "--";
-            string cur = _betterDisplayService.GetCurrentResolution();
-            BetterDisplayCurrentResolution = !string.IsNullOrWhiteSpace(cur) ? cur : "--";
-
-            var s = _settingsService.Current;
-            // Auto-memorize desktop mode if not already set!
-            if (!s.BetterDisplaySavedDesktopModeNumber.HasValue)
-            {
-                int? curMode = _betterDisplayService.GetCurrentDisplayModeNumber();
-                if (curMode.HasValue)
-                {
-                    s.BetterDisplaySavedDesktopModeNumber = curMode.Value;
-                    var modes = _betterDisplayService.GetAvailableModes();
-                    var curModeObj = modes.FirstOrDefault(m => m.ModeNumber == curMode.Value);
-                    s.BetterDisplaySavedDesktopResolution = curModeObj?.DisplayText ?? cur;
-                    _settingsService.Save();
-                }
-            }
-        }
-        else
-        {
-            BetterDisplayMonitorName = "--";
-            BetterDisplayCurrentResolution = "--";
-        }
-
-        var currentSettings = _settingsService.Current;
-        if (!string.IsNullOrWhiteSpace(currentSettings.BetterDisplaySavedDesktopResolution))
-        {
-            BetterDisplaySavedResolution = currentSettings.BetterDisplaySavedDesktopResolution;
-        }
-        else if (currentSettings.BetterDisplaySavedDesktopModeNumber.HasValue)
-        {
-            BetterDisplaySavedResolution = $"Mode {currentSettings.BetterDisplaySavedDesktopModeNumber.Value}";
-        }
-        else
-        {
-            BetterDisplaySavedResolution = Loc.BetterDisplayNoneSaved;
-        }
-
-        UpdateBetterDisplayTargetOptions();
-    }
-
-    public void UpdateBetterDisplayTargetOptions()
-    {
-        int prevTarget = _settingsService.Current.BetterDisplayTargetModeNumber ?? -1;
-        int prevDesktop = _settingsService.Current.BetterDisplaySavedDesktopModeNumber ?? -1;
-
-        BetterDisplayTargetOptions.Clear();
-        _targetModeNumbers.Clear();
-        BetterDisplayDesktopOptions.Clear();
-        _desktopModeNumbers.Clear();
-
-        // Option 0: Native monitor resolution (recommended)
-        BetterDisplayTargetOptions.Add(Loc.BetterDisplayTargetNativeOption);
-        _targetModeNumbers.Add(null);
-
-        if (IsBetterDisplayAvailable && IsBetterDisplayRunning)
-        {
-            var modes = _betterDisplayService.GetAvailableModes();
-            foreach (var mode in modes)
-            {
-                BetterDisplayTargetOptions.Add(mode.DisplayText);
-                _targetModeNumbers.Add(mode.ModeNumber);
-
-                BetterDisplayDesktopOptions.Add(mode.DisplayText);
-                _desktopModeNumbers.Add(mode.ModeNumber);
-            }
-        }
-
-        int foundIndex = prevTarget >= 0 ? _targetModeNumbers.IndexOf(prevTarget) : 0;
-        SelectedBetterDisplayTargetIndex = foundIndex >= 0 ? foundIndex : 0;
-
-        int foundDesktopIndex = prevDesktop >= 0 ? _desktopModeNumbers.IndexOf(prevDesktop) : -1;
-        if (foundDesktopIndex < 0 && _desktopModeNumbers.Count > 0)
-        {
-            int? curMode = _betterDisplayService.GetCurrentDisplayModeNumber();
-            foundDesktopIndex = curMode.HasValue ? _desktopModeNumbers.IndexOf(curMode.Value) : 0;
-        }
-        SelectedBetterDisplayDesktopIndex = foundDesktopIndex >= 0 ? foundDesktopIndex : 0;
-    }
-
-    [RelayCommand]
-    public void SaveCurrentDesktopResolution()
-    {
-        if (!IsBetterDisplayAvailable) return;
-        int? modeNum = _betterDisplayService.GetCurrentDisplayModeNumber();
-        string res = _betterDisplayService.GetCurrentResolution();
-
-        var modes = _betterDisplayService.GetAvailableModes();
-        var modeObj = modeNum.HasValue ? modes.FirstOrDefault(m => m.ModeNumber == modeNum.Value) : null;
-        string friendlyText = modeObj?.DisplayText ?? (!string.IsNullOrWhiteSpace(res) ? res : (modeNum.HasValue ? $"Mode {modeNum}" : ""));
-
-        _settingsService.Current.BetterDisplaySavedDesktopModeNumber = modeNum;
-        _settingsService.Current.BetterDisplaySavedDesktopResolution = friendlyText;
-        _settingsService.Save();
-
-        BetterDisplaySavedResolution = friendlyText;
-        if (modeNum.HasValue)
-        {
-            int idx = _desktopModeNumbers.IndexOf(modeNum.Value);
-            if (idx >= 0)
-            {
-                SelectedBetterDisplayDesktopIndex = idx;
-            }
-        }
-
-        BetterDisplayFeedbackNotice = Loc.BetterDisplaySavedSuccess;
-        _ = ClearFeedbackNoticeAfterDelayAsync();
-    }
-
-    [RelayCommand]
-    public void TestGameResolution()
-    {
-        if (!IsBetterDisplayAvailable) return;
-        Task.Run(() =>
-        {
-            var s = _settingsService.Current;
-
-            // Make sure desktop mode is captured before switching!
-            if (!s.BetterDisplaySavedDesktopModeNumber.HasValue)
-            {
-                int? curMode = _betterDisplayService.GetCurrentDisplayModeNumber();
-                if (curMode.HasValue)
-                {
-                    s.BetterDisplaySavedDesktopModeNumber = curMode.Value;
-                    var modes = _betterDisplayService.GetAvailableModes();
-                    var modeObj = modes.FirstOrDefault(m => m.ModeNumber == curMode.Value);
-                    s.BetterDisplaySavedDesktopResolution = modeObj?.DisplayText ?? _betterDisplayService.GetCurrentResolution();
-                    _settingsService.Save();
-                }
-            }
-
-            BetterDisplayMode? target = null;
-            if (s.BetterDisplayTargetModeNumber.HasValue)
-            {
-                var modes = _betterDisplayService.GetAvailableModes();
-                target = modes.FirstOrDefault(m => m.ModeNumber == s.BetterDisplayTargetModeNumber.Value);
-            }
-            target ??= _betterDisplayService.GetNativeMode();
-
-            if (target != null)
-            {
-                _betterDisplayService.SetDisplayMode(target.ModeNumber);
-            }
-
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                string cur = _betterDisplayService.GetCurrentResolution();
-                if (!string.IsNullOrWhiteSpace(cur))
-                {
-                    BetterDisplayCurrentResolution = cur;
-                }
-            });
-        });
-    }
-
-    [RelayCommand]
-    public void TestDesktopResolution()
-    {
-        if (!IsBetterDisplayAvailable) return;
-        var s = _settingsService.Current;
-        if (SelectedBetterDisplayDesktopIndex >= 0 && SelectedBetterDisplayDesktopIndex < _desktopModeNumbers.Count)
-        {
-            var chosenMode = _desktopModeNumbers[SelectedBetterDisplayDesktopIndex];
-            if (chosenMode.HasValue)
-            {
-                s.BetterDisplaySavedDesktopModeNumber = chosenMode.Value;
-                var modes = _betterDisplayService.GetAvailableModes();
-                var curModeObj = modes.FirstOrDefault(m => m.ModeNumber == chosenMode.Value);
-                s.BetterDisplaySavedDesktopResolution = curModeObj?.DisplayText ?? "";
-                _settingsService.Save();
-            }
-        }
-        Task.Run(() =>
-        {
-            _betterDisplayService.RestoreDesktop(s);
-            Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-            {
-                string cur = _betterDisplayService.GetCurrentResolution();
-                if (!string.IsNullOrWhiteSpace(cur))
-                {
-                    BetterDisplayCurrentResolution = cur;
-                }
-            });
-        });
-    }
-
-    [RelayCommand]
-    public void RefreshBetterDisplay()
-    {
-        RefreshBetterDisplayState();
-    }
-
-    private async Task ClearFeedbackNoticeAfterDelayAsync()
-    {
-        await Task.Delay(3000);
-        BetterDisplayFeedbackNotice = "";
     }
 
     partial void OnShowSocTempChanged(bool value)
@@ -1395,14 +1076,6 @@ public partial class SettingsViewModel : ViewModelBase
         WhitelistedApps.Clear();
         _settingsService.Current.AutoModeBlacklist = new List<string>();
         _settingsService.Current.AutoModeWhitelist = new List<string>();
-        _settingsService.Current.BetterDisplayEnabled = false;
-        _settingsService.Current.BetterDisplayRestoreOnExit = true;
-        _settingsService.Current.BetterDisplaySavedDesktopModeNumber = null;
-        _settingsService.Current.BetterDisplaySavedDesktopResolution = "";
-        _settingsService.Current.BetterDisplayTargetModeNumber = null;
-        _settingsService.Current.BetterDisplayTargetResolution = "Native";
-        BetterDisplayEnabled = false;
-        BetterDisplayRestoreOnExit = true;
         _settingsService.Save();
         _fpsService.SetBlacklist(Array.Empty<string>());
         _fpsService.SetWhitelist(Array.Empty<string>());
@@ -1410,7 +1083,6 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasWhitelistedApps));
         UpdatePositionOptions();
         UpdateThemeOptions();
-        RefreshBetterDisplayState();
         CheckPermissionStatus();
         RefreshUpdateCardText();
         OnPropertyChanged(nameof(Loc));

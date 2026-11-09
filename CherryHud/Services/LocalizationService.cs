@@ -39,7 +39,6 @@ public class LocalizationService : ObservableObject
 
     // Tabs
     public string TabGeneral => IsFrench ? "Général" : "General";
-    public string TabDisplay => IsFrench ? "Écran (BetterDisplay)" : "Display (BetterDisplay)";
     public string TabApplications => IsFrench ? "Applications" : "Applications";
     public string TabMetrics => IsFrench ? "Métriques" : "Metrics";
     public string TabAbout => IsFrench ? "À propos" : "About";
@@ -128,28 +127,6 @@ public class LocalizationService : ObservableObject
 
     public string GitHubRepoTitle => IsFrench ? "Dépôt GitHub source" : "GitHub Source Repository";
     public string GitHubRepoSubtitle => IsFrench ? "Référence GitHub Releases (propriétaire/dépôt)" : "GitHub Releases reference (owner/repo)";
-
-    // BetterDisplay Integration
-    public string BetterDisplayCardTitle => IsFrench ? "Résolution d'écran (BetterDisplay)" : "Display Resolution (BetterDisplay)";
-    public string BetterDisplayCardSubtitle => IsFrench ? "Bascule automatiquement l'écran sur sa résolution native en jeu et restaure le bureau à la sortie" : "Automatically switches display to native monitor resolution in-game and restores desktop upon exit";
-    public string BetterDisplayEnableLabel => IsFrench ? "Activer l'ajustement automatique de résolution" : "Enable automatic resolution switching";
-    public string BetterDisplayEnableSubtitle => IsFrench ? "Applique la résolution du moniteur dès qu'un jeu démarre" : "Applies monitor resolution as soon as a game starts";
-    public string BetterDisplayStatusActive => IsFrench ? "✓ BetterDisplay actif" : "✓ BetterDisplay active";
-    public string BetterDisplayStatusNotFound => IsFrench ? "⚠️ BetterDisplay non détecté (/Applications/BetterDisplay.app requis)" : "⚠️ BetterDisplay not detected (/Applications/BetterDisplay.app required)";
-    public string BetterDisplayStatusNotRunning => IsFrench ? "⚠️ BetterDisplay installé mais non lancé" : "⚠️ BetterDisplay installed but not running";
-    public string BetterDisplayMonitorLabel => IsFrench ? "Moniteur principal :" : "Main monitor:";
-    public string BetterDisplayCurrentResLabel => IsFrench ? "Résolution actuelle :" : "Current resolution:";
-    public string BetterDisplayDesktopSavedLabel => IsFrench ? "Résolution bureau :" : "Desktop resolution:";
-    public string BetterDisplayTargetResLabel => IsFrench ? "Résolution en jeu :" : "In-game resolution:";
-    public string BetterDisplayTargetNativeOption => IsFrench ? "Résolution native du moniteur (recommandé)" : "Monitor native resolution (recommended)";
-    public string BetterDisplaySaveCurrentBtn => IsFrench ? "Mémoriser actuelle" : "Save current";
-    public string BetterDisplayRestoreOnExitToggle => IsFrench ? "Restaurer le bureau à la fermeture du jeu" : "Restore desktop on game exit";
-    public string BetterDisplayRestoreOnExitSubtitle => IsFrench ? "Rétablit automatiquement la résolution de votre bureau dès que le jeu se ferme" : "Automatically restores desktop resolution as soon as the game closes";
-    public string BetterDisplayTestGameBtn => IsFrench ? "Tester (Jeu)" : "Test (Game)";
-    public string BetterDisplayTestDesktopBtn => IsFrench ? "Tester (Bureau)" : "Test (Desktop)";
-    public string BetterDisplayRefreshBtn => IsFrench ? "Actualiser" : "Refresh";
-    public string BetterDisplaySavedSuccess => IsFrench ? "Résolution mémorisée !" : "Resolution saved!";
-    public string BetterDisplayNoneSaved => IsFrench ? "Non mémorisée (automatique au 1er jeu)" : "Not saved (auto on 1st game)";
 
     // About
     public string AboutDesc => IsFrench ? "Overlay de performance gaming natif pour macOS" : "Native macOS gaming performance overlay";
