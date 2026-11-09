@@ -330,7 +330,7 @@ public partial class App : Application
 
         var settingsService = mainVm?.SettingsService ?? new SettingsService();
         var fpsService = new FpsService();
-        var settingsVm = new SettingsViewModel(settingsService, mainVm, fpsService);
+        var settingsVm = new SettingsViewModel(settingsService, mainVm, fpsService, mainVm?.BetterDisplayService);
 
         _settingsWindow = new SettingsWindow
         {

@@ -312,6 +312,208 @@
                                 </Grid>
                             </StackPanel>
                         </Border>
+
+                        <!-- BetterDisplay Integration Card -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
+                            <StackPanel Spacing="10">
+                                <!-- Title & Main Toggle -->
+                                <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
+                                        <TextBlock Text="{Binding Loc.BetterDisplayCardTitle}"
+                                                   Foreground="#FFFFFF"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Loc.BetterDisplayCardSubtitle}"
+                                                   Foreground="#8A8D9F"
+                                                   FontSize="11"
+                                                   TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="1"
+                                                  IsChecked="{Binding BetterDisplayEnabled}"
+                                                  OnContent="" OffContent="" />
+                                </Grid>
+
+                                <!-- Status / Refresh banner -->
+                                <Border Background="#14FFFFFF" CornerRadius="6" Padding="10,6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding BetterDisplayStatusText}"
+                                                   Foreground="{Binding BetterDisplayStatusColor}"
+                                                   FontSize="11"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center"
+                                                   TextWrapping="Wrap" />
+                                        <Button Grid.Column="1"
+                                                Content="{Binding Loc.BetterDisplayRefreshBtn}"
+                                                Command="{Binding RefreshBetterDisplayCommand}"
+                                                Background="#242838"
+                                                Foreground="#FFFFFF"
+                                                BorderBrush="#383D54"
+                                                BorderThickness="1"
+                                                FontSize="10.5"
+                                                CornerRadius="5"
+                                                Padding="8,3"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="#32384D" />
+                                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter Property="BorderBrush" Value="#4C5474" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+
+                                <!-- BetterDisplay Controls -->
+                                <StackPanel Spacing="9" IsEnabled="{Binding BetterDisplayEnabled}">
+                                    <!-- Monitor info & current resolution -->
+                                    <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch">
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock Text="{Binding Loc.BetterDisplayMonitorLabel}"
+                                                       Foreground="#8A8D9F"
+                                                       FontSize="10.5" />
+                                            <TextBlock Text="{Binding BetterDisplayMonitorName}"
+                                                       Foreground="#FFFFFF"
+                                                       FontSize="11.5"
+                                                       FontWeight="SemiBold" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="{Binding Loc.BetterDisplayCurrentResLabel}"
+                                                       Foreground="#8A8D9F"
+                                                       FontSize="10.5" />
+                                            <TextBlock Text="{Binding BetterDisplayCurrentResolution}"
+                                                       Foreground="#7ED884"
+                                                       FontSize="11.5"
+                                                       FontWeight="Bold" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Rectangle Height="1" Fill="#14FFFFFF" Margin="0,2" />
+
+                                    <!-- Saved desktop resolution row with "Save current" button -->
+                                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,10,0">
+                                            <TextBlock Text="{Binding Loc.BetterDisplayDesktopSavedLabel}"
+                                                       Foreground="#8A8D9F"
+                                                       FontSize="10.5" />
+                                            <TextBlock Text="{Binding BetterDisplaySavedResolution}"
+                                                       Foreground="#FFFFFF"
+                                                       FontSize="11.5"
+                                                       FontWeight="SemiBold"
+                                                       TextWrapping="Wrap" />
+                                            <TextBlock Text="{Binding BetterDisplayFeedbackNotice}"
+                                                       Foreground="#7ED884"
+                                                       FontSize="10.5"
+                                                       FontWeight="SemiBold"
+                                                       IsVisible="{Binding HasBetterDisplayFeedbackNotice}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Content="{Binding Loc.BetterDisplaySaveCurrentBtn}"
+                                                Command="{Binding SaveCurrentDesktopResolutionCommand}"
+                                                Background="#242838"
+                                                Foreground="#FFFFFF"
+                                                BorderBrush="#383D54"
+                                                BorderThickness="1"
+                                                FontSize="11"
+                                                FontWeight="Medium"
+                                                CornerRadius="6"
+                                                Padding="10,5"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="#32384D" />
+                                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter Property="BorderBrush" Value="#4C5474" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- In-game target resolution dropdown -->
+                                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                            <TextBlock Text="{Binding Loc.BetterDisplayTargetResLabel}"
+                                                       Foreground="#FFFFFF"
+                                                       FontSize="11.5"
+                                                       FontWeight="Medium" />
+                                        </StackPanel>
+                                        <ComboBox Grid.Column="1"
+                                                  ItemsSource="{Binding BetterDisplayTargetOptions}"
+                                                  SelectedIndex="{Binding SelectedBetterDisplayTargetIndex}"
+                                                  Width="240"
+                                                  FontSize="11" />
+                                    </Grid>
+
+                                    <!-- Restore on exit toggle -->
+                                    <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                        <StackPanel Grid.Column="0" Spacing="2" Margin="0,0,16,0">
+                                            <TextBlock Text="{Binding Loc.BetterDisplayRestoreOnExitToggle}"
+                                                       Foreground="#FFFFFF"
+                                                       FontSize="11.5"
+                                                       FontWeight="Medium" />
+                                            <TextBlock Text="{Binding Loc.BetterDisplayRestoreOnExitSubtitle}"
+                                                       Foreground="#8A8D9F"
+                                                       FontSize="10.5"
+                                                       TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <ToggleSwitch Grid.Column="1"
+                                                      IsChecked="{Binding BetterDisplayRestoreOnExit}"
+                                                      OnContent="" OffContent="" />
+                                    </Grid>
+
+                                    <!-- Test Action Buttons -->
+                                    <Grid ColumnDefinitions="*,*" HorizontalAlignment="Stretch" Margin="0,4,0,0">
+                                        <Button Grid.Column="0"
+                                                Content="{Binding Loc.BetterDisplayTestGameBtn}"
+                                                Command="{Binding TestGameResolutionCommand}"
+                                                Background="#242838"
+                                                Foreground="#4EA2FF"
+                                                BorderBrush="#383D54"
+                                                BorderThickness="1"
+                                                FontSize="11"
+                                                FontWeight="Medium"
+                                                CornerRadius="6"
+                                                Padding="10,5"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                Margin="0,0,5,0"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="#32384D" />
+                                                    <Setter Property="Foreground" Value="#4EA2FF" />
+                                                    <Setter Property="BorderBrush" Value="#4C5474" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                        <Button Grid.Column="1"
+                                                Content="{Binding Loc.BetterDisplayTestDesktopBtn}"
+                                                Command="{Binding TestDesktopResolutionCommand}"
+                                                Background="#242838"
+                                                Foreground="#D0D3E0"
+                                                BorderBrush="#383D54"
+                                                BorderThickness="1"
+                                                FontSize="11"
+                                                FontWeight="Medium"
+                                                CornerRadius="6"
+                                                Padding="10,5"
+                                                HorizontalAlignment="Stretch"
+                                                HorizontalContentAlignment="Center"
+                                                Margin="5,0,0,0"
+                                                Cursor="Hand">
+                                            <Button.Styles>
+                                                <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                                                    <Setter Property="Background" Value="#32384D" />
+                                                    <Setter Property="Foreground" Value="#FFFFFF" />
+                                                    <Setter Property="BorderBrush" Value="#4C5474" />
+                                                </Style>
+                                            </Button.Styles>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

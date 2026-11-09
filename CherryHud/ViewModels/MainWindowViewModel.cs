@@ -20,6 +20,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IFpsService _fpsService;
     public IFpsService FpsService => _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
+    private readonly IBetterDisplayService _betterDisplayService;
+    public IBetterDisplayService BetterDisplayService => _betterDisplayService;
     private readonly CancellationTokenSource _cts = new();
     private readonly double[] _bufferA = new double[HistoryCapacity];
     private readonly double[] _bufferB = new double[HistoryCapacity];
@@ -673,14 +675,14 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         _settingsService.Save();
     }
 
-    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService())
+    public MainWindowViewModel() : this(new SmcTemperatureService(), new FpsService(), new SystemMetricsService(), new SettingsService(), new BetterDisplayService())
     {
     }
 
     public MainWindowViewModel(
         ITemperatureService temperatureService,
         IFpsService fpsService,
-        ISystemMetricsService systemMetricsService) : this(temperatureService, fpsService, systemMetricsService, new SettingsService())
+        ISystemMetricsService systemMetricsService) : this(temperatureService, fpsService, systemMetricsService, new SettingsService(), new BetterDisplayService())
     {
     }
 
@@ -688,12 +690,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         ITemperatureService temperatureService,
         IFpsService fpsService,
         ISystemMetricsService systemMetricsService,
-        ISettingsService settingsService)
+        ISettingsService settingsService) : this(temperatureService, fpsService, systemMetricsService, settingsService, new BetterDisplayService())
+    {
+    }
+
+    public MainWindowViewModel(
+        ITemperatureService temperatureService,
+        IFpsService fpsService,
+        ISystemMetricsService systemMetricsService,
+        ISettingsService settingsService,
+        IBetterDisplayService betterDisplayService)
     {
         _temperatureService = temperatureService;
         _fpsService = fpsService;
         _systemMetricsService = systemMetricsService;
         _settingsService = settingsService;
+        _betterDisplayService = betterDisplayService;
 
         SocName = SystemMetricsService.FormatSocName(_systemMetricsService.CpuName);
 
@@ -940,6 +952,15 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (IsGameActive != isGame)
         {
             IsGameActive = isGame;
+            if (isGame)
+            {
+                Task.Run(() => _betterDisplayService.OnGameStarted(_settingsService.Current));
+            }
+            else
+            {
+                Task.Run(() => _betterDisplayService.OnGameEnded(_settingsService.Current));
+            }
+
             // When a game becomes active, seamlessly re-align to auto mode
             if (isGame && _manualVisibilityOverride.HasValue)
             {
@@ -1404,6 +1425,11 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         if (_fpsService is IDisposable disposableFps)
         {
             disposableFps.Dispose();
+        }
+
+        if (_betterDisplayService.IsResolutionSwapped)
+        {
+            _betterDisplayService.RestoreDesktop(_settingsService.Current);
         }
 
         GC.SuppressFinalize(this);

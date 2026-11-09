@@ -75,4 +75,12 @@ public class AppSettings
 
     public bool AutoCheckUpdates { get; set; } = true;
     public string GitHubRepo { get; set; } = "Matricard/CherryHud";
+
+    // BetterDisplay Integration
+    public bool BetterDisplayEnabled { get; set; } = false;
+    public bool BetterDisplayRestoreOnExit { get; set; } = true;
+    public int? BetterDisplaySavedDesktopModeNumber { get; set; } = null;
+    public string BetterDisplaySavedDesktopResolution { get; set; } = "";
+    public int? BetterDisplayTargetModeNumber { get; set; } = null;
+    public string BetterDisplayTargetResolution { get; set; } = "Native";
 }
