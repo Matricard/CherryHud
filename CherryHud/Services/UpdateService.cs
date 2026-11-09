@@ -53,6 +53,17 @@ public class UpdateService
         return "1.0.2.1";
     }
 
+    public static string GetDisplayVersion()
+    {
+        string ver = GetCurrentVersion();
+        var parts = ver.Split('.');
+        if (parts.Length >= 4 && int.TryParse(parts[3], out int buildNum) && buildNum > 0)
+        {
+            return $"{parts[0]}.{parts[1]}.{parts[2]} (Build {buildNum})";
+        }
+        return ver;
+    }
+
     public static bool IsUpdateAvailable { get; private set; }
     public static string? LatestAvailableVersion { get; private set; }
     public static event Action<bool>? UpdateAvailabilityChanged;

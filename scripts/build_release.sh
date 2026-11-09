@@ -14,6 +14,7 @@ VERSION=""
 ARCH="arm64"
 
 BUMP_BUILD=false
+IS_RELEASE=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -29,6 +30,10 @@ while [[ $# -gt 0 ]]; do
             BUMP_BUILD=true
             shift
             ;;
+        --release|-r)
+            IS_RELEASE=true
+            shift
+            ;;
         *)
             if [[ -z "$VERSION" ]]; then
                 VERSION="$1"
@@ -40,7 +45,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$BUMP_BUILD" == "true" ]]; then
+if [[ "$IS_RELEASE" == "true" ]]; then
+    "$REPO_ROOT/scripts/bump_build.sh" --release
+    VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
+elif [[ "$BUMP_BUILD" == "true" ]]; then
     "$REPO_ROOT/scripts/bump_build.sh"
     # Re-extract bumped version
     VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')

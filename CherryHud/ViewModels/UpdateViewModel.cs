@@ -24,7 +24,7 @@ public partial class UpdateViewModel : ViewModelBase
     private string _statusMessage = "Connexion aux serveurs GitHub...";
 
     [ObservableProperty]
-    private string _currentVersionText = $"Version actuelle : {UpdateService.GetCurrentVersion()}";
+    private string _currentVersionText = $"Version actuelle : {UpdateService.GetDisplayVersion()}";
 
     [ObservableProperty]
     private string _latestVersionText = string.Empty;
@@ -76,7 +76,7 @@ public partial class UpdateViewModel : ViewModelBase
     private void RefreshLocalizedState()
     {
         bool fr = Loc.IsFrench;
-        string curVer = _latestUpdateInfo?.CurrentVersion ?? UpdateService.GetCurrentVersion();
+        string curVer = _latestUpdateInfo?.CurrentVersion ?? UpdateService.GetDisplayVersion();
         CurrentVersionText = fr ? $"Version actuelle : {curVer}" : $"Current version: {curVer}";
 
         if (_latestUpdateInfo != null)

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # CherryHud Build Version Bumping Script
-# Increments the 4th build digit (e.g. 1.0.2.1 -> 1.0.2.2) across project files
+# - Dev mode (default): increments 4th build digit (e.g. 1.0.2.1 -> 1.0.2.2)
+# - Release mode (--release / -r): sets clean 3-digit release (e.g. 1.0.2.1 -> 1.0.2)
+# - Custom version: ./scripts/bump_build.sh 1.0.3
 # ==============================================================================
 
 set -euo pipefail
@@ -19,18 +21,45 @@ if [[ -z "$CURRENT_VER" ]]; then
     exit 1
 fi
 
-IFS='.' read -r -a PARTS <<< "$CURRENT_VER"
+ACTION="dev"
+TARGET_VER=""
 
-if [[ ${#PARTS[@]} -eq 3 ]]; then
-    NEW_VER="${PARTS[0]}.${PARTS[1]}.${PARTS[2]}.1"
-elif [[ ${#PARTS[@]} -ge 4 ]]; then
-    BUILD_NUM=$((PARTS[3] + 1))
-    NEW_VER="${PARTS[0]}.${PARTS[1]}.${PARTS[2]}.${BUILD_NUM}"
-else
-    NEW_VER="${CURRENT_VER}.1"
+if [[ $# -gt 0 ]]; then
+    case "$1" in
+        --release|-r)
+            ACTION="release"
+            ;;
+        --dev|-d)
+            ACTION="dev"
+            ;;
+        *)
+            TARGET_VER="$1"
+            ACTION="custom"
+            ;;
+    esac
 fi
 
-echo "🍒 Bumping version: ${CURRENT_VER} -> ${NEW_VER}"
+IFS='.' read -r -a PARTS <<< "$CURRENT_VER"
+
+if [[ "$ACTION" == "release" ]]; then
+    # Format to clean 3-digit release (e.g. 1.0.2)
+    NEW_VER="${PARTS[0]}.${PARTS[1]}.${PARTS[2]}"
+    echo "📦 Setting official 3-digit release version: ${CURRENT_VER} -> ${NEW_VER}"
+elif [[ "$ACTION" == "custom" ]]; then
+    NEW_VER="$TARGET_VER"
+    echo "🍒 Setting custom version: ${CURRENT_VER} -> ${NEW_VER}"
+else
+    # Dev tracking: increment or add 4th build digit
+    if [[ ${#PARTS[@]} -eq 3 ]]; then
+        NEW_VER="${PARTS[0]}.${PARTS[1]}.${PARTS[2]}.1"
+    elif [[ ${#PARTS[@]} -ge 4 ]]; then
+        BUILD_NUM=$((PARTS[3] + 1))
+        NEW_VER="${PARTS[0]}.${PARTS[1]}.${PARTS[2]}.${BUILD_NUM}"
+    else
+        NEW_VER="${CURRENT_VER}.1"
+    fi
+    echo "🍒 Bumping dev build version: ${CURRENT_VER} -> ${NEW_VER}"
+fi
 
 # Update CherryHud.csproj
 sed -i '' -e "s/<Version>[^<]*<\/Version>/<Version>${NEW_VER}<\/Version>/" "$CSPROJ"
