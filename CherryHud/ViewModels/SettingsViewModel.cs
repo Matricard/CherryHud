@@ -218,6 +218,12 @@ public partial class SettingsViewModel : ViewModelBase
     private string _latestVersion = "";
 
     [ObservableProperty]
+    private int _overlayScalePercent = 100;
+
+    [ObservableProperty]
+    private string _overlayScaleDisplay = "100%";
+
+    [ObservableProperty]
     private string _updateCardTitle = "";
 
     [ObservableProperty]
@@ -349,6 +355,9 @@ public partial class SettingsViewModel : ViewModelBase
         _autoTrackGameWindow = s.AutoTrackGameWindow;
         _selectedThemeIndex = (int)s.OverlayTheme;
         _allowOverlayDrag = s.AllowOverlayDrag;
+        double scale = s.OverlayScale > 0 ? s.OverlayScale : 1.0;
+        _overlayScalePercent = (int)Math.Round(scale * 100);
+        _overlayScaleDisplay = $"{_overlayScalePercent}%";
         UpdatePositionOptions();
         UpdateThemeOptions();
 
@@ -690,6 +699,26 @@ public partial class SettingsViewModel : ViewModelBase
         {
             _mainViewModel.AllowOverlayDrag = value;
         }
+    }
+
+    partial void OnOverlayScalePercentChanged(int value)
+    {
+        if (value < 50) value = 50;
+        if (value > 250) value = 250;
+        OverlayScaleDisplay = $"{value}%";
+        double scale = value / 100.0;
+        _settingsService.Current.OverlayScale = scale;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.OverlayScale = scale;
+        }
+    }
+
+    [RelayCommand]
+    public void ResetOverlayScale()
+    {
+        OverlayScalePercent = 100;
     }
 
     partial void OnBetterDisplayEnabledChanged(bool value)
@@ -1341,6 +1370,7 @@ public partial class SettingsViewModel : ViewModelBase
         SelectedPositionIndex = 0;
         AutoTrackGameWindow = true;
         SelectedThemeIndex = 0;
+        OverlayScalePercent = 100;
         AllowOverlayDrag = true;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";

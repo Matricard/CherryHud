@@ -117,6 +117,7 @@ public partial class MainWindow : Window
                     }
                     else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition)
                           || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme)
+                          || e.PropertyName == nameof(MainWindowViewModel.OverlayScale)
                           || e.PropertyName == nameof(MainWindowViewModel.AutoTrackGameWindow))
                     {
                         if (vm.IsUserDraggingOverlay) return;

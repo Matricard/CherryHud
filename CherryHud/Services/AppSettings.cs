@@ -34,6 +34,7 @@ public class AppSettings
     public int CustomScreenOffsetY { get; set; } = 8;
     public bool AutoTrackGameWindow { get; set; } = true;
     public OverlayTheme OverlayTheme { get; set; } = OverlayTheme.Normal;
+    public double OverlayScale { get; set; } = 1.0;
     public bool AllowOverlayDrag { get; set; } = true;
     
     public bool ShowSocTemp { get; set; } = true;

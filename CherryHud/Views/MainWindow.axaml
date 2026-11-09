@@ -5,7 +5,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" 
-        Width="{Binding OverlayWidth}"
         SizeToContent="{Binding WindowSizeToContent}"
         x:Class="CherryHud.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -24,13 +23,19 @@
         <KeyBinding Gesture="Cmd+Q" Command="{Binding QuitCommand}" />
     </Window.KeyBindings>
 
-    <!-- Carte HUD avec theme dynamique et lueur néon optionnelle -->
-    <Border CornerRadius="{Binding CardCornerRadius}"
-            Background="{Binding CardBackground}"
-            BorderBrush="{Binding CardBorderBrush}"
-            BorderThickness="{Binding CardBorderThickness}"
-            BoxShadow="{Binding CardBoxShadow}"
-            Padding="{Binding CardPadding}">
+    <LayoutTransformControl HorizontalAlignment="Left" VerticalAlignment="Top">
+        <LayoutTransformControl.LayoutTransform>
+            <ScaleTransform ScaleX="{Binding OverlayScale}" ScaleY="{Binding OverlayScale}" />
+        </LayoutTransformControl.LayoutTransform>
+
+        <!-- Carte HUD avec theme dynamique et lueur néon optionnelle -->
+        <Border Width="{Binding OverlayWidth}"
+                CornerRadius="{Binding CardCornerRadius}"
+                Background="{Binding CardBackground}"
+                BorderBrush="{Binding CardBorderBrush}"
+                BorderThickness="{Binding CardBorderThickness}"
+                BoxShadow="{Binding CardBoxShadow}"
+                Padding="{Binding CardPadding}">
 
         <Panel>
             <!-- Mode Normal (Disposition Verticale) -->
@@ -753,4 +758,5 @@
             </StackPanel>
         </Panel>
     </Border>
+    </LayoutTransformControl>
 </Window>

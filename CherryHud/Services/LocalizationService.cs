@@ -73,6 +73,11 @@ public class LocalizationService : ObservableObject
     public string ThemeNormal => IsFrench ? "Normal" : "Normal";
     public string ThemeCompact => IsFrench ? "Compact" : "Compact";
 
+    // Scale Card
+    public string ScaleTitle => IsFrench ? "Échelle du HUD" : "HUD Scale";
+    public string ScaleSubtitle => IsFrench ? "Ajustez la taille d'affichage de l'overlay (grossissement)" : "Adjust overlay display size and magnification";
+    public string ScaleResetButton => IsFrench ? "100%" : "100%";
+
     // Drag & Drop Card
     public string AllowDragTitle => IsFrench ? "Glisser-déposer de l'overlay" : "Overlay Drag & Drop";
     public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre de l'overlay à la souris" : "Allow moving the overlay freely with the mouse";

@@ -272,6 +272,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     public ISettingsService SettingsService => _settingsService;
 
     [ObservableProperty]
+    private double _overlayScale = 1.0;
+
+    [ObservableProperty]
+    private double _cardWidth = 200;
+
+    [ObservableProperty]
     private bool _showGpu = true;
 
     [ObservableProperty]
@@ -553,6 +559,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
             IsCompact = true;
             WindowSizeToContent = SizeToContent.WidthAndHeight;
             OverlayWidth = double.NaN;
+            CardWidth = double.NaN;
             CardPadding = new Thickness(14, 7, 14, 7);
             CardCornerRadius = new CornerRadius(12);
 
@@ -572,8 +579,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         else
         {
             IsCompact = false;
-            WindowSizeToContent = SizeToContent.Height;
+            WindowSizeToContent = SizeToContent.WidthAndHeight;
             OverlayWidth = 200;
+            CardWidth = 200;
             CardPadding = new Thickness(12, 14, 12, 8);
             CardCornerRadius = new CornerRadius(16);
             BadgeFontSize = 14;
@@ -761,6 +769,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         OverlayTheme = s.OverlayTheme;
         ApplyTheme(s.OverlayTheme);
         AllowOverlayDrag = s.AllowOverlayDrag;
+        OverlayScale = s.OverlayScale > 0 ? s.OverlayScale : 1.0;
         IsAutoModeActive = s.AutoGameMode;
         if (s.AutoGameMode)
         {

@@ -41,6 +41,7 @@ public class AppSettingsTests
         Assert.False(settings.ShowGraph);
         Assert.True(settings.AutoCheckUpdates);
         Assert.True(settings.AllowOverlayDrag);
+        Assert.Equal(1.0, settings.OverlayScale);
         Assert.Equal("Matricard/CherryHud", settings.GitHubRepo);
     }
 
@@ -421,5 +422,35 @@ public class AppSettingsTests
         settingsVm.ShowFrametime = true;
         Assert.True(mainVm.ShowFrametime);
         Assert.True(mainVm.ShowGraph);
+    }
+
+    [Fact]
+    public void SettingsViewModel_OverlayScale_SynchronizesWithSettingsAndMainViewModel()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        Assert.Equal(100, settingsVm.OverlayScalePercent);
+        Assert.Equal("100%", settingsVm.OverlayScaleDisplay);
+        Assert.Equal(1.0, mainVm.OverlayScale);
+
+        // Modify scale to 125%
+        settingsVm.OverlayScalePercent = 125;
+        Assert.Equal(1.25, settingsService.Current.OverlayScale);
+        Assert.Equal(1.25, mainVm.OverlayScale);
+        Assert.Equal("125%", settingsVm.OverlayScaleDisplay);
+
+        // Reset scale
+        settingsVm.ResetOverlayScale();
+        Assert.Equal(100, settingsVm.OverlayScalePercent);
+        Assert.Equal(1.0, settingsService.Current.OverlayScale);
+        Assert.Equal(1.0, mainVm.OverlayScale);
+        Assert.Equal("100%", settingsVm.OverlayScaleDisplay);
     }
 }
