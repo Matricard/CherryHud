@@ -155,7 +155,7 @@ public class BetterDisplayTests
         service.OnGameStarted(settings);
 
         Assert.Equal(39, settings.BetterDisplaySavedDesktopModeNumber);
-        Assert.Equal("2580x1080", settings.BetterDisplaySavedDesktopResolution);
+        Assert.Contains("2580x1080", settings.BetterDisplaySavedDesktopResolution);
         Assert.True(service.IsResolutionSwapped);
         Assert.Contains(commandsExecuted, c => c.Contains("set -displayWithMainStatus -displayModeNumber=40"));
     }
@@ -232,8 +232,8 @@ public class BetterDisplayTests
         vm.SaveCurrentDesktopResolution();
 
         Assert.Equal(39, mockSettings.Current.BetterDisplaySavedDesktopModeNumber);
-        Assert.Equal("2580x1080", mockSettings.Current.BetterDisplaySavedDesktopResolution);
-        Assert.Equal("2580x1080", vm.BetterDisplaySavedResolution);
+        Assert.Contains("2580x1080", mockSettings.Current.BetterDisplaySavedDesktopResolution);
+        Assert.Contains("2580x1080", vm.BetterDisplaySavedResolution);
         Assert.True(vm.HasBetterDisplayFeedbackNotice);
     }
 

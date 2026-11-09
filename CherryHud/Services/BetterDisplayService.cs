@@ -226,6 +226,17 @@ public class BetterDisplayService : IBetterDisplayService
     public bool SetResolution(string resolution)
     {
         if (string.IsNullOrWhiteSpace(resolution)) return false;
+
+        var modes = GetAvailableModes();
+        var match = modes.FirstOrDefault(m =>
+            $"{m.Width}x{m.Height}".Equals(resolution.Trim(), StringComparison.OrdinalIgnoreCase) ||
+            m.DisplayText.IndexOf(resolution.Trim(), StringComparison.OrdinalIgnoreCase) >= 0 ||
+            resolution.Trim().IndexOf($"{m.Width}x{m.Height}", StringComparison.OrdinalIgnoreCase) >= 0);
+        if (match != null)
+        {
+            return SetDisplayMode(match.ModeNumber);
+        }
+
         string result = RunCommand($"set -displayWithMainStatus -resolution={resolution.Trim()}");
         return true;
     }
@@ -244,7 +255,9 @@ public class BetterDisplayService : IBetterDisplayService
             if (!settings.BetterDisplaySavedDesktopModeNumber.HasValue && currentMode.HasValue)
             {
                 settings.BetterDisplaySavedDesktopModeNumber = currentMode.Value;
-                settings.BetterDisplaySavedDesktopResolution = currentRes;
+                var modes = GetAvailableModes();
+                var curModeObj = modes.FirstOrDefault(m => m.ModeNumber == currentMode.Value);
+                settings.BetterDisplaySavedDesktopResolution = curModeObj?.DisplayText ?? currentRes;
             }
 
             // Determine target game mode
@@ -300,6 +313,17 @@ public class BetterDisplayService : IBetterDisplayService
         else if (!string.IsNullOrWhiteSpace(settings.BetterDisplaySavedDesktopResolution))
         {
             SetResolution(settings.BetterDisplaySavedDesktopResolution);
+        }
+        else
+        {
+            // Fallback: search for first non-native / HiDPI mode
+            var modes = GetAvailableModes();
+            var fallback = modes.FirstOrDefault(m => m.IsHiDpi && !m.IsNative)
+                           ?? modes.FirstOrDefault(m => !m.IsNative);
+            if (fallback != null)
+            {
+                SetDisplayMode(fallback.ModeNumber);
+            }
         }
     }
 }
