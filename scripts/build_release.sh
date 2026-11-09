@@ -13,9 +13,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 VERSION=""
 ARCH="arm64"
 
-BUMP_BUILD=false
-IS_RELEASE=false
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --arch)
@@ -25,14 +22,6 @@ while [[ $# -gt 0 ]]; do
         --version)
             VERSION="$2"
             shift 2
-            ;;
-        --bump|--bump-build)
-            BUMP_BUILD=true
-            shift
-            ;;
-        --release|-r)
-            IS_RELEASE=true
-            shift
             ;;
         *)
             if [[ -z "$VERSION" ]]; then
@@ -45,20 +34,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [[ "$IS_RELEASE" == "true" ]]; then
-    "$REPO_ROOT/scripts/bump_build.sh" --release
-    VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
-elif [[ "$BUMP_BUILD" == "true" ]]; then
-    "$REPO_ROOT/scripts/bump_build.sh"
-    # Re-extract bumped version
-    VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
-fi
-
 if [[ -z "$VERSION" ]]; then
     # Extract version from CherryHud.csproj
     VERSION=$(grep -o '<Version>[^<]*</Version>' "$REPO_ROOT/CherryHud/CherryHud.csproj" | sed -e 's/<Version>//' -e 's/<\/Version>//')
     if [[ -z "$VERSION" ]]; then
-        VERSION="1.0.2.1"
+        VERSION="1.0.2"
     fi
 fi
 

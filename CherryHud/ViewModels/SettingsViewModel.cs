@@ -87,8 +87,8 @@ public partial class SettingsViewModel : ViewModelBase
                 ? "CherryHud est à jour"
                 : "CherryHud is up to date";
             UpdateCardSubtitle = Loc.IsFrench
-                ? $"Vous disposez de la version la plus récente ({UpdateService.GetDisplayVersion()})."
-                : $"You have the latest version installed ({UpdateService.GetDisplayVersion()}).";
+                ? $"Vous disposez de la version la plus récente ({UpdateService.GetCurrentVersion()})."
+                : $"You have the latest version installed ({UpdateService.GetCurrentVersion()}).";
         }
     }
 
@@ -204,7 +204,7 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _autoCheckUpdates = true;
 
     [ObservableProperty]
-    private string _currentVersionText = $"Version {UpdateService.GetDisplayVersion()}";
+    private string _currentVersionText = $"Version {UpdateService.GetCurrentVersion()}";
 
     [ObservableProperty]
     private string _gitHubRepo = "Matricard/CherryHud";
@@ -1170,8 +1170,8 @@ public partial class SettingsViewModel : ViewModelBase
                 IsUpdateAvailable = false;
                 UpdateCardTitle = Loc.IsFrench ? "CherryHud" : "CherryHud";
                 UpdateCardSubtitle = Loc.IsFrench
-                    ? $"Version {UpdateService.GetDisplayVersion()}"
-                    : $"Version {UpdateService.GetDisplayVersion()}";
+                    ? $"Version {UpdateService.GetCurrentVersion()}"
+                    : $"Version {UpdateService.GetCurrentVersion()}";
             });
         }
     }

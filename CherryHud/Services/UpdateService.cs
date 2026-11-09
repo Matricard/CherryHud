@@ -29,39 +29,13 @@ public class UpdateService
     public static string GetCurrentVersion()
     {
         var asm = Assembly.GetExecutingAssembly();
-        var infoVer = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (!string.IsNullOrWhiteSpace(infoVer))
-        {
-            int plusIdx = infoVer.IndexOf('+');
-            string clean = plusIdx > 0 ? infoVer.Substring(0, plusIdx) : infoVer;
-            if (!string.IsNullOrWhiteSpace(clean))
-            {
-                return clean.Trim();
-            }
-        }
-
         var ver = asm.GetName().Version;
         if (ver != null)
         {
             int build = ver.Build >= 0 ? ver.Build : 0;
-            if (ver.Revision >= 0)
-            {
-                return $"{ver.Major}.{ver.Minor}.{build}.{ver.Revision}";
-            }
             return $"{ver.Major}.{ver.Minor}.{build}";
         }
-        return "1.0.2.1";
-    }
-
-    public static string GetDisplayVersion()
-    {
-        string ver = GetCurrentVersion();
-        var parts = ver.Split('.');
-        if (parts.Length >= 4 && int.TryParse(parts[3], out int buildNum) && buildNum > 0)
-        {
-            return $"{parts[0]}.{parts[1]}.{parts[2]} (Build {buildNum})";
-        }
-        return ver;
+        return "1.0.2";
     }
 
     public static bool IsUpdateAvailable { get; private set; }

@@ -56,7 +56,7 @@ public class UpdateServiceTests
         }
 
         Assert.False(info.HasError, info.ErrorMessage);
-        Assert.Equal("1.0.2.1", info.CurrentVersion);
+        Assert.Equal("1.0.2", info.CurrentVersion);
         Assert.NotNull(info.LatestVersion);
         Assert.False(info.IsUpdateAvailable);
     }
@@ -74,25 +74,6 @@ public class UpdateServiceTests
     {
         string actual = UpdateService.FormatBytes(bytes, isFrench);
         Assert.Equal(expected, actual);
-    }
-
-    [Theory]
-    [InlineData("1.0.2.1", "1.0.2 (Build 1)")]
-    [InlineData("1.0.2.42", "1.0.2 (Build 42)")]
-    [InlineData("1.0.2", "1.0.2")]
-    public void DisplayVersion_FormatsCorrectly(string rawVersion, string expectedDisplay)
-    {
-        var parts = rawVersion.Split('.');
-        string display;
-        if (parts.Length >= 4 && int.TryParse(parts[3], out int buildNum) && buildNum > 0)
-        {
-            display = $"{parts[0]}.{parts[1]}.{parts[2]} (Build {buildNum})";
-        }
-        else
-        {
-            display = rawVersion;
-        }
-        Assert.Equal(expectedDisplay, display);
     }
 
     [Fact]
