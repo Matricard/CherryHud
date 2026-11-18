@@ -218,6 +218,14 @@ public sealed class SystemMetricsService : ISystemMetricsService
         {
             cleaned = cleaned[6..].Trim();
         }
+
+        // Supprimer l'espace entre le modèle (M1, M2, M3, M4, M5...) et les déclinaisons Pro, Max ou Ultra (ex: M5 Pro => M5Pro)
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"\b(M\d+)\s+(Pro|Max|Ultra)\b",
+            "$1$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         return string.IsNullOrWhiteSpace(cleaned) ? "SoC" : cleaned;
     }
 
