@@ -377,7 +377,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     partial void OnSelectedTabIndexChanged(int value)
     {
-        if (value == 1)
+        if (value == 2)
         {
             RefreshRunningApps();
         }

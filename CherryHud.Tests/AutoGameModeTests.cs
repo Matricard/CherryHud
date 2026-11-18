@@ -339,4 +339,28 @@ public class AutoGameModeTests
 
         Assert.Contains("Hades II", settingsVm.RunningAppNames);
     }
+
+    [Fact]
+    public void SettingsViewModel_AddSelectedApp_ToBlacklistAndWhitelist()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Select an app into input
+        settingsVm.NewAppNameInput = "World of Warcraft";
+        settingsVm.AddCustomBlacklistCommand.Execute(null);
+
+        Assert.Contains("World of Warcraft", settingsVm.BlacklistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+
+        // Select an app into input and add to whitelist
+        settingsVm.NewAppNameInput = "Spotify";
+        settingsVm.AddCustomWhitelistCommand.Execute(null);
+
+        Assert.Contains("Spotify", settingsVm.WhitelistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
 }

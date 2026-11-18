@@ -55,6 +55,7 @@ public class AppSettingsTests
         Assert.False(loc.IsFrench);
         Assert.Equal("CherryHud Settings", loc.WindowTitle);
         Assert.Equal("General", loc.TabGeneral);
+        Assert.Equal("HUD", loc.TabHud);
         Assert.Equal("Overlay Drag & Drop", loc.AllowDragTitle);
         Assert.Equal("Allow moving the overlay freely with the mouse", loc.AllowDragSubtitle);
         Assert.Equal("Custom", loc.PositionCustom);
@@ -80,6 +81,7 @@ public class AppSettingsTests
         Assert.True(loc.IsFrench);
         Assert.Equal("Paramètres de CherryHud", loc.WindowTitle);
         Assert.Equal("Général", loc.TabGeneral);
+        Assert.Equal("HUD", loc.TabHud);
         Assert.Equal("Glisser-déposer de l'overlay", loc.AllowDragTitle);
         Assert.Equal("Autoriser le déplacement libre de l'overlay à la souris", loc.AllowDragSubtitle);
         Assert.Equal("Personnalisé", loc.PositionCustom);
@@ -452,5 +454,29 @@ public class AppSettingsTests
         Assert.Equal(1.0, settingsService.Current.OverlayScale);
         Assert.Equal(1.0, mainVm.OverlayScale);
         Assert.Equal("100%", settingsVm.OverlayScaleDisplay);
+    }
+
+    [Fact]
+    public void SettingsViewModel_HudTabAndApplicationsTab_SwitchingWorks()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        // Default tab is 0 (General)
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+
+        // Switch to HUD tab (index 1)
+        settingsVm.SelectedTabIndex = 1;
+        Assert.Equal(1, settingsVm.SelectedTabIndex);
+
+        // Switch to Applications tab (index 2) - triggers RefreshRunningApps
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
     }
 }

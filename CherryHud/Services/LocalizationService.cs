@@ -39,6 +39,7 @@ public class LocalizationService : ObservableObject
 
     // Tabs
     public string TabGeneral => IsFrench ? "Général" : "General";
+    public string TabHud => "HUD";
     public string TabApplications => IsFrench ? "Applications" : "Applications";
     public string TabMetrics => IsFrench ? "Métriques" : "Metrics";
     public string TabAbout => IsFrench ? "À propos" : "About";
