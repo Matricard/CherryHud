@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -13,6 +15,7 @@ namespace CherryHud.Views;
 public partial class MainWindow : Window
 {
     private IntPtr? _nativeHandle;
+    private int _isPositionUpdatePending = 0;
 
     public MainWindow()
     {
@@ -38,7 +41,9 @@ public partial class MainWindow : Window
 
             if (DataContext is MainWindowViewModel vm)
             {
-                SetOverlayPosition(vm.OverlayPosition);
+                RegisterMetricControls();
+                ApplyMetricOrder(vm.MetricOrder);
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
         };
@@ -47,7 +52,7 @@ public partial class MainWindow : Window
         {
             if (DataContext is MainWindowViewModel vm)
             {
-                SetOverlayPosition(vm.OverlayPosition);
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
             }
         };
 
@@ -66,14 +71,31 @@ public partial class MainWindow : Window
                     return;
                 }
 
+                if (DataContext is MainWindowViewModel currentVm)
+                {
+                    currentVm.IsUserDraggingOverlay = true;
+                }
+
                 BeginMoveDrag(e);
             }
+        }, RoutingStrategies.Bubble);
+
+        AddHandler(PointerReleasedEvent, (sender, e) =>
+        {
+            FinishOverlayDrag();
+        }, RoutingStrategies.Bubble);
+
+        AddHandler(PointerCaptureLostEvent, (sender, e) =>
+        {
+            FinishOverlayDrag();
         }, RoutingStrategies.Bubble);
 
         DataContextChanged += (_, _) =>
         {
             if (DataContext is MainWindowViewModel vm)
             {
+                vm.NotifyOverlayDragFinished = () => Dispatcher.UIThread.Post(FinishOverlayDrag);
+
                 vm.PropertyChanged += (_, e) =>
                 {
                     if (e.PropertyName == nameof(MainWindowViewModel.IsOverlayVisible))
@@ -83,16 +105,38 @@ public partial class MainWindow : Window
                             ApplyVisibility(vm.IsOverlayVisible);
                         });
                     }
-                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition) || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme))
+                    else if (e.PropertyName == nameof(MainWindowViewModel.ActiveGameBounds))
                     {
+                        if (vm.IsUserDraggingOverlay) return;
+
+                        if (Interlocked.Exchange(ref _isPositionUpdatePending, 1) == 0)
+                        {
+                            Dispatcher.UIThread.Post(() =>
+                            {
+                                _isPositionUpdatePending = 0;
+                                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
+                            }, DispatcherPriority.Send);
+                        }
+                    }
+                    else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition)
+                          || e.PropertyName == nameof(MainWindowViewModel.OverlayTheme)
+                          || e.PropertyName == nameof(MainWindowViewModel.OverlayScale)
+                          || e.PropertyName == nameof(MainWindowViewModel.AutoTrackGameWindow))
+                    {
+                        if (vm.IsUserDraggingOverlay) return;
+
                         Dispatcher.UIThread.Post(() =>
                         {
-                            SetOverlayPosition(vm.OverlayPosition);
+                            SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                         });
                     }
                 };
 
-                SetOverlayPosition(vm.OverlayPosition);
+                RegisterMetricControls();
+                ApplyMetricOrder(vm.MetricOrder);
+                vm.MetricOrderChangedCallback = order => Dispatcher.UIThread.Post(() => ApplyMetricOrder(order));
+
+                SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
         };
@@ -106,35 +150,157 @@ public partial class MainWindow : Window
         };
     }
 
-    public void SetOverlayPosition(OverlayCorner corner)
+    private readonly System.Collections.Generic.Dictionary<string, Control> _normalMetricControls = new();
+    private readonly System.Collections.Generic.Dictionary<string, Control> _compactMetricControls = new();
+
+    private void RegisterMetricControls()
     {
-        var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
-        if (screen == null) return;
+        if (_normalMetricControls.Count == AppSettings.DefaultMetricOrder.Length &&
+            _compactMetricControls.Count == AppSettings.DefaultMetricOrder.Length)
+        {
+            return;
+        }
+
+        _normalMetricControls.Clear();
+        _compactMetricControls.Clear();
+
+        void AddRow(string id)
+        {
+            var normal = this.FindControl<Control>($"NormalRow_{id}");
+            if (normal != null) _normalMetricControls[id] = normal;
+
+            var compact = this.FindControl<Control>($"CompactItem_{id}");
+            if (compact != null) _compactMetricControls[id] = compact;
+        }
+
+        foreach (var id in AppSettings.DefaultMetricOrder)
+        {
+            AddRow(id);
+        }
+    }
+
+    public void ApplyMetricOrder(IEnumerable<string> order)
+    {
+        var normalPanel = this.FindControl<StackPanel>("NormalMetricsPanel");
+        var compactPanel = this.FindControl<StackPanel>("CompactMetricsPanel");
+        if (normalPanel == null || compactPanel == null) return;
+
+        normalPanel.Children.Clear();
+        compactPanel.Children.Clear();
+
+        foreach (var id in order)
+        {
+            if (_normalMetricControls.TryGetValue(id, out var normal))
+            {
+                normalPanel.Children.Add(normal);
+            }
+            if (_compactMetricControls.TryGetValue(id, out var compact))
+            {
+                compactPanel.Children.Add(compact);
+            }
+        }
+    }
+
+    private void FinishOverlayDrag()
+    {
+        if (DataContext is MainWindowViewModel vm && vm.IsUserDraggingOverlay)
+        {
+            vm.IsUserDraggingOverlay = false;
+
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            int scrX = screen?.Bounds.X ?? 0;
+            int scrY = screen?.Bounds.Y ?? 0;
+            vm.SaveCustomPosition(Position.X, Position.Y, vm.ActiveGameBounds, scrX, scrY);
+        }
+    }
+
+    public void SetOverlayPosition(OverlayCorner corner, GameWindowBounds? gameBounds = null)
+    {
+        var vm = DataContext as MainWindowViewModel;
+        if (vm != null && vm.IsUserDraggingOverlay)
+        {
+            return;
+        }
+
+        gameBounds ??= vm?.ActiveGameBounds;
 
         int margin = 8;
-        int screenX = screen.Bounds.X;
-        int screenY = screen.Bounds.Y;
-        int screenW = screen.Bounds.Width;
-        int screenH = screen.Bounds.Height;
+        int targetX, targetY, targetW, targetH;
+        bool isWindowedGame = false;
+
+        if (gameBounds.HasValue)
+        {
+            targetX = gameBounds.Value.X;
+            targetY = gameBounds.Value.Y;
+            targetW = gameBounds.Value.Width;
+            targetH = gameBounds.Value.Height;
+
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen != null)
+            {
+                // Windowed mode if it does not cover the full display
+                isWindowedGame = targetW < screen.Bounds.Width || targetH < screen.Bounds.Height;
+            }
+            else
+            {
+                isWindowedGame = true;
+            }
+        }
+        else
+        {
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen == null) return;
+            targetX = screen.Bounds.X;
+            targetY = screen.Bounds.Y;
+            targetW = screen.Bounds.Width;
+            targetH = screen.Bounds.Height;
+        }
+
         int winW = (int)(Bounds.Width > 0 ? Bounds.Width : (double.IsNaN(Width) ? 200 : Width));
         int winH = (int)(Bounds.Height > 0 ? Bounds.Height : (double.IsNaN(Height) ? 210 : Height));
 
-        int x = corner switch
-        {
-            OverlayCorner.TopRight => screenX + screenW - winW - margin,
-            OverlayCorner.BottomLeft => screenX + margin,
-            OverlayCorner.BottomRight => screenX + screenW - winW - margin,
-            _ => screenX + margin
-        };
+        // When tracking a windowed game with title bar and buttons, position below the 32pt title bar
+        int topOffset = isWindowedGame ? (32 + margin) : margin;
 
-        int y = corner switch
-        {
-            OverlayCorner.BottomLeft => screenY + screenH - winH - margin,
-            OverlayCorner.BottomRight => screenY + screenH - winH - margin,
-            _ => screenY + margin
-        };
+        int x;
+        int y;
 
-        Position = new PixelPoint(x, y);
+        if (corner == OverlayCorner.Custom)
+        {
+            if (gameBounds.HasValue)
+            {
+                x = targetX + (vm?.CustomWindowOffsetX ?? margin);
+                y = targetY + (vm?.CustomWindowOffsetY ?? topOffset);
+            }
+            else
+            {
+                x = targetX + (vm?.CustomScreenOffsetX ?? margin);
+                y = targetY + (vm?.CustomScreenOffsetY ?? margin);
+            }
+        }
+        else
+        {
+            x = corner switch
+            {
+                OverlayCorner.TopRight => targetX + targetW - winW - margin,
+                OverlayCorner.BottomLeft => targetX + margin,
+                OverlayCorner.BottomRight => targetX + targetW - winW - margin,
+                _ => targetX + margin
+            };
+
+            y = corner switch
+            {
+                OverlayCorner.BottomLeft => targetY + targetH - winH - margin,
+                OverlayCorner.BottomRight => targetY + targetH - winH - margin,
+                _ => targetY + topOffset
+            };
+        }
+
+        var newPos = new PixelPoint(x, y);
+        if (Position != newPos)
+        {
+            Position = newPos;
+        }
     }
 
     private void ApplyVisibility(bool visible)

@@ -12,10 +12,19 @@ public class AutoGameModeTests
         public bool IsLaptop => true;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "TestApp", true, 0, 0, 100, false, IsGameActive);
+        public FpsData GetFpsData() => new(0, 0, 0, "TestApp", true, 0, 0, 100, false, IsGameActive, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
+        public List<string> LastBlacklist { get; private set; } = new();
+        public void SetBlacklist(System.Collections.Generic.IEnumerable<string> blacklist) => LastBlacklist = new List<string>(blacklist);
+        public List<string> LastWhitelist { get; private set; } = new();
+        public void SetWhitelist(System.Collections.Generic.IEnumerable<string> whitelist) => LastWhitelist = new List<string>(whitelist);
+        public bool IsFpsCaptureEnabled { get; set; } = false;
+        public void SetFpsCaptureEnabled(bool enabled) => IsFpsCaptureEnabled = enabled;
         public void RequestPermission() { }
         public void CheckPermission() { }
+        public List<string> MockRunningApps { get; set; } = new() { "Google Chrome", "Spotify", "Terminal", "World of Warcraft" };
+        public IReadOnlyList<string> GetRunningAppNames() => MockRunningApps;
     }
 
     private class MockTempService : ITemperatureService
@@ -108,5 +117,333 @@ public class AutoGameModeTests
         Assert.True(mainVm.IsAutoModeActive);
         Assert.False(mainVm.IsOverlayVisible);
         Assert.True(settings.Current.AutoGameMode);
+    }
+
+    [Fact]
+    public void ToggleBlacklistApp_AddsAndRemovesAppFromBlacklist()
+    {
+        var fps = new MockFpsService { IsGameActive = true };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        Assert.False(vm.IsAppBlacklisted("Unity Hub"));
+
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.True(vm.IsAppBlacklisted("Unity Hub"));
+        Assert.True(vm.IsAppBlacklisted("unity hub")); // Case-insensitive
+        Assert.Contains("Unity Hub", settings.Current.AutoModeBlacklist);
+        Assert.Contains("Unity Hub", fps.LastBlacklist);
+
+        // Toggling again should remove it
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.False(vm.IsAppBlacklisted("Unity Hub"));
+        Assert.DoesNotContain("Unity Hub", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Unity Hub", fps.LastBlacklist);
+    }
+
+    [Fact]
+    public void ToggleBlacklistApp_ImmediatelyHidesOverlay_IfAppCurrentlyTrackedInAutoMode()
+    {
+        var fps = new MockFpsService { IsGameActive = true };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        vm.TrackedAppName = "Unity Hub";
+        vm.IsGameActive = true;
+        vm.IsOverlayVisible = true;
+
+        vm.ToggleBlacklistApp("Unity Hub");
+
+        Assert.False(vm.IsGameActive);
+        Assert.False(vm.IsOverlayVisible);
+    }
+
+    [Fact]
+    public void SettingsViewModel_BlacklistCollection_SyncsAndRemoves()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoModeBlacklist.Add("Blender");
+        settings.Current.AutoModeBlacklist.Add("Unity Hub");
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.HasBlacklistedApps);
+        Assert.Equal(2, settingsVm.BlacklistedApps.Count);
+        Assert.Contains("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Unity Hub", settingsVm.BlacklistedApps);
+
+        settingsVm.RemoveBlacklistedApp("Blender");
+
+        Assert.Single(settingsVm.BlacklistedApps);
+        Assert.DoesNotContain("Blender", settingsVm.BlacklistedApps);
+        Assert.DoesNotContain("Blender", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Blender", fps.LastBlacklist);
+
+        settingsVm.RemoveBlacklistedApp("Unity Hub");
+
+        Assert.Empty(settingsVm.BlacklistedApps);
+        Assert.False(settingsVm.HasBlacklistedApps);
+    }
+
+    [Fact]
+    public void ToggleWhitelistApp_AddsAndRemovesAppFromWhitelist()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        Assert.False(vm.IsAppWhitelisted("Factorio"));
+
+        vm.ToggleWhitelistApp("Factorio");
+
+        Assert.True(vm.IsAppWhitelisted("Factorio"));
+        Assert.True(vm.IsAppWhitelisted("factorio"));
+        Assert.Contains("Factorio", settings.Current.AutoModeWhitelist);
+        Assert.Contains("Factorio", fps.LastWhitelist);
+
+        // Toggling again should remove it
+        vm.ToggleWhitelistApp("Factorio");
+
+        Assert.False(vm.IsAppWhitelisted("Factorio"));
+        Assert.DoesNotContain("Factorio", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("Factorio", fps.LastWhitelist);
+    }
+
+    [Fact]
+    public void ToggleBlacklist_RemovesFromWhitelist_AndViceVersa()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoGameMode = true;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        // Whitelist app first
+        vm.ToggleWhitelistApp("MyCustomGame");
+        Assert.True(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.False(vm.IsAppBlacklisted("MyCustomGame"));
+
+        // Now blacklist it - should automatically be removed from whitelist
+        vm.ToggleBlacklistApp("MyCustomGame");
+        Assert.False(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.True(vm.IsAppBlacklisted("MyCustomGame"));
+        Assert.DoesNotContain("MyCustomGame", settings.Current.AutoModeWhitelist);
+        Assert.Contains("MyCustomGame", settings.Current.AutoModeBlacklist);
+
+        // Whitelist it again - should automatically be removed from blacklist
+        vm.ToggleWhitelistApp("MyCustomGame");
+        Assert.True(vm.IsAppWhitelisted("MyCustomGame"));
+        Assert.False(vm.IsAppBlacklisted("MyCustomGame"));
+        Assert.Contains("MyCustomGame", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("MyCustomGame", settings.Current.AutoModeBlacklist);
+    }
+
+    [Fact]
+    public void SettingsViewModel_WhitelistAndMoveOperations_WorkCorrectly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.AutoModeBlacklist.Add("Blender");
+        settings.Current.AutoModeWhitelist.Add("Celeste");
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.HasBlacklistedApps);
+        Assert.True(settingsVm.HasWhitelistedApps);
+        Assert.Contains("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Celeste", settingsVm.WhitelistedApps);
+
+        // Move Blender from Blacklist to Whitelist
+        settingsVm.MoveToWhitelist("Blender");
+        Assert.DoesNotContain("Blender", settingsVm.BlacklistedApps);
+        Assert.Contains("Blender", settingsVm.WhitelistedApps);
+        Assert.Contains("Blender", settings.Current.AutoModeWhitelist);
+        Assert.DoesNotContain("Blender", settings.Current.AutoModeBlacklist);
+
+        // Move Celeste from Whitelist to Blacklist
+        settingsVm.MoveToBlacklist("Celeste");
+        Assert.DoesNotContain("Celeste", settingsVm.WhitelistedApps);
+        Assert.Contains("Celeste", settingsVm.BlacklistedApps);
+        Assert.Contains("Celeste", settings.Current.AutoModeBlacklist);
+        Assert.DoesNotContain("Celeste", settings.Current.AutoModeWhitelist);
+
+        // Test custom input adds
+        settingsVm.NewAppNameInput = "CustomApp1";
+        settingsVm.AddCustomBlacklist();
+        Assert.Contains("CustomApp1", settingsVm.BlacklistedApps);
+        Assert.Equal("", settingsVm.NewAppNameInput);
+
+        settingsVm.NewAppNameInput = "CustomApp2";
+        settingsVm.AddCustomWhitelist();
+        Assert.Contains("CustomApp2", settingsVm.WhitelistedApps);
+        Assert.Equal("", settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void FpsCapture_DisabledWhenAllFpsMetricsDisabled_AndEnabledWhenAnyFpsMetricEnabled()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+        settings.Current.ShowFps = false;
+        settings.Current.ShowOnePercentLowFps = false;
+        settings.Current.ShowFrametime = false;
+        settings.Current.ShowGraph = false;
+
+        using var vm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+
+        // When all FPS metrics are false, FPS screen capture is disabled!
+        Assert.False(fps.IsFpsCaptureEnabled);
+
+        // Enabling ShowFps enables FPS screen capture
+        vm.ShowFps = true;
+        Assert.True(fps.IsFpsCaptureEnabled);
+
+        // Disabling it disables screen capture again
+        vm.ShowFps = false;
+        Assert.False(fps.IsFpsCaptureEnabled);
+
+        // Enabling graph enables screen capture
+        vm.ShowGraph = true;
+        Assert.True(fps.IsFpsCaptureEnabled);
+
+        vm.ShowGraph = false;
+        Assert.False(fps.IsFpsCaptureEnabled);
+    }
+
+    [Fact]
+    public void SettingsViewModel_RunningApps_LoadsAndRefreshesCorrectly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.Contains("Google Chrome", settingsVm.RunningAppNames);
+        Assert.Contains("Spotify", settingsVm.RunningAppNames);
+        Assert.Contains("World of Warcraft", settingsVm.RunningAppNames);
+
+        // Update running apps and refresh
+        fps.MockRunningApps.Add("Hades II");
+        settingsVm.RefreshRunningApps();
+
+        Assert.Contains("Hades II", settingsVm.RunningAppNames);
+    }
+
+    [Fact]
+    public void SettingsViewModel_AddSelectedApp_ToBlacklistAndWhitelist()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Select an app into input
+        settingsVm.NewAppNameInput = "World of Warcraft";
+        settingsVm.AddCustomBlacklistCommand.Execute(null);
+
+        Assert.Contains("World of Warcraft", settingsVm.BlacklistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+
+        // Select an app into input and add to whitelist
+        settingsVm.NewAppNameInput = "Spotify";
+        settingsVm.AddCustomWhitelistCommand.Execute(null);
+
+        Assert.Contains("Spotify", settingsVm.WhitelistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void SettingsViewModel_FilteringAndSelectingRunningApp_WorksProperly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Type to search "Chrome"
+        settingsVm.NewAppNameInput = "Chrome";
+        Assert.True(settingsVm.IsSuggestionsOpen);
+        Assert.Single(settingsVm.FilteredRunningApps);
+        Assert.Equal("Google Chrome", settingsVm.FilteredRunningApps[0]);
+
+        // User clicks / selects "Google Chrome"
+        settingsVm.SelectRunningAppCommand.Execute("Google Chrome");
+        Assert.Equal("Google Chrome", settingsVm.NewAppNameInput);
+        Assert.False(settingsVm.IsSuggestionsOpen);
+
+        // Add to blacklist
+        settingsVm.AddCustomBlacklistCommand.Execute(null);
+        Assert.Contains("Google Chrome", settingsVm.BlacklistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void SettingsViewModel_FilteringAndSelectingRunningApp_Whitelist_WorksProperly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Toggle suggestions directly (chevron button)
+        settingsVm.ToggleSuggestionsCommand.Execute(null);
+        Assert.True(settingsVm.IsSuggestionsOpen);
+        Assert.NotEmpty(settingsVm.FilteredRunningApps);
+
+        // User selects "Google Chrome"
+        settingsVm.SelectRunningAppCommand.Execute("Google Chrome");
+        Assert.Equal("Google Chrome", settingsVm.NewAppNameInput);
+        Assert.False(settingsVm.IsSuggestionsOpen);
+
+        // Add to whitelist
+        settingsVm.AddCustomWhitelistCommand.Execute(null);
+        Assert.Contains("Google Chrome", settingsVm.WhitelistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void SettingsViewModel_WhenAutoGameModeDisabled_ApplicationsTabDisabledAndRedirected()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.AutoGameMode);
+        Assert.Null(settingsVm.ApplicationsTabTooltip);
+
+        // Can navigate to Applications tab (index 2) when AutoGameMode is true
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
+
+        // Disable AutoGameMode -> automatically redirects away from Applications tab (to index 0)
+        settingsVm.AutoGameMode = false;
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+        Assert.Equal(LocalizationService.Instance.ApplicationsTabDisabledTooltip, settingsVm.ApplicationsTabTooltip);
+
+        // Attempting to select Applications tab (index 2) when disabled redirects back to 0
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+
+        // Re-enabling AutoGameMode allows navigation again
+        settingsVm.AutoGameMode = true;
+        Assert.Null(settingsVm.ApplicationsTabTooltip);
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
     }
 }

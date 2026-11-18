@@ -62,6 +62,7 @@ public sealed class SmcTemperatureService : ITemperatureService, IDisposable
 
     private List<string>? _activeCpuKeys;
     private List<string>? _activeGpuKeys;
+    private string? _activePowerKey;
 
     // Known candidate keys for Apple Silicon (M1-M5) and Intel
     private static readonly string[] CandidateCpuKeys =
@@ -85,6 +86,16 @@ public sealed class SmcTemperatureService : ITemperatureService, IDisposable
         "Tg1o", "Tg1s", "Tg1Y", "Tg4b",
         // Intel Mac GPU
         "TG0D", "TG0P", "TPCD"
+    };
+
+    private static readonly string[] CandidatePowerKeys =
+    {
+        "PSTR", // Apple Silicon System Total Power (W)
+        "PDTR", // Apple Silicon DC-In Power (W)
+        "PPBR", // Apple Silicon Battery Rail Power (W)
+        "PCTR", // Apple Silicon CPU+GPU Total Power (W)
+        "PCPR", // Apple Silicon CPU Power (W)
+        "PCPC"  // Apple Silicon Package CPU (W)
     };
 
     public SmcTemperatureService()
@@ -158,8 +169,35 @@ public sealed class SmcTemperatureService : ITemperatureService, IDisposable
                 gpu = ReadAverageFromKeys(_activeGpuKeys);
             }
 
-            return new TemperatureData(cpu, gpu);
+            double? power = ReadPower();
+
+            return new TemperatureData(cpu, gpu, power);
         }
+    }
+
+    private double? ReadPower()
+    {
+        if (_activePowerKey != null)
+        {
+            var val = ReadKey(_activePowerKey);
+            if (val is > 0.05 and < 600.0)
+            {
+                return val.Value;
+            }
+            _activePowerKey = null;
+        }
+
+        foreach (var key in CandidatePowerKeys)
+        {
+            var val = ReadKey(key);
+            if (val is > 0.05 and < 600.0)
+            {
+                _activePowerKey = key;
+                return val.Value;
+            }
+        }
+
+        return null;
     }
 
     private void DiscoverKeys()
@@ -181,6 +219,17 @@ public sealed class SmcTemperatureService : ITemperatureService, IDisposable
             if (val is >= 10.0 and <= 125.0)
             {
                 _activeGpuKeys.Add(key);
+            }
+        }
+
+        _activePowerKey = null;
+        foreach (var key in CandidatePowerKeys)
+        {
+            var val = ReadKey(key);
+            if (val is > 0.05 and < 600.0)
+            {
+                _activePowerKey = key;
+                break;
             }
         }
     }

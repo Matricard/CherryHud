@@ -13,8 +13,15 @@ public class AppSettingsTests
         Assert.Equal(AppLanguage.English, settings.Language);
         Assert.True(settings.AutoGameMode);
         Assert.Equal(OverlayCorner.TopLeft, settings.Position);
+        Assert.Equal(8, settings.CustomWindowOffsetX);
+        Assert.Equal(40, settings.CustomWindowOffsetY);
+        Assert.Equal(8, settings.CustomScreenOffsetX);
+        Assert.Equal(8, settings.CustomScreenOffsetY);
+        Assert.True(settings.AutoTrackGameWindow);
         Assert.Equal(OverlayTheme.Normal, settings.OverlayTheme);
         Assert.True(settings.ShowSocTemp);
+        Assert.True(settings.ShowThermalState);
+        Assert.True(settings.ShowPower);
         Assert.True(settings.ShowGpu);
         Assert.True(settings.ShowGpuUsage);
         Assert.True(settings.ShowGpuTemp);
@@ -23,14 +30,18 @@ public class AppSettingsTests
         Assert.True(settings.ShowCpuTemp);
         Assert.True(settings.ShowVram);
         Assert.True(settings.ShowRam);
+        Assert.True(settings.ShowMemoryPressure);
+        Assert.True(settings.ShowSwap);
         Assert.True(settings.ShowBattery);
         Assert.True(settings.HideBatteryWhenCharged);
         Assert.Equal(80, settings.BatteryHideThresholdPercent);
         Assert.False(settings.ShowFps);
+        Assert.False(settings.ShowOnePercentLowFps);
         Assert.False(settings.ShowFrametime);
         Assert.False(settings.ShowGraph);
         Assert.True(settings.AutoCheckUpdates);
         Assert.True(settings.AllowOverlayDrag);
+        Assert.Equal(1.0, settings.OverlayScale);
         Assert.Equal("Matricard/CherryHud", settings.GitHubRepo);
     }
 
@@ -44,9 +55,14 @@ public class AppSettingsTests
         Assert.False(loc.IsFrench);
         Assert.Equal("CherryHud Settings", loc.WindowTitle);
         Assert.Equal("General", loc.TabGeneral);
-        Assert.Equal("Overlay Drag & Drop", loc.AllowDragTitle);
-        Assert.Equal("Allow moving the overlay freely with the mouse", loc.AllowDragSubtitle);
-        Assert.Equal("Overlay Theme", loc.ThemeTitle);
+        Assert.Equal("HUD", loc.TabHud);
+        Assert.Equal("Auto Mode must be enabled to manage applications", loc.ApplicationsTabDisabledTooltip);
+        Assert.Equal("Drag & Drop", loc.AllowDragTitle);
+        Assert.Equal("Allow moving freely with the mouse", loc.AllowDragSubtitle);
+        Assert.Equal("Custom", loc.PositionCustom);
+        Assert.Equal("Game Window Auto-Tracking", loc.AutoTrackGameWindowTitle);
+        Assert.Equal("Anchor HUD inside the game window's corner when running windowed", loc.AutoTrackGameWindowSubtitle);
+        Assert.Equal("Theme", loc.ThemeTitle);
         Assert.Equal("Choose HUD display density", loc.ThemeSubtitle);
         Assert.Equal("Normal", loc.ThemeNormal);
         Assert.Equal("Compact", loc.ThemeCompact);
@@ -66,9 +82,14 @@ public class AppSettingsTests
         Assert.True(loc.IsFrench);
         Assert.Equal("Paramètres de CherryHud", loc.WindowTitle);
         Assert.Equal("Général", loc.TabGeneral);
-        Assert.Equal("Glisser-déposer de l'overlay", loc.AllowDragTitle);
-        Assert.Equal("Autoriser le déplacement libre de l'overlay à la souris", loc.AllowDragSubtitle);
-        Assert.Equal("Thème de l'overlay", loc.ThemeTitle);
+        Assert.Equal("HUD", loc.TabHud);
+        Assert.Equal("Le Mode Auto doit être activé pour gérer les applications", loc.ApplicationsTabDisabledTooltip);
+        Assert.Equal("Glisser-déposer", loc.AllowDragTitle);
+        Assert.Equal("Autoriser le déplacement libre à la souris", loc.AllowDragSubtitle);
+        Assert.Equal("Personnalisé", loc.PositionCustom);
+        Assert.Equal("Suivi de la fenêtre de jeu", loc.AutoTrackGameWindowTitle);
+        Assert.Equal("Ancre le HUD directement dans le coin du jeu lorsqu'il est en mode fenêtré", loc.AutoTrackGameWindowSubtitle);
+        Assert.Equal("Thème", loc.ThemeTitle);
         Assert.Equal("Choisissez la densité d'affichage du HUD", loc.ThemeSubtitle);
         Assert.Equal("Normal", loc.ThemeNormal);
         Assert.Equal("Compact", loc.ThemeCompact);
@@ -154,7 +175,8 @@ public class AppSettingsTests
         public bool IsLaptop => false;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "Test", true, 0, 0, 100, false, false);
+        public FpsData GetFpsData() => new(0, 0, 0, "Test", true, 0, 0, 100, false, false, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (true, 0, 0, 0);
         public void RequestPermission() { }
         public void CheckPermission() { }
@@ -336,13 +358,35 @@ public class AppSettingsTests
     [InlineData("Apple M3 Ultra", "M3 Ultra")]
     [InlineData("Apple M4", "M4")]
     [InlineData("Apple M5", "M5")]
+    [InlineData("Apple M5 Pro", "M5 Pro")]
+    [InlineData("Apple M5 Max", "M5 Max")]
     [InlineData("Apple Inc. M2", "M2")]
+    [InlineData("Apple Inc. M2 Pro", "M2 Pro")]
     [InlineData("Intel Core i7-9750H", "Intel Core i7-9750H")]
     [InlineData(null, "SoC")]
     [InlineData("", "SoC")]
     public void FormatSocName_StripsApplePrefixProperly(string? input, string expected)
     {
         var result = SystemMetricsService.FormatSocName(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("Apple M1", "M1")]
+    [InlineData("Apple M1 Pro", "M1Pro")]
+    [InlineData("Apple M2 Max", "M2Max")]
+    [InlineData("Apple M3 Ultra", "M3Ult")]
+    [InlineData("Apple M4", "M4")]
+    [InlineData("Apple M5", "M5")]
+    [InlineData("Apple M5 Pro", "M5Pro")]
+    [InlineData("Apple M5 Max", "M5Max")]
+    [InlineData("Apple M6 Ultra", "M6Ult")]
+    [InlineData("Apple Inc. M2 Pro", "M2Pro")]
+    [InlineData(null, "SoC")]
+    [InlineData("", "SoC")]
+    public void FormatSocBadge_FormatsForSettingsProperly(string? input, string expected)
+    {
+        var result = SystemMetricsService.FormatSocBadge(input);
         Assert.Equal(expected, result);
     }
 
@@ -404,5 +448,101 @@ public class AppSettingsTests
         settingsVm.ShowFrametime = true;
         Assert.True(mainVm.ShowFrametime);
         Assert.True(mainVm.ShowGraph);
+    }
+
+    [Fact]
+    public void SettingsViewModel_OverlayScale_SynchronizesWithSettingsAndMainViewModel()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        Assert.Equal(100, settingsVm.OverlayScalePercent);
+        Assert.Equal("100%", settingsVm.OverlayScaleDisplay);
+        Assert.Equal(1.0, mainVm.OverlayScale);
+
+        // Modify scale to 125%
+        settingsVm.OverlayScalePercent = 125;
+        Assert.Equal(1.25, settingsService.Current.OverlayScale);
+        Assert.Equal(1.25, mainVm.OverlayScale);
+        Assert.Equal("125%", settingsVm.OverlayScaleDisplay);
+
+        // Reset scale
+        settingsVm.ResetOverlayScale();
+        Assert.Equal(100, settingsVm.OverlayScalePercent);
+        Assert.Equal(1.0, settingsService.Current.OverlayScale);
+        Assert.Equal(1.0, mainVm.OverlayScale);
+        Assert.Equal("100%", settingsVm.OverlayScaleDisplay);
+    }
+
+    [Fact]
+    public void SettingsViewModel_HudTabAndApplicationsTab_SwitchingWorks()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        // Default tab is 0 (General)
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+
+        // Switch to HUD tab (index 1)
+        settingsVm.SelectedTabIndex = 1;
+        Assert.Equal(1, settingsVm.SelectedTabIndex);
+
+        // Switch to Applications tab (index 2) - triggers RefreshRunningApps
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
+    }
+
+    [Fact]
+    public void MetricOrder_SanitizationAndReordering_WorksProperly()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        // Initial default order
+        Assert.Equal(AppSettings.DefaultMetricOrder.Length, settingsVm.MetricOrder.Count);
+        Assert.Equal("soc", settingsVm.MetricOrder[0]);
+
+        // Reorder: put "fps" first
+        var customOrder = new System.Collections.Generic.List<string> { "fps", "battery", "cpu", "gpu" };
+        settingsVm.SaveMetricOrder(customOrder);
+
+        // Verify sanitized list has 13 elements starting with fps, battery, cpu, gpu
+        Assert.Equal(13, settingsVm.MetricOrder.Count);
+        Assert.Equal("fps", settingsVm.MetricOrder[0]);
+        Assert.Equal("battery", settingsVm.MetricOrder[1]);
+        Assert.Equal("cpu", settingsVm.MetricOrder[2]);
+        Assert.Equal("gpu", settingsVm.MetricOrder[3]);
+        Assert.Equal("fps", mainVm.MetricOrder[0]);
+        Assert.Equal("fps", settingsService.Current.MetricOrder[0]);
+
+        // Test GetSanitizedMetricOrder with partial/dirty list
+        var dirtySettings = new AppSettings { MetricOrder = new System.Collections.Generic.List<string> { "unknown", "fps", "fps" } };
+        var sanitized = dirtySettings.GetSanitizedMetricOrder();
+        Assert.Equal(13, sanitized.Count);
+        Assert.Equal("fps", sanitized[0]);
+
+        // Reset defaults restores initial order
+        settingsVm.ResetDefaults();
+        Assert.Equal("soc", settingsVm.MetricOrder[0]);
+        Assert.Equal("soc", mainVm.MetricOrder[0]);
+        Assert.Equal("soc", settingsService.Current.MetricOrder[0]);
     }
 }

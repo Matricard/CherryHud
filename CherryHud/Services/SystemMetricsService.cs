@@ -63,6 +63,22 @@ public sealed class SystemMetricsService : ISystemMetricsService
     [DllImport(LibSystem, EntryPoint = "sysctlbyname", CharSet = CharSet.Ansi)]
     private static extern int sysctlbyname_string(string name, [Out] byte[]? oldp, ref nuint oldlenp, IntPtr newp, nuint newsize);
 
+    [StructLayout(LayoutKind.Sequential)]
+    private struct XswUsage
+    {
+        public ulong Total;
+        public ulong Avail;
+        public ulong Used;
+        public uint PageSize;
+        public int Encrypted;
+    }
+
+    [DllImport(LibSystem, EntryPoint = "sysctlbyname")]
+    private static extern int sysctlbyname_xsw(string name, ref XswUsage info, ref nuint size, IntPtr newp, nuint newsize);
+
+    [DllImport(LibSystem, EntryPoint = "sysctlbyname")]
+    private static extern int sysctlbyname_int(string name, out int value, ref nuint size, IntPtr newp, nuint newsize);
+
     private readonly uint _host;
     private readonly double _totalRamGb;
     private readonly nuint _pageSize;
@@ -141,7 +157,26 @@ public sealed class SystemMetricsService : ISystemMetricsService
                 }
             }
 
-            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent);
+            // 3. Swap Memory Usage (sysctl vm.swapusage)
+            double swapUsedGb = 0.0;
+            double swapTotalGb = 0.0;
+            XswUsage xsw = default;
+            nuint xswSize = (nuint)Marshal.SizeOf<XswUsage>();
+            if (sysctlbyname_xsw("vm.swapusage", ref xsw, ref xswSize, IntPtr.Zero, 0) == 0)
+            {
+                swapUsedGb = xsw.Used / (1024.0 * 1024.0 * 1024.0);
+                swapTotalGb = xsw.Total / (1024.0 * 1024.0 * 1024.0);
+            }
+
+            // 4. Memory Pressure Level (kern.memorystatus_vm_pressure_level)
+            int memoryPressure = 1;
+            nuint mpSize = (nuint)sizeof(int);
+            if (sysctlbyname_int("kern.memorystatus_vm_pressure_level", out int mp, ref mpSize, IntPtr.Zero, 0) == 0 && mp > 0)
+            {
+                memoryPressure = mp;
+            }
+
+            return new SystemResourceMetrics(cpuPercent, usedRamGb, _totalRamGb, ramPercent, swapUsedGb, swapTotalGb, memoryPressure);
         }
     }
 
@@ -171,7 +206,7 @@ public sealed class SystemMetricsService : ISystemMetricsService
         return "CPU";
     }
 
-    public static string FormatSocName(string? raw)
+    public static string FormatSocHudName(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return "SoC";
         var cleaned = raw.Trim();
@@ -183,6 +218,30 @@ public sealed class SystemMetricsService : ISystemMetricsService
         {
             cleaned = cleaned[6..].Trim();
         }
+
+        return string.IsNullOrWhiteSpace(cleaned) ? "SoC" : cleaned;
+    }
+
+    public static string FormatSocName(string? raw) => FormatSocHudName(raw);
+
+    public static string FormatSocBadge(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "SoC";
+        var cleaned = FormatSocHudName(raw);
+
+        // Dans les paramètres, badge compact avec suffixes à 3 lettres sans espace (e.g. Ultra => Ult, M5 Pro => M5Pro, M3 Ultra => M3Ult)
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"\bUltra\b",
+            "Ult",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"\b(M\d+)\s+(Pro|Max|Ult)\b",
+            "$1$2",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         return string.IsNullOrWhiteSpace(cleaned) ? "SoC" : cleaned;
     }
 

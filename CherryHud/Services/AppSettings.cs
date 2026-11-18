@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace CherryHud.Services;
 
@@ -7,8 +8,11 @@ public enum OverlayCorner
     TopLeft = 0,
     TopRight = 1,
     BottomLeft = 2,
-    BottomRight = 3
+    BottomRight = 3,
+    Custom = 4
 }
+
+public readonly record struct GameWindowBounds(int X, int Y, int Width, int Height);
 
 public enum OverlayTheme
 {
@@ -20,12 +24,51 @@ public class AppSettings
 {
     public AppLanguage Language { get; set; } = AppLanguage.English;
     public bool AutoGameMode { get; set; } = true;
+    public List<string> AutoModeBlacklist { get; set; } = new();
+    public List<string> AutoModeWhitelist { get; set; } = new();
     public bool LaunchAtLogin { get; set; } = false;
     public OverlayCorner Position { get; set; } = OverlayCorner.TopLeft;
+    public int CustomWindowOffsetX { get; set; } = 8;
+    public int CustomWindowOffsetY { get; set; } = 40;
+    public int CustomScreenOffsetX { get; set; } = 8;
+    public int CustomScreenOffsetY { get; set; } = 8;
+    public bool AutoTrackGameWindow { get; set; } = true;
     public OverlayTheme OverlayTheme { get; set; } = OverlayTheme.Normal;
+    public double OverlayScale { get; set; } = 1.0;
     public bool AllowOverlayDrag { get; set; } = true;
     
+    public static readonly string[] DefaultMetricOrder =
+    {
+        "soc", "thermal", "power", "cpu", "gpu", "vram", "ram", "swap", "battery", "fps", "low", "frametime", "graph"
+    };
+
+    public List<string> MetricOrder { get; set; } = new(DefaultMetricOrder);
+
+    public List<string> GetSanitizedMetricOrder()
+    {
+        var result = new List<string>();
+        if (MetricOrder != null)
+        {
+            foreach (var id in MetricOrder)
+            {
+                if (Array.IndexOf(DefaultMetricOrder, id) >= 0 && !result.Contains(id))
+                {
+                    result.Add(id);
+                }
+            }
+        }
+        foreach (var id in DefaultMetricOrder)
+        {
+            if (!result.Contains(id))
+            {
+                result.Add(id);
+            }
+        }
+        return result;
+    }
+
     public bool ShowSocTemp { get; set; } = true;
+    public bool ShowThermalState { get; set; } = true;
     public bool ShowGpuUsage { get; set; } = true;
     public bool ShowGpuTemp { get; set; } = true;
     public bool ShowCpuUsage { get; set; } = true;
@@ -48,12 +91,16 @@ public class AppSettings
             ShowCpuTemp = value;
         }
     }
+    public bool ShowPower { get; set; } = true;
     public bool ShowVram { get; set; } = true;
     public bool ShowRam { get; set; } = true;
+    public bool ShowMemoryPressure { get; set; } = true;
+    public bool ShowSwap { get; set; } = true;
     public bool ShowBattery { get; set; } = true;
     public bool HideBatteryWhenCharged { get; set; } = true;
     public int BatteryHideThresholdPercent { get; set; } = 80;
     public bool ShowFps { get; set; } = false;
+    public bool ShowOnePercentLowFps { get; set; } = false;
     public bool ShowFrametime { get; set; } = false;
     public bool ShowGraph { get; set; } = false;
 

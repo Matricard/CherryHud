@@ -179,7 +179,12 @@ static void FpsMonitor_LibraryInit(void) {
 @property (atomic) double currentFps;
 @property (atomic) double currentFrametime;
 @property (atomic) BOOL isGameActive;
+@property (atomic) pid_t currentPid;
+@property (atomic) pid_t lastGamePid;
+@property (atomic) BOOL fpsCaptureEnabled;
 @property (nonatomic, copy) NSString *trackedAppName;
+@property (nonatomic, copy) NSString *trackedAppBundleId;
+@property (nonatomic, copy) NSString *lastGameName;
 - (void)start;
 - (void)stop;
 - (void)checkActiveWindow;
@@ -188,9 +193,74 @@ static void FpsMonitor_LibraryInit(void) {
 - (double)consumePeakFrametime;
 @end
 
+static NSMutableArray<NSString *> *s_customBlacklist = nil;
+static os_unfair_lock s_blacklistLock = OS_UNFAIR_LOCK_INIT;
+
+static NSMutableArray<NSString *> *s_customWhitelist = nil;
+static os_unfair_lock s_whitelistLock = OS_UNFAIR_LOCK_INIT;
+
+static BOOL IsInCustomBlacklist(NSRunningApplication *app) {
+    if (!app) return NO;
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
+    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
+
+    os_unfair_lock_lock(&s_blacklistLock);
+    if (!s_customBlacklist || s_customBlacklist.count == 0) {
+        os_unfair_lock_unlock(&s_blacklistLock);
+        return NO;
+    }
+
+    for (NSString *entry in s_customBlacklist) {
+        if (entry.length == 0) continue;
+        if ([bundleId isEqualToString:entry] ||
+            [appName isEqualToString:entry] ||
+            [execName isEqualToString:entry] ||
+            [bundleName isEqualToString:entry]) {
+            os_unfair_lock_unlock(&s_blacklistLock);
+            return YES;
+        }
+    }
+    os_unfair_lock_unlock(&s_blacklistLock);
+    return NO;
+}
+
+static BOOL IsInCustomWhitelist(NSRunningApplication *app) {
+    if (!app) return NO;
+    NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
+    NSString *appName = (app.localizedName ?: @"").lowercaseString;
+    NSString *execName = (app.executableURL.lastPathComponent ?: @"").lowercaseString;
+    NSString *bundleName = (app.bundleURL.lastPathComponent ?: @"").lowercaseString;
+
+    os_unfair_lock_lock(&s_whitelistLock);
+    if (!s_customWhitelist || s_customWhitelist.count == 0) {
+        os_unfair_lock_unlock(&s_whitelistLock);
+        return NO;
+    }
+
+    for (NSString *entry in s_customWhitelist) {
+        if (entry.length == 0) continue;
+        if ([bundleId isEqualToString:entry] ||
+            [appName isEqualToString:entry] ||
+            [execName isEqualToString:entry] ||
+            [bundleName isEqualToString:entry]) {
+            os_unfair_lock_unlock(&s_whitelistLock);
+            return YES;
+        }
+    }
+    os_unfair_lock_unlock(&s_whitelistLock);
+    return NO;
+}
+
 static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow) {
     if (!app) return NO;
     if (app.processIdentifier == getpid()) return NO;
+
+    // 0. Whitelist check: If app is explicitly whitelisted by user, it is ALWAYS treated as a game!
+    if (IsInCustomWhitelist(app)) {
+        return YES;
+    }
 
     NSString *bundleId = (app.bundleIdentifier ?: @"").lowercaseString;
     NSString *appName = (app.localizedName ?: @"").lowercaseString;
@@ -310,7 +380,10 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
 
     BOOL _isRunning;
     BOOL _isQueryingContent;
+    BOOL _fpsCaptureEnabled;
 }
+
+static BOOL s_initialFpsCaptureEnabled = NO;
 
 - (instancetype)init {
     self = [super init];
@@ -319,18 +392,52 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         _queue = dispatch_queue_create("com.cherryhud.fpsmonitor", attr);
         _lock = OS_UNFAIR_LOCK_INIT;
         _trackedAppName = @"";
+        _trackedAppBundleId = @"";
         _currentFps = 0.0;
         _currentFrametime = 0.0;
         _intervalPeakFrametime = 0.0;
         _currentPid = 0;
+        _lastGamePid = 0;
+        _lastGameName = @"";
         _tsHead = 0;
         _tsCount = 0;
         _prevFrameTime = 0.0;
         _lastFrameWallTime = 0.0;
         _isGameActive = NO;
         _isQueryingContent = NO;
+        _fpsCaptureEnabled = s_initialFpsCaptureEnabled;
     }
     return self;
+}
+
+- (BOOL)fpsCaptureEnabled {
+    @synchronized (self) {
+        return _fpsCaptureEnabled;
+    }
+}
+
+- (void)setFpsCaptureEnabled:(BOOL)enabled {
+    @synchronized (self) {
+        if (_fpsCaptureEnabled == enabled) return;
+        _fpsCaptureEnabled = enabled;
+        if (!enabled) {
+            if (_stream != nil) {
+                [_stream stopCaptureWithCompletionHandler:nil];
+                _stream = nil;
+            }
+            os_unfair_lock_lock(&_lock);
+            self.currentFps = 0.0;
+            self.currentFrametime = 0.0;
+            _intervalPeakFrametime = 0.0;
+            _tsCount = 0;
+            _prevFrameTime = 0.0;
+            os_unfair_lock_unlock(&_lock);
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self checkActiveWindow];
+            });
+        }
+    }
 }
 
 - (void)start {
@@ -348,6 +455,10 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
             [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
                                                                    selector:@selector(onAppActivated:)
                                                                        name:NSWorkspaceDidActivateApplicationNotification
+                                                                     object:nil];
+            [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
+                                                                   selector:@selector(onAppTerminated:)
+                                                                       name:NSWorkspaceDidTerminateApplicationNotification
                                                                      object:nil];
 
             [self checkActiveWindow];
@@ -369,6 +480,13 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
         [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(checkActiveWindow) object:nil];
         [self performSelector:@selector(checkActiveWindow) withObject:nil afterDelay:0.15];
     });
+}
+
+- (void)onAppTerminated:(NSNotification *)note {
+    NSRunningApplication *app = note.userInfo[NSWorkspaceApplicationKey];
+    if (app && app.processIdentifier == self.lastGamePid) {
+        self.lastGamePid = 0;
+    }
 }
 
 - (void)stop {
@@ -401,6 +519,16 @@ static BOOL IsGameApplication(NSRunningApplication *app, SCWindow *targetWindow)
 static BOOL IsExcludedApp(NSRunningApplication *app) {
     if (!app) return YES;
     if (app.processIdentifier == getpid()) return YES;
+
+    // 0. User custom blacklist ALWAYS takes precedence
+    if (IsInCustomBlacklist(app)) {
+        return YES;
+    }
+
+    // User custom whitelist overrides system exclusions
+    if (IsInCustomWhitelist(app)) {
+        return NO;
+    }
 
     // If officially marked as a game, it is never excluded
     if (app.bundleURL) {
@@ -479,32 +607,54 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
     @synchronized (self) {
         self.trackedAppName = appName;
+        self.trackedAppBundleId = frontApp.bundleIdentifier ?: @"";
     }
 
     // 1. FAST-PATH: Synchronous check (0.001ms)
-    BOOL isKnownGame = IsGameApplication(frontApp, nil);
-
-    if (!isKnownGame) {
-        if (IsExcludedApp(frontApp)) {
-            // Definitively NOT a game (Finder, Safari, Rider, Terminal, etc.)
-            self.isGameActive = NO;
-            if (self->_stream != nil) {
-                [self->_stream stopCaptureWithCompletionHandler:nil];
-                self->_stream = nil;
-            }
-            self->_currentPid = 0;
-            os_unfair_lock_lock(&self->_lock);
-            self.currentFps = 0.0;
-            self.currentFrametime = 0.0;
-            self->_intervalPeakFrametime = 0.0;
-            self->_tsCount = 0;
-            self->_prevFrameTime = 0.0;
-            os_unfair_lock_unlock(&self->_lock);
-            return;
+    // Check exclusion first so blacklisted apps or system exclusions are ignored immediately
+    if (IsExcludedApp(frontApp)) {
+        self.isGameActive = NO;
+        if (self->_stream != nil) {
+            [self->_stream stopCaptureWithCompletionHandler:nil];
+            self->_stream = nil;
         }
-    } else {
+        self->_currentPid = 0;
+        os_unfair_lock_lock(&self->_lock);
+        self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        self->_intervalPeakFrametime = 0.0;
+        self->_tsCount = 0;
+        self->_prevFrameTime = 0.0;
+        os_unfair_lock_unlock(&self->_lock);
+        return;
+    }
+
+    BOOL isKnownGame = IsGameApplication(frontApp, nil);
+    if (isKnownGame) {
         // Definitively a game (WoW, Steam games, etc.) - mark active IMMEDIATELY (0ms)!
         self.isGameActive = YES;
+        self->_currentPid = frontApp.processIdentifier;
+        self.lastGamePid = frontApp.processIdentifier;
+        self.lastGameName = appName;
+    }
+
+    // ------------------------------------------------------------------
+    // If FPS capture is DISABLED, DO NOT record the screen!
+    // Never query ScreenCaptureKit and never start SCStream.
+    // ------------------------------------------------------------------
+    if (!self.fpsCaptureEnabled) {
+        if (self->_stream != nil) {
+            [self->_stream stopCaptureWithCompletionHandler:nil];
+            self->_stream = nil;
+        }
+        os_unfair_lock_lock(&self->_lock);
+        self.currentFps = 0.0;
+        self.currentFrametime = 0.0;
+        self->_intervalPeakFrametime = 0.0;
+        self->_tsCount = 0;
+        self->_prevFrameTime = 0.0;
+        os_unfair_lock_unlock(&self->_lock);
+        return;
     }
 
     // If we are already capturing this exact process and stream is healthy, NO NEED to re-query ScreenCaptureKit!
@@ -537,7 +687,11 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
                 s_hasPermission = NO;
             }
 
-            if (error || !content || !self->_isRunning) {
+            if (!self.fpsCaptureEnabled || error || !content || !self->_isRunning) {
+                if (!self.fpsCaptureEnabled && self->_stream != nil) {
+                    [self->_stream stopCaptureWithCompletionHandler:nil];
+                    self->_stream = nil;
+                }
                 // Even if SCShareableContent fails or permission is missing,
                 // we PRESERVE self.isGameActive = isKnownGame so the HUD stays visible over the game!
                 return;
@@ -556,7 +710,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
             }
 
             // Check if frontmost application is a game (verifying window geometry if needed)
-            BOOL isGame = isKnownGame || IsGameApplication(frontApp, targetWindow);
+            BOOL isGame = !IsExcludedApp(frontApp) && (isKnownGame || IsGameApplication(frontApp, targetWindow));
 
             if (!isGame) {
                 // NOT a game: Stop capture immediately
@@ -578,6 +732,8 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
             // Active game confirmed
             self.isGameActive = YES;
+            self.lastGamePid = frontApp.processIdentifier;
+            self.lastGameName = appName;
 
             if (frontApp.processIdentifier == self->_currentPid && self->_stream != nil) {
                 return; // Already tracking this game stream
@@ -750,6 +906,7 @@ static BOOL IsExcludedApp(NSRunningApplication *app) {
 
 static FpsMonitor *s_monitor = nil;
 static char s_appNameBuffer[256] = {0};
+static char s_appBundleIdBuffer[256] = {0};
 
 bool FpsMonitor_HasPermission(void) {
     if (CGPreflightScreenCaptureAccess()) {
@@ -799,6 +956,124 @@ bool FpsMonitor_IsGameActive(void) {
     return s_monitor.isGameActive;
 }
 
+static CGWindowID s_cachedGameWindowId = 0;
+static pid_t s_cachedGameWindowPid = 0;
+
+bool FpsMonitor_IsLeftMouseDown(void) {
+    return (bool)CGEventSourceButtonState(kCGEventSourceStateCombinedSessionState, kCGMouseButtonLeft);
+}
+
+bool FpsMonitor_GetActiveGameWindowBounds(int *outX, int *outY, int *outW, int *outH) {
+    if (outX) *outX = 0;
+    if (outY) *outY = 0;
+    if (outW) *outW = 0;
+    if (outH) *outH = 0;
+
+    if (!s_monitor || !s_monitor.isGameActive) {
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
+        return false;
+    }
+
+    pid_t targetPid = s_monitor.currentPid;
+    if (targetPid <= 0) {
+        NSRunningApplication *frontApp = [[NSWorkspace sharedWorkspace] frontmostApplication];
+        if (frontApp && frontApp.processIdentifier != getpid()) {
+            targetPid = frontApp.processIdentifier;
+        }
+    }
+    if (targetPid <= 0) {
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
+        return false;
+    }
+
+    // Fast-path: query single cached game window directly (microsecond query)
+    if (s_cachedGameWindowId > 0 && s_cachedGameWindowPid == targetPid) {
+        CFArrayRef singleList = CGWindowListCopyWindowInfo(kCGWindowListOptionIncludingWindow, s_cachedGameWindowId);
+        if (singleList) {
+            NSArray *arr = (NSArray *)singleList;
+            if (arr.count > 0) {
+                NSDictionary *info = arr[0];
+                NSNumber *pidNum = info[(id)kCGWindowOwnerPID];
+                NSNumber *layerNum = info[(id)kCGWindowLayer];
+                NSDictionary *boundsDict = info[(id)kCGWindowBounds];
+                if (pidNum && [pidNum intValue] == targetPid &&
+                    layerNum && [layerNum intValue] == 0 && boundsDict) {
+                    CGRect rect;
+                    if (CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)boundsDict, &rect)) {
+                        if (rect.size.width >= 200 && rect.size.height >= 150) {
+                            CFRelease(singleList);
+                            if (outX) *outX = (int)round(rect.origin.x);
+                            if (outY) *outY = (int)round(rect.origin.y);
+                            if (outW) *outW = (int)round(rect.size.width);
+                            if (outH) *outH = (int)round(rect.size.height);
+                            return true;
+                        }
+                    }
+                }
+            }
+            CFRelease(singleList);
+        }
+        s_cachedGameWindowId = 0;
+        s_cachedGameWindowPid = 0;
+    }
+
+    CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+    if (!windowList) {
+        return false;
+    }
+
+    NSArray *windows = (NSArray *)windowList;
+    CGRect bestBounds = CGRectZero;
+    CGFloat maxArea = 0;
+    CGWindowID bestId = 0;
+
+    for (NSDictionary *info in windows) {
+        NSNumber *pidNum = info[(id)kCGWindowOwnerPID];
+        if (!pidNum || [pidNum intValue] != targetPid) {
+            continue;
+        }
+
+        NSNumber *layerNum = info[(id)kCGWindowLayer];
+        if (!layerNum || [layerNum intValue] != 0) {
+            continue;
+        }
+
+        NSDictionary *boundsDict = info[(id)kCGWindowBounds];
+        if (!boundsDict) {
+            continue;
+        }
+
+        CGRect rect;
+        if (CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)boundsDict, &rect)) {
+            if (rect.size.width >= 200 && rect.size.height >= 150) {
+                CGFloat area = rect.size.width * rect.size.height;
+                if (area > maxArea) {
+                    maxArea = area;
+                    bestBounds = rect;
+                    NSNumber *wNum = info[(id)kCGWindowNumber];
+                    if (wNum) bestId = (CGWindowID)[wNum unsignedIntValue];
+                }
+            }
+        }
+    }
+
+    CFRelease(windowList);
+
+    if (maxArea > 0) {
+        s_cachedGameWindowId = bestId;
+        s_cachedGameWindowPid = targetPid;
+        if (outX) *outX = (int)round(bestBounds.origin.x);
+        if (outY) *outY = (int)round(bestBounds.origin.y);
+        if (outW) *outW = (int)round(bestBounds.size.width);
+        if (outH) *outH = (int)round(bestBounds.size.height);
+        return true;
+    }
+
+    return false;
+}
+
 double FpsMonitor_GetFps(void) {
     if (!s_monitor) return 0.0;
     return [s_monitor readFps];
@@ -819,6 +1094,155 @@ const char* FpsMonitor_GetTrackedAppName(void) {
     NSString *name = s_monitor.trackedAppName ?: @"";
     [name getCString:s_appNameBuffer maxLength:sizeof(s_appNameBuffer) encoding:NSUTF8StringEncoding];
     return s_appNameBuffer;
+}
+
+const char* FpsMonitor_GetTrackedAppBundleId(void) {
+    if (!s_monitor) return "";
+    NSString *bundleId = s_monitor.trackedAppBundleId ?: @"";
+    [bundleId getCString:s_appBundleIdBuffer maxLength:sizeof(s_appBundleIdBuffer) encoding:NSUTF8StringEncoding];
+    return s_appBundleIdBuffer;
+}
+
+int FpsMonitor_GetTrackedAppPid(void) {
+    if (!s_monitor) return 0;
+    if (s_monitor.lastGamePid > 0) return (int)s_monitor.lastGamePid;
+    return (int)s_monitor.currentPid;
+}
+
+bool FpsMonitor_IsProcessAlive(int pid) {
+    if (pid <= 0) return false;
+    NSRunningApplication *app = [NSRunningApplication runningApplicationWithProcessIdentifier:pid];
+    if (app) {
+        return !app.isTerminated;
+    }
+    return (kill(pid, 0) == 0 || errno == EPERM);
+}
+
+bool FpsMonitor_IsAppRunning(const char *appNameUtf8) {
+    if (!appNameUtf8 || strlen(appNameUtf8) == 0) return false;
+    NSString *targetName = [NSString stringWithUTF8String:appNameUtf8];
+    if (!targetName || targetName.length == 0) return false;
+
+    for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+        if (!app.isTerminated && app.localizedName && [app.localizedName isEqualToString:targetName]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static char s_runningAppsBuffer[32768];
+
+const char* FpsMonitor_GetRunningAppNames(void) {
+    @autoreleasepool {
+        NSMutableSet<NSString *> *names = [NSMutableSet set];
+        pid_t myPid = getpid();
+
+        NSMutableSet<NSNumber *> *windowPids = [NSMutableSet set];
+        CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+        if (windowList) {
+            NSArray *arr = (__bridge NSArray *)windowList;
+            for (NSDictionary *info in arr) {
+                NSNumber *layer = info[(id)kCGWindowLayer];
+                NSNumber *pid = info[(id)kCGWindowOwnerPID];
+                if (layer && [layer intValue] == 0 && pid) {
+                    [windowPids addObject:pid];
+                }
+            }
+            CFRelease(windowList);
+        }
+
+        for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+            if (app.processIdentifier == myPid) continue;
+            if (app.isTerminated) continue;
+
+            NSString *name = app.localizedName;
+            if (!name || name.length == 0) continue;
+
+            BOOL isRegular = (app.activationPolicy == NSApplicationActivationPolicyRegular);
+            BOOL hasWindow = [windowPids containsObject:@(app.processIdentifier)];
+
+            if (isRegular || hasWindow) {
+                NSString *trimmed = [name stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (trimmed.length > 0) {
+                    [names addObject:trimmed];
+                }
+            }
+        }
+
+        NSArray<NSString *> *sorted = [[names allObjects] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+        NSString *joined = [sorted componentsJoinedByString:@"\n"];
+        [joined getCString:s_runningAppsBuffer maxLength:sizeof(s_runningAppsBuffer) encoding:NSUTF8StringEncoding];
+        return s_runningAppsBuffer;
+    }
+}
+
+void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
+    os_unfair_lock_lock(&s_blacklistLock);
+    if (!s_customBlacklist) {
+        s_customBlacklist = [[NSMutableArray alloc] init];
+    } else {
+        [s_customBlacklist removeAllObjects];
+    }
+
+    if (newlineSeparated != NULL && strlen(newlineSeparated) > 0) {
+        NSString *raw = [NSString stringWithUTF8String:newlineSeparated];
+        NSArray<NSString *> *lines = [raw componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        for (NSString *line in lines) {
+            NSString *trimmed = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].lowercaseString;
+            if (trimmed.length > 0) {
+                [s_customBlacklist addObject:trimmed];
+            }
+        }
+    }
+    os_unfair_lock_unlock(&s_blacklistLock);
+
+    if (s_monitor) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [s_monitor checkActiveWindow];
+        });
+    }
+}
+
+void FpsMonitor_SetFpsCaptureEnabled(bool enabled) {
+    s_initialFpsCaptureEnabled = (BOOL)enabled;
+    if (s_monitor) {
+        s_monitor.fpsCaptureEnabled = (BOOL)enabled;
+    }
+}
+
+bool FpsMonitor_GetFpsCaptureEnabled(void) {
+    if (s_monitor) {
+        return (bool)s_monitor.fpsCaptureEnabled;
+    }
+    return (bool)s_initialFpsCaptureEnabled;
+}
+
+void FpsMonitor_SetWhitelist(const char *newlineSeparated) {
+    os_unfair_lock_lock(&s_whitelistLock);
+    if (!s_customWhitelist) {
+        s_customWhitelist = [[NSMutableArray alloc] init];
+    } else {
+        [s_customWhitelist removeAllObjects];
+    }
+
+    if (newlineSeparated != NULL && strlen(newlineSeparated) > 0) {
+        NSString *raw = [NSString stringWithUTF8String:newlineSeparated];
+        NSArray<NSString *> *lines = [raw componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        for (NSString *line in lines) {
+            NSString *trimmed = [line stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]].lowercaseString;
+            if (trimmed.length > 0) {
+                [s_customWhitelist addObject:trimmed];
+            }
+        }
+    }
+    os_unfair_lock_unlock(&s_whitelistLock);
+
+    if (s_monitor) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [s_monitor checkActiveWindow];
+        });
+    }
 }
 
 void FpsMonitor_GetGpuStats(double *outUtilization, double *outVramBytes) {
@@ -1343,6 +1767,13 @@ int FpsMonitor_GetLaunchAtLogin(void) {
         return service.status == SMAppServiceStatusEnabled ? 1 : 0;
     }
     return 0;
+}
+
+int FpsMonitor_GetThermalState(void) {
+    if (@available(macOS 10.10.3, *)) {
+        return (int)[[NSProcessInfo processInfo] thermalState];
+    }
+    return 0; // Nominal
 }
 
 

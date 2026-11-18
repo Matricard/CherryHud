@@ -39,7 +39,9 @@ public class LocalizationService : ObservableObject
 
     // Tabs
     public string TabGeneral => IsFrench ? "Général" : "General";
-    public string TabDisplay => TabGeneral;
+    public string TabHud => "HUD";
+    public string TabApplications => IsFrench ? "Applications" : "Applications";
+    public string ApplicationsTabDisabledTooltip => IsFrench ? "Le Mode Auto doit être activé pour gérer les applications" : "Auto Mode must be enabled to manage applications";
     public string TabMetrics => IsFrench ? "Métriques" : "Metrics";
     public string TabAbout => IsFrench ? "À propos" : "About";
 
@@ -56,25 +58,35 @@ public class LocalizationService : ObservableObject
     public string LaunchAtLoginSubtitle => IsFrench ? "Ouvrir CherryHud automatiquement à l'ouverture du Mac" : "Automatically open CherryHud when your Mac starts up";
 
     // Position Card
-    public string PositionTitle => IsFrench ? "Emplacement de l'overlay" : "Overlay Position";
+    public string PositionTitle => IsFrench ? "Position" : "Position";
     public string PositionSubtitle => IsFrench ? "Coin de l'écran où ancrer le HUD" : "Screen corner where the HUD is anchored";
     public string PositionTopLeft => IsFrench ? "Haut Gauche" : "Top Left";
     public string PositionTopRight => IsFrench ? "Haut Droite" : "Top Right";
     public string PositionBottomLeft => IsFrench ? "Bas Gauche" : "Bottom Left";
     public string PositionBottomRight => IsFrench ? "Bas Droite" : "Bottom Right";
+    public string PositionCustom => IsFrench ? "Personnalisé" : "Custom";
+    public string AutoTrackGameWindowTitle => IsFrench ? "Suivi de la fenêtre de jeu" : "Game Window Auto-Tracking";
+    public string AutoTrackGameWindowSubtitle => IsFrench ? "Ancre le HUD directement dans le coin du jeu lorsqu'il est en mode fenêtré" : "Anchor HUD inside the game window's corner when running windowed";
 
     // Theme Card
-    public string ThemeTitle => IsFrench ? "Thème de l'overlay" : "Overlay Theme";
+    public string ThemeTitle => IsFrench ? "Thème" : "Theme";
     public string ThemeSubtitle => IsFrench ? "Choisissez la densité d'affichage du HUD" : "Choose HUD display density";
     public string ThemeNormal => IsFrench ? "Normal" : "Normal";
     public string ThemeCompact => IsFrench ? "Compact" : "Compact";
 
+    // Scale Card
+    public string ScaleTitle => IsFrench ? "Échelle" : "Scale";
+    public string ScaleSubtitle => IsFrench ? "Ajustez la taille d'affichage (grossissement)" : "Adjust display size and magnification";
+    public string ScaleResetButton => IsFrench ? "100%" : "100%";
+
     // Drag & Drop Card
-    public string AllowDragTitle => IsFrench ? "Glisser-déposer de l'overlay" : "Overlay Drag & Drop";
-    public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre de l'overlay à la souris" : "Allow moving the overlay freely with the mouse";
+    public string AllowDragTitle => IsFrench ? "Glisser-déposer" : "Drag & Drop";
+    public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre à la souris" : "Allow moving freely with the mouse";
 
     // Metrics
     public string MetricSocTemp => IsFrench ? "Température moyenne du processeur (CPU + GPU)" : "Processor average temperature (CPU + GPU)";
+    public string MetricThermalState => IsFrench ? "État thermique & Throttling" : "Thermal State & Throttling";
+    public string MetricPower => IsFrench ? "Consommation (Watts)" : "Power Consumption (Watts)";
     public string MetricGpu => IsFrench ? "Charge GPU & Température" : "GPU Load & Temperature";
     public string MetricCpu => IsFrench ? "Charge CPU & Température" : "CPU Load & Temperature";
     public string MetricGpuUsage => IsFrench ? "Charge GPU (%)" : "GPU Load (%)";
@@ -83,13 +95,17 @@ public class LocalizationService : ObservableObject
     public string MetricCpuTemp => IsFrench ? "Température CPU (°C)" : "CPU Temperature (°C)";
     public string MetricVram => IsFrench ? "Mémoire Graphique (VRAM)" : "Video Memory (VRAM)";
     public string MetricRam => IsFrench ? "Mémoire Vive Système" : "System RAM Memory";
+    public string MetricMemoryPressure => IsFrench ? "Pression Mémoire (Pastille RAM)" : "Memory Pressure (RAM Indicator)";
+    public string MetricSwap => IsFrench ? "Mémoire Swap" : "Swap Memory";
     public string MetricBattery => IsFrench ? "Batterie & État de charge" : "Battery & Charging State";
     public string HideBatteryWhenChargedTitle => IsFrench ? "Masquer la batterie si chargée" : "Hide battery when charged";
     public string HideBatteryWhenChargedSubtitle => IsFrench ? "Masque la batterie lorsque le Mac est branché et a atteint le pourcentage défini" : "Hides the battery when the Mac is plugged in and has reached the specified percentage";
     public string BatteryThresholdLabel => IsFrench ? "Seuil de masquage" : "Hide threshold";
     public string MetricFps => IsFrench ? "Images par seconde" : "Frames Per Second";
+    public string MetricOnePercentLowFps => IsFrench ? "1% Low FPS" : "1% Low FPS";
     public string MetricFrametime => IsFrench ? "Temps de trame (Frametime)" : "Frametime";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
+    public string MetricsReorderHint => IsFrench ? "Glissez-déposez les cartes pour changer l'ordre dans le HUD" : "Drag and drop cards to change order in the HUD";
     public string BetaNoteText => IsFrench ? "Ces métriques sont en cours de développement." : "These metrics are currently under development.";
 
     // Advanced
@@ -153,8 +169,34 @@ public class LocalizationService : ObservableObject
     public string TrayShow => IsFrench ? "Afficher" : "Show";
     public string TrayHide => IsFrench ? "Masquer" : "Hide";
     public string TrayAutoMode => IsFrench ? "Mode Auto" : "Auto Mode";
+    public string TrayBlacklistFormat => IsFrench ? "Ignorer '{0}' (Mode Auto)" : "Ignore '{0}' (Auto Mode)";
+    public string TrayUnblacklistFormat => IsFrench ? "Ne plus ignorer '{0}'" : "Unblacklist '{0}'";
+    public string TrayWhitelistFormat => IsFrench ? "Ajouter '{0}' à la liste blanche" : "Whitelist '{0}' (Auto Mode)";
+    public string TrayUnwhitelistFormat => IsFrench ? "Retirer '{0}' de la liste blanche" : "Remove '{0}' from Whitelist";
+    public string TrayAppActionEmpty => IsFrench ? "Gérer le logiciel actuel (Mode Auto)" : "Manage Current App (Auto Mode)";
+    public string TrayBlacklistEmpty => TrayAppActionEmpty;
     public string TraySettings => IsFrench ? "Paramètres" : "Settings";
     public string TrayUpdate => IsFrench ? "Mettre à jour" : "Update";
     public string TrayCheckUpdates => TrayUpdate;
     public string TrayQuit => IsFrench ? "Quitter CherryHud" : "Quit CherryHud";
+
+    // Applications Tab in Settings
+    public string ApplicationsPageTitle => IsFrench ? "Règles des applications" : "Application Rules";
+    public string ApplicationsPageSubtitle => IsFrench ? "Contrôlez précisément quelles applications activent ou non CherryHud en mode automatique" : "Precisely control which applications trigger CherryHud in auto mode";
+    public string BlacklistSectionTitle => IsFrench ? "Liste Noire (Ignorées)" : "Blacklist (Ignored)";
+    public string BlacklistSectionSubtitle => IsFrench ? "CherryHud ne s'affichera JAMAIS automatiquement pour ces applications" : "CherryHud will NEVER automatically show for these applications";
+    public string WhitelistSectionTitle => IsFrench ? "Liste Blanche (Forcées)" : "Whitelist (Forced)";
+    public string WhitelistSectionSubtitle => IsFrench ? "CherryHud s'affichera TOUJOURS pour ces applications en mode auto, même si macOS ne les détecte pas comme jeux" : "CherryHud will ALWAYS show for these applications in auto mode, even if not detected as games";
+    public string MoveToWhitelistButton => IsFrench ? "Passer en liste blanche" : "Move to Whitelist";
+    public string MoveToBlacklistButton => IsFrench ? "Passer en liste noire" : "Move to Blacklist";
+    public string AddAppPlaceholder => IsFrench ? "Rechercher une app ouverte ou saisir un nom..." : "Search open app or enter name...";
+    public string RunningAppsTooltip => IsFrench ? "Afficher les applications ouvertes sur macOS" : "Show open applications on macOS";
+    public string AddToBlacklistButton => IsFrench ? "+ Liste Noire" : "+ Blacklist";
+    public string AddToWhitelistButton => IsFrench ? "+ Liste Blanche" : "+ Whitelist";
+    public string CurrentAppDetectedFormat => IsFrench ? "Application active : {0}" : "Active application: {0}";
+    public string AddCurrentToBlacklistButton => IsFrench ? "+ Ignorer l'actuelle" : "+ Ignore Current";
+    public string AddCurrentToWhitelistButton => IsFrench ? "+ Forcer l'actuelle" : "+ Whitelist Current";
+    public string BlacklistEmptyText => IsFrench ? "Aucune application dans la liste noire" : "No applications in blacklist";
+    public string WhitelistEmptyText => IsFrench ? "Aucune application dans la liste blanche" : "No applications in whitelist";
+    public string RemoveButtonText => IsFrench ? "Supprimer" : "Remove";
 }

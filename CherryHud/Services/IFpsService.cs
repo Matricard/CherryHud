@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace CherryHud.Services;
 
 public record FpsData(
@@ -10,7 +12,8 @@ public record FpsData(
     double GpuVramGb,
     int? BatteryPercent,
     bool IsBatteryCharging,
-    bool IsGameActive
+    bool IsGameActive,
+    int ThermalState = 0
 );
 
 public interface IFpsService
@@ -19,6 +22,23 @@ public interface IFpsService
     (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample();
     bool IsGameActive { get; }
     bool IsLaptop { get; }
+    bool IsLeftMouseDown => false;
+    int GetThermalState() => 0;
+    bool GetActiveGameWindowBounds(out int x, out int y, out int width, out int height)
+    {
+        x = 0; y = 0; width = 0; height = 0;
+        return false;
+    }
+    string GetTrackedAppName() => "";
+    string GetTrackedAppBundleId() => "";
+    int TrackedAppPid => 0;
+    bool IsProcessAlive(int pid) => false;
+    bool IsAppRunning(string appName) => false;
+    IReadOnlyList<string> GetRunningAppNames() => System.Array.Empty<string>();
+    void SetBlacklist(IEnumerable<string> blacklist) { }
+    void SetWhitelist(IEnumerable<string> whitelist) { }
+    void SetFpsCaptureEnabled(bool enabled) { }
+    bool IsFpsCaptureEnabled => false;
     void Start();
     void Stop();
     void RequestPermission();

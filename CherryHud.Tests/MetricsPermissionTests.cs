@@ -13,7 +13,8 @@ public class MetricsPermissionTests
         public bool IsLaptop => false;
         public void Start() { }
         public void Stop() { }
-        public FpsData GetFpsData() => new(0, 0, 0, "Test", HasPermission, 0, 0, 100, false, false);
+        public FpsData GetFpsData() => new(0, 0, 0, "Test", HasPermission, 0, 0, 100, false, false, 0);
+        public int GetThermalState() => 0;
         public (bool HasPermission, double Fps, double CurrentFrametimeMs, double PeakFrametimeMs) GetFrametimeSample() => (HasPermission, 0, 0, 0);
         public void RequestPermission() { }
         public void CheckPermission() { }
@@ -71,6 +72,30 @@ public class MetricsPermissionTests
 
         Assert.True(vm.IsPermissionAlertVisible);
         Assert.False(settings.Current.ShowFrametime);
+
+        // Dismiss alert
+        vm.DismissPermissionAlert();
+        Assert.False(vm.IsPermissionAlertVisible);
+    }
+
+    [Fact]
+    public void WhenPermissionNotGranted_EnablingOnePercentLowFps_BlocksUserAndShowsAlert()
+    {
+        var fps = new TestFpsService { HasPermission = false };
+        var settings = new TestSettingsService();
+        settings.Current.ShowOnePercentLowFps = false;
+
+        var vm = new SettingsViewModel(settings, null, fps);
+
+        Assert.False(vm.HasScreenCapturePermission);
+        Assert.False(vm.ShowOnePercentLowFps);
+        Assert.False(vm.IsPermissionAlertVisible);
+
+        // Attempt to turn on 1% Low FPS
+        vm.ShowOnePercentLowFps = true;
+
+        Assert.True(vm.IsPermissionAlertVisible);
+        Assert.False(settings.Current.ShowOnePercentLowFps);
 
         // Dismiss alert
         vm.DismissPermissionAlert();

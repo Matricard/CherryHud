@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -18,6 +20,26 @@ public partial class SettingsViewModel : ViewModelBase
 
     public ObservableCollection<string> PositionOptions { get; } = new();
     public ObservableCollection<string> ThemeOptions { get; } = new();
+    public ObservableCollection<string> RunningAppNames { get; } = new();
+    public ObservableCollection<string> FilteredRunningApps { get; } = new();
+    public ObservableCollection<string> BlacklistedApps { get; } = new();
+    public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
+    public ObservableCollection<string> WhitelistedApps { get; } = new();
+    public bool HasWhitelistedApps => WhitelistedApps.Count > 0;
+
+    [ObservableProperty]
+    private bool _isSuggestionsOpen;
+
+    [ObservableProperty]
+    private string _newAppNameInput = "";
+
+    private bool _isSelectingSuggestion;
+
+    partial void OnNewAppNameInputChanged(string value)
+    {
+        if (_isSelectingSuggestion) return;
+        FilterRunningApps(value, openPopupIfMatches: true);
+    }
 
     public void UpdatePositionOptions()
     {
@@ -27,6 +49,7 @@ public partial class SettingsViewModel : ViewModelBase
         PositionOptions.Add(Loc.PositionTopRight);
         PositionOptions.Add(Loc.PositionBottomLeft);
         PositionOptions.Add(Loc.PositionBottomRight);
+        PositionOptions.Add(Loc.PositionCustom);
         SelectedPositionIndex = -1;
         SelectedPositionIndex = prev >= 0 ? prev : 0;
     }
@@ -76,6 +99,34 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedLanguageIndex;
 
     [ObservableProperty]
+    private List<string> _metricOrder = new(AppSettings.DefaultMetricOrder);
+
+    public void SaveMetricOrder(List<string> newOrder)
+    {
+        var sanitized = new List<string>();
+        foreach (var id in newOrder)
+        {
+            if (Array.IndexOf(AppSettings.DefaultMetricOrder, id) >= 0 && !sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+        foreach (var id in AppSettings.DefaultMetricOrder)
+        {
+            if (!sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+
+        MetricOrder = sanitized;
+        _settingsService.Current.MetricOrder = new List<string>(sanitized);
+        _settingsService.Save();
+
+        _mainViewModel?.UpdateMetricOrder(sanitized);
+    }
+
+    [ObservableProperty]
     private bool _autoGameMode = true;
 
     [ObservableProperty]
@@ -85,6 +136,9 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedPositionIndex;
 
     [ObservableProperty]
+    private bool _autoTrackGameWindow = true;
+
+    [ObservableProperty]
     private int _selectedThemeIndex;
 
     [ObservableProperty]
@@ -92,6 +146,12 @@ public partial class SettingsViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _showSocTemp = true;
+
+    [ObservableProperty]
+    private bool _showThermalState = true;
+
+    [ObservableProperty]
+    private bool _showPower = true;
 
     [ObservableProperty]
     private string _socName = "SoC";
@@ -121,6 +181,12 @@ public partial class SettingsViewModel : ViewModelBase
     private bool _showRam;
 
     [ObservableProperty]
+    private bool _showMemoryPressure = true;
+
+    [ObservableProperty]
+    private bool _showSwap;
+
+    [ObservableProperty]
     private bool _showBattery;
 
     [ObservableProperty]
@@ -131,12 +197,16 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool ShowBatterySubOptions => IsLaptop && ShowBattery;
     public string BatteryThresholdDisplay => $"≥ {BatteryHideThresholdPercent} %";
+    public string? ApplicationsTabTooltip => AutoGameMode ? null : Loc.ApplicationsTabDisabledTooltip;
 
     [ObservableProperty]
     private bool _isLaptop;
 
     [ObservableProperty]
     private bool _showFps;
+
+    [ObservableProperty]
+    private bool _showOnePercentLowFps;
 
     [ObservableProperty]
     private bool _showFrametime;
@@ -169,24 +239,34 @@ public partial class SettingsViewModel : ViewModelBase
     private string _latestVersion = "";
 
     [ObservableProperty]
+    private int _overlayScalePercent = 100;
+
+    [ObservableProperty]
+    private string _overlayScaleDisplay = "100%";
+
+    [ObservableProperty]
     private string _updateCardTitle = "";
 
     [ObservableProperty]
     private string _updateCardSubtitle = "";
 
-    public SettingsViewModel(ISettingsService settingsService, MainWindowViewModel? mainViewModel, IFpsService fpsService)
+    public SettingsViewModel(
+        ISettingsService settingsService,
+        MainWindowViewModel? mainViewModel = null,
+        IFpsService? fpsService = null)
     {
         _settingsService = settingsService;
         _mainViewModel = mainViewModel;
-        _fpsService = fpsService;
+        _fpsService = fpsService ?? mainViewModel?.FpsService ?? new FpsService();
 
-        SocName = mainViewModel != null ? mainViewModel.SocName : SystemMetricsService.FormatSocName(new SystemMetricsService().CpuName);
+        SocName = SystemMetricsService.FormatSocBadge(mainViewModel?.CpuName ?? new SystemMetricsService().CpuName);
 
         UpdateCardTitle = Loc.IsFrench ? "Mises à jour" : "Software Updates";
         UpdateCardSubtitle = Loc.IsFrench ? "Vérification en arrière-plan..." : "Checking in background...";
 
         LoadFromSettings();
         CheckPermissionStatus();
+        RefreshRunningApps();
         _ = CheckUpdateSilentlyAsync();
 
         LocalizationService.Instance.LanguageChanged += (_, _) =>
@@ -215,8 +295,24 @@ public partial class SettingsViewModel : ViewModelBase
                         }
                     });
                 }
+                else if (e.PropertyName == nameof(MainWindowViewModel.OverlayPosition))
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        if (SelectedPositionIndex != (int)_mainViewModel.OverlayPosition)
+                        {
+                            SelectedPositionIndex = (int)_mainViewModel.OverlayPosition;
+                        }
+                    });
+                }
             };
         }
+
+        _settingsService.SettingsChanged += (_, s) =>
+        {
+            SyncBlacklistedApps(s);
+            SyncWhitelistedApps(s);
+        };
     }
 
 #pragma warning disable MVVMTK0034
@@ -230,12 +326,18 @@ public partial class SettingsViewModel : ViewModelBase
         _autoGameMode = s.AutoGameMode;
         _launchAtLogin = s.LaunchAtLogin || LaunchAtLoginService.IsLaunchAtLoginEnabled();
         _selectedPositionIndex = (int)s.Position;
+        _autoTrackGameWindow = s.AutoTrackGameWindow;
         _selectedThemeIndex = (int)s.OverlayTheme;
         _allowOverlayDrag = s.AllowOverlayDrag;
+        double scale = s.OverlayScale > 0 ? s.OverlayScale : 1.0;
+        _overlayScalePercent = (int)Math.Round(scale * 100);
+        _overlayScaleDisplay = $"{_overlayScalePercent}%";
         UpdatePositionOptions();
         UpdateThemeOptions();
 
         _showSocTemp = s.ShowSocTemp;
+        _showThermalState = s.ShowThermalState;
+        _showPower = s.ShowPower;
         _showGpu = s.ShowGpu;
         _showGpuUsage = s.ShowGpuUsage;
         _showGpuTemp = s.ShowGpuTemp;
@@ -244,6 +346,8 @@ public partial class SettingsViewModel : ViewModelBase
         _showCpuTemp = s.ShowCpuTemp;
         _showVram = s.ShowVram;
         _showRam = s.ShowRam;
+        _showMemoryPressure = s.ShowMemoryPressure;
+        _showSwap = s.ShowSwap;
         _showBattery = s.ShowBattery;
         _hideBatteryWhenCharged = s.HideBatteryWhenCharged;
         _batteryHideThresholdPercent = s.BatteryHideThresholdPercent;
@@ -251,13 +355,251 @@ public partial class SettingsViewModel : ViewModelBase
         OnPropertyChanged(nameof(ShowBatterySubOptions));
         OnPropertyChanged(nameof(BatteryThresholdDisplay));
         _showFps = s.ShowFps;
+        _showOnePercentLowFps = s.ShowOnePercentLowFps;
         _showFrametime = s.ShowFrametime;
         _showGraph = s.ShowGraph;
+        _metricOrder = s.GetSanitizedMetricOrder();
+        OnPropertyChanged(nameof(MetricOrder));
 
         _autoCheckUpdates = s.AutoCheckUpdates;
         _gitHubRepo = s.GitHubRepo;
+        SyncBlacklistedApps(s);
+        SyncWhitelistedApps(s);
     }
 #pragma warning restore MVVMTK0034
+
+    private void SyncBlacklistedApps(AppSettings s)
+    {
+        void Update()
+        {
+            var currentList = s.AutoModeBlacklist ?? new List<string>();
+            if (BlacklistedApps.SequenceEqual(currentList)) return;
+
+            BlacklistedApps.Clear();
+            foreach (var app in currentList)
+            {
+                BlacklistedApps.Add(app);
+            }
+            OnPropertyChanged(nameof(HasBlacklistedApps));
+        }
+
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
+    private void SyncWhitelistedApps(AppSettings s)
+    {
+        void Update()
+        {
+            var currentList = s.AutoModeWhitelist ?? new List<string>();
+            if (WhitelistedApps.SequenceEqual(currentList)) return;
+
+            WhitelistedApps.Clear();
+            foreach (var app in currentList)
+            {
+                WhitelistedApps.Add(app);
+            }
+            OnPropertyChanged(nameof(HasWhitelistedApps));
+        }
+
+        if (Avalonia.Threading.Dispatcher.UIThread.CheckAccess())
+        {
+            Update();
+        }
+        else
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == 2)
+        {
+            if (!AutoGameMode)
+            {
+                SelectedTabIndex = 0;
+                return;
+            }
+            RefreshRunningApps();
+        }
+    }
+
+    [RelayCommand]
+    public void RefreshRunningApps()
+    {
+        try
+        {
+            var apps = _fpsService.GetRunningAppNames();
+            RunningAppNames.Clear();
+            foreach (var app in apps)
+            {
+                RunningAppNames.Add(app);
+            }
+            FilterRunningApps(NewAppNameInput, openPopupIfMatches: false);
+        }
+        catch
+        {
+        }
+    }
+
+    public void FilterRunningApps(string query, bool openPopupIfMatches = false)
+    {
+        FilteredRunningApps.Clear();
+        var trimmed = query?.Trim() ?? "";
+        var matches = string.IsNullOrWhiteSpace(trimmed)
+            ? (System.Collections.Generic.IEnumerable<string>)RunningAppNames
+            : RunningAppNames.Where(a => a.Contains(trimmed, StringComparison.OrdinalIgnoreCase));
+
+        foreach (var app in matches)
+        {
+            FilteredRunningApps.Add(app);
+        }
+
+        if (openPopupIfMatches)
+        {
+            IsSuggestionsOpen = !string.IsNullOrWhiteSpace(trimmed) && FilteredRunningApps.Count > 0;
+        }
+    }
+
+    [RelayCommand]
+    public void ToggleSuggestions()
+    {
+        RefreshRunningApps();
+        if (IsSuggestionsOpen)
+        {
+            IsSuggestionsOpen = false;
+        }
+        else
+        {
+            FilterRunningApps(NewAppNameInput, openPopupIfMatches: false);
+            IsSuggestionsOpen = FilteredRunningApps.Count > 0;
+        }
+    }
+
+    [RelayCommand]
+    public void SelectRunningApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        _isSelectingSuggestion = true;
+        try
+        {
+            NewAppNameInput = appName.Trim();
+            IsSuggestionsOpen = false;
+        }
+        finally
+        {
+            _isSelectingSuggestion = false;
+        }
+    }
+
+    [RelayCommand]
+    public void RemoveBlacklistedApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        BlacklistedApps.Remove(appName);
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+    }
+
+    [RelayCommand]
+    public void RemoveWhitelistedApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        WhitelistedApps.Remove(appName);
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void MoveToWhitelist(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        BlacklistedApps.Remove(trimmed);
+        if (!WhitelistedApps.Contains(trimmed))
+        {
+            WhitelistedApps.Add(trimmed);
+        }
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void MoveToBlacklist(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        var trimmed = appName.Trim();
+        WhitelistedApps.Remove(trimmed);
+        if (!BlacklistedApps.Contains(trimmed))
+        {
+            BlacklistedApps.Add(trimmed);
+        }
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetWhitelist(WhitelistedApps);
+        _fpsService.SetBlacklist(BlacklistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCustomBlacklist()
+    {
+        if (string.IsNullOrWhiteSpace(NewAppNameInput)) return;
+        var trimmed = NewAppNameInput.Trim();
+        WhitelistedApps.Remove(trimmed);
+        if (!BlacklistedApps.Contains(trimmed))
+        {
+            BlacklistedApps.Add(trimmed);
+        }
+        NewAppNameInput = "";
+        IsSuggestionsOpen = false;
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
+
+    [RelayCommand]
+    public void AddCustomWhitelist()
+    {
+        if (string.IsNullOrWhiteSpace(NewAppNameInput)) return;
+        var trimmed = NewAppNameInput.Trim();
+        BlacklistedApps.Remove(trimmed);
+        if (!WhitelistedApps.Contains(trimmed))
+        {
+            WhitelistedApps.Add(trimmed);
+        }
+        NewAppNameInput = "";
+        IsSuggestionsOpen = false;
+        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
+        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(BlacklistedApps);
+        _fpsService.SetWhitelist(WhitelistedApps);
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
+    }
 
     public void CheckPermissionStatus()
     {
@@ -313,6 +655,7 @@ public partial class SettingsViewModel : ViewModelBase
         CheckPermissionStatus();
         RefreshUpdateCardText();
         OnPropertyChanged(nameof(Loc));
+        OnPropertyChanged(nameof(ApplicationsTabTooltip));
     }
 
     partial void OnAutoGameModeChanged(bool value)
@@ -323,6 +666,11 @@ public partial class SettingsViewModel : ViewModelBase
         {
             _mainViewModel.SetAutoGameMode(value);
         }
+        if (!value && SelectedTabIndex == 2)
+        {
+            SelectedTabIndex = 0;
+        }
+        OnPropertyChanged(nameof(ApplicationsTabTooltip));
     }
 
     partial void OnLaunchAtLoginChanged(bool value)
@@ -335,12 +683,22 @@ public partial class SettingsViewModel : ViewModelBase
     partial void OnSelectedPositionIndexChanged(int value)
     {
         if (value < 0) return;
-        var corner = (OverlayCorner)Math.Clamp(value, 0, 3);
+        var corner = (OverlayCorner)Math.Clamp(value, 0, 4);
         _settingsService.Current.Position = corner;
         _settingsService.Save();
         if (_mainViewModel != null)
         {
             _mainViewModel.OverlayPosition = corner;
+        }
+    }
+
+    partial void OnAutoTrackGameWindowChanged(bool value)
+    {
+        _settingsService.Current.AutoTrackGameWindow = value;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.AutoTrackGameWindow = value;
         }
     }
 
@@ -366,11 +724,45 @@ public partial class SettingsViewModel : ViewModelBase
         }
     }
 
+    partial void OnOverlayScalePercentChanged(int value)
+    {
+        if (value < 50) value = 50;
+        if (value > 250) value = 250;
+        OverlayScaleDisplay = $"{value}%";
+        double scale = value / 100.0;
+        _settingsService.Current.OverlayScale = scale;
+        _settingsService.Save();
+        if (_mainViewModel != null)
+        {
+            _mainViewModel.OverlayScale = scale;
+        }
+    }
+
+    [RelayCommand]
+    public void ResetOverlayScale()
+    {
+        OverlayScalePercent = 100;
+    }
+
     partial void OnShowSocTempChanged(bool value)
     {
         _settingsService.Current.ShowSocTemp = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowSocTemp = value;
+    }
+
+    partial void OnShowThermalStateChanged(bool value)
+    {
+        _settingsService.Current.ShowThermalState = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowThermalState = value;
+    }
+
+    partial void OnShowPowerChanged(bool value)
+    {
+        _settingsService.Current.ShowPower = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowPower = value;
     }
 
     partial void OnShowGpuChanged(bool value)
@@ -445,6 +837,20 @@ public partial class SettingsViewModel : ViewModelBase
         if (_mainViewModel != null) _mainViewModel.ShowRam = value;
     }
 
+    partial void OnShowMemoryPressureChanged(bool value)
+    {
+        _settingsService.Current.ShowMemoryPressure = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowMemoryPressure = value;
+    }
+
+    partial void OnShowSwapChanged(bool value)
+    {
+        _settingsService.Current.ShowSwap = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowSwap = value;
+    }
+
     partial void OnShowBatteryChanged(bool value)
     {
         _settingsService.Current.ShowBattery = value;
@@ -489,6 +895,29 @@ public partial class SettingsViewModel : ViewModelBase
         _settingsService.Current.ShowFps = value;
         _settingsService.Save();
         if (_mainViewModel != null) _mainViewModel.ShowFps = value;
+    }
+
+    partial void OnShowOnePercentLowFpsChanged(bool value)
+    {
+        if (value)
+        {
+            CheckPermissionStatus();
+            if (!HasScreenCapturePermission)
+            {
+                Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    _showOnePercentLowFps = false;
+                    OnPropertyChanged(nameof(ShowOnePercentLowFps));
+                });
+                PermissionAlertMessage = Loc.PermissionRequiredForMetrics;
+                IsPermissionAlertVisible = true;
+                return;
+            }
+        }
+
+        _settingsService.Current.ShowOnePercentLowFps = value;
+        _settingsService.Save();
+        if (_mainViewModel != null) _mainViewModel.ShowOnePercentLowFps = value;
     }
 
     partial void OnShowFrametimeChanged(bool value)
@@ -700,7 +1129,9 @@ public partial class SettingsViewModel : ViewModelBase
         AutoGameMode = true;
         LaunchAtLogin = false;
         SelectedPositionIndex = 0;
+        AutoTrackGameWindow = true;
         SelectedThemeIndex = 0;
+        OverlayScalePercent = 100;
         AllowOverlayDrag = true;
         AutoCheckUpdates = true;
         GitHubRepo = "Matricard/CherryHud";
@@ -721,6 +1152,16 @@ public partial class SettingsViewModel : ViewModelBase
         ShowFps = false;
         ShowFrametime = false;
         ShowGraph = false;
+        SaveMetricOrder(new List<string>(AppSettings.DefaultMetricOrder));
+        BlacklistedApps.Clear();
+        WhitelistedApps.Clear();
+        _settingsService.Current.AutoModeBlacklist = new List<string>();
+        _settingsService.Current.AutoModeWhitelist = new List<string>();
+        _settingsService.Save();
+        _fpsService.SetBlacklist(Array.Empty<string>());
+        _fpsService.SetWhitelist(Array.Empty<string>());
+        OnPropertyChanged(nameof(HasBlacklistedApps));
+        OnPropertyChanged(nameof(HasWhitelistedApps));
         UpdatePositionOptions();
         UpdateThemeOptions();
         CheckPermissionStatus();

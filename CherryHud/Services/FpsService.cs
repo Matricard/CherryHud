@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -78,6 +79,36 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern IntPtr FpsMonitor_GetTrackedAppName();
 
     [DllImport(LibraryName)]
+    private static extern IntPtr FpsMonitor_GetTrackedAppBundleId();
+
+    [DllImport(LibraryName)]
+    private static extern int FpsMonitor_GetTrackedAppPid();
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsProcessAlive(int pid);
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsAppRunning([MarshalAs(UnmanagedType.LPUTF8Str)] string appName);
+
+    [DllImport(LibraryName)]
+    private static extern IntPtr FpsMonitor_GetRunningAppNames();
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetBlacklist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetWhitelist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
+
+    [DllImport(LibraryName)]
+    private static extern void FpsMonitor_SetFpsCaptureEnabled([MarshalAs(UnmanagedType.I1)] bool enabled);
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_GetFpsCaptureEnabled();
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_GetGpuStats(out double outUtilization, out double outVramBytes);
 
     [DllImport(LibraryName)]
@@ -88,6 +119,205 @@ public sealed class FpsService : IFpsService, IDisposable
 
     [DllImport(LibraryName)]
     private static extern void FpsMonitor_SetOverlayVisible(IntPtr viewOrWindowPtr, [MarshalAs(UnmanagedType.I1)] bool visible);
+
+    [DllImport(LibraryName)]
+    private static extern int FpsMonitor_GetThermalState();
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_GetActiveGameWindowBounds(out int outX, out int outY, out int outW, out int outH);
+
+    [DllImport(LibraryName)]
+    [return: MarshalAs(UnmanagedType.I1)]
+    private static extern bool FpsMonitor_IsLeftMouseDown();
+
+    public bool IsLeftMouseDown
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_IsLeftMouseDown();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public int GetThermalState()
+    {
+        try
+        {
+            return FpsMonitor_GetThermalState();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    public string GetTrackedAppName()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetTrackedAppName();
+            return ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) ?? "" : "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    public string GetTrackedAppBundleId()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetTrackedAppBundleId();
+            return ptr != IntPtr.Zero ? Marshal.PtrToStringUTF8(ptr) ?? "" : "";
+        }
+        catch
+        {
+            return "";
+        }
+    }
+
+    public int TrackedAppPid
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_GetTrackedAppPid();
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+    }
+
+    public bool IsProcessAlive(int pid)
+    {
+        if (pid <= 0) return false;
+        try
+        {
+            return FpsMonitor_IsProcessAlive(pid);
+        }
+        catch
+        {
+            try
+            {
+                var p = System.Diagnostics.Process.GetProcessById(pid);
+                return !p.HasExited;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public bool IsAppRunning(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return false;
+        try
+        {
+            return FpsMonitor_IsAppRunning(appName);
+        }
+        catch
+        {
+            try
+            {
+                return System.Diagnostics.Process.GetProcessesByName(appName).Length > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public IReadOnlyList<string> GetRunningAppNames()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetRunningAppNames();
+            if (ptr == IntPtr.Zero) return Array.Empty<string>();
+            string raw = Marshal.PtrToStringUTF8(ptr) ?? "";
+            if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<string>();
+            return raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+        catch
+        {
+            return Array.Empty<string>();
+        }
+    }
+
+    public void SetBlacklist(IEnumerable<string> blacklist)
+    {
+        try
+        {
+            string joined = string.Join("\n", blacklist ?? Array.Empty<string>());
+            FpsMonitor_SetBlacklist(joined);
+        }
+        catch
+        {
+        }
+    }
+
+    public void SetWhitelist(IEnumerable<string> whitelist)
+    {
+        try
+        {
+            string joined = string.Join("\n", whitelist ?? Array.Empty<string>());
+            FpsMonitor_SetWhitelist(joined);
+        }
+        catch
+        {
+        }
+    }
+
+    public void SetFpsCaptureEnabled(bool enabled)
+    {
+        try
+        {
+            FpsMonitor_SetFpsCaptureEnabled(enabled);
+        }
+        catch
+        {
+        }
+    }
+
+    public bool IsFpsCaptureEnabled
+    {
+        get
+        {
+            try
+            {
+                return FpsMonitor_GetFpsCaptureEnabled();
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
+
+    public bool GetActiveGameWindowBounds(out int x, out int y, out int width, out int height)
+    {
+        try
+        {
+            return FpsMonitor_GetActiveGameWindowBounds(out x, out y, out width, out height);
+        }
+        catch
+        {
+            x = 0; y = 0; width = 0; height = 0;
+            return false;
+        }
+    }
 
     public static void ConfigureOverlayWindow(IntPtr viewOrWindowPtr)
     {
@@ -334,11 +564,20 @@ public sealed class FpsService : IFpsService, IDisposable
             double vramGb = vramBytes / (1024.0 * 1024.0 * 1024.0);
             int? battery = batPercent >= 0 ? batPercent : null;
 
-            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging, isGameActive);
+            int thermalState = 0;
+            try
+            {
+                thermalState = FpsMonitor_GetThermalState();
+            }
+            catch
+            {
+            }
+
+            return new FpsData(fps, currentFt, peakFt, appName, hasPerm, gpuUsage, vramGb, battery, isCharging, isGameActive, thermalState);
         }
         catch
         {
-            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false, false);
+            return new FpsData(0.0, 0.0, 0.0, "", false, 0.0, 0.0, null, false, false, 0);
         }
     }
 
