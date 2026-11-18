@@ -99,6 +99,34 @@ public partial class SettingsViewModel : ViewModelBase
     private int _selectedLanguageIndex;
 
     [ObservableProperty]
+    private List<string> _metricOrder = new(AppSettings.DefaultMetricOrder);
+
+    public void SaveMetricOrder(List<string> newOrder)
+    {
+        var sanitized = new List<string>();
+        foreach (var id in newOrder)
+        {
+            if (Array.IndexOf(AppSettings.DefaultMetricOrder, id) >= 0 && !sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+        foreach (var id in AppSettings.DefaultMetricOrder)
+        {
+            if (!sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+
+        MetricOrder = sanitized;
+        _settingsService.Current.MetricOrder = new List<string>(sanitized);
+        _settingsService.Save();
+
+        _mainViewModel?.UpdateMetricOrder(sanitized);
+    }
+
+    [ObservableProperty]
     private bool _autoGameMode = true;
 
     [ObservableProperty]
@@ -330,6 +358,8 @@ public partial class SettingsViewModel : ViewModelBase
         _showOnePercentLowFps = s.ShowOnePercentLowFps;
         _showFrametime = s.ShowFrametime;
         _showGraph = s.ShowGraph;
+        _metricOrder = s.GetSanitizedMetricOrder();
+        OnPropertyChanged(nameof(MetricOrder));
 
         _autoCheckUpdates = s.AutoCheckUpdates;
         _gitHubRepo = s.GitHubRepo;
@@ -1122,6 +1152,7 @@ public partial class SettingsViewModel : ViewModelBase
         ShowFps = false;
         ShowFrametime = false;
         ShowGraph = false;
+        SaveMetricOrder(new List<string>(AppSettings.DefaultMetricOrder));
         BlacklistedApps.Clear();
         WhitelistedApps.Clear();
         _settingsService.Current.AutoModeBlacklist = new List<string>();

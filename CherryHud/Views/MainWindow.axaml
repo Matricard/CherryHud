@@ -39,9 +39,9 @@
 
         <Panel>
             <!-- Mode Normal (Disposition Verticale) -->
-            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding !IsCompact}">
+            <StackPanel x:Name="NormalMetricsPanel" Orientation="Vertical" Spacing="0" IsVisible="{Binding !IsCompact}">
             <!-- SoC Temp Row (CPU + GPU Average) -->
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSocTemp}">
+            <Grid x:Name="NormalRow_soc" Grid.Row="0" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSocTemp}">
                 <TextBlock Grid.Column="0"
                            Text="{Binding SocName}"
                            Foreground="{Binding SocBadgeFg}"
@@ -67,7 +67,7 @@
             </Grid>
 
             <!-- Thermal State & Throttling Row -->
-            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowThermalState}">
+            <Grid x:Name="NormalRow_thermal" Grid.Row="1" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowThermalState}">
                 <TextBlock Grid.Column="0"
                            Text="THRM"
                            Foreground="{Binding ThermalBadgeFg}"
@@ -87,7 +87,7 @@
             </Grid>
 
             <!-- Power Row (Watts) -->
-            <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowPower}">
+            <Grid x:Name="NormalRow_power" Grid.Row="2" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowPower}">
                 <TextBlock Grid.Column="0"
                            Text="PWR"
                            Foreground="{Binding PowerBadgeFg}"
@@ -113,7 +113,7 @@
             </Grid>
 
             <!-- CPU Row -->
-            <Grid Grid.Row="3" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowCpu}">
+            <Grid x:Name="NormalRow_cpu" Grid.Row="3" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowCpu}">
                 <TextBlock Grid.Column="0"
                            Text="CPU"
                            Foreground="{Binding CpuBadgeFg}"
@@ -150,7 +150,7 @@
             </Grid>
 
             <!-- GPU Row -->
-            <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowGpu}">
+            <Grid x:Name="NormalRow_gpu" Grid.Row="4" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowGpu}">
                 <TextBlock Grid.Column="0"
                            Text="GPU"
                            Foreground="{Binding GpuBadgeFg}"
@@ -187,7 +187,7 @@
             </Grid>
 
             <!-- VRAM Row -->
-            <Grid Grid.Row="5" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowVram}">
+            <Grid x:Name="NormalRow_vram" Grid.Row="5" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowVram}">
                 <TextBlock Grid.Column="0"
                            Text="VRAM"
                            Foreground="{Binding VramBadgeFg}"
@@ -213,7 +213,7 @@
             </Grid>
 
             <!-- RAM Row -->
-            <Grid Grid.Row="6" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowRam}">
+            <Grid x:Name="NormalRow_ram" Grid.Row="6" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowRam}">
                 <TextBlock Grid.Column="0"
                            Text="RAM"
                            Foreground="{Binding RamBadgeFg}"
@@ -242,7 +242,7 @@
             </Grid>
 
             <!-- SWAP Row -->
-            <Grid Grid.Row="7" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSwap}">
+            <Grid x:Name="NormalRow_swap" Grid.Row="7" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowSwap}">
                 <TextBlock Grid.Column="0"
                            Text="SWAP"
                            Foreground="{Binding SwapBadgeFg}"
@@ -268,7 +268,7 @@
             </Grid>
 
             <!-- BAT Row -->
-            <Grid Grid.Row="8" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowBatteryRow}">
+            <Grid x:Name="NormalRow_battery" Grid.Row="8" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowBatteryRow}">
                 <TextBlock Grid.Column="0"
                            Text="BAT"
                            Foreground="{Binding BatBadgeFg}"
@@ -323,7 +323,7 @@
             </Grid>
 
             <!-- FPS Row -->
-            <Grid Grid.Row="9" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowFps}">
+            <Grid x:Name="NormalRow_fps" Grid.Row="9" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowFps}">
                 <TextBlock Grid.Column="0"
                            Text="FPS"
                            Foreground="{Binding FpsBadgeFg}"
@@ -381,7 +381,7 @@
             </Grid>
 
             <!-- Frametime Row (dédié au graphique, texte plus petit) -->
-            <Grid Grid.Row="10" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding FrametimeRowMargin}" IsVisible="{Binding ShowFrametime}">
+            <Grid x:Name="NormalRow_frametime" Grid.Row="10" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding FrametimeRowMargin}" IsVisible="{Binding ShowFrametime}">
                 <TextBlock Grid.Column="0"
                            Text="Frametime"
                            Foreground="{Binding FpsBadgeFg}"
@@ -407,7 +407,7 @@
             </Grid>
 
             <!-- Graphique Frametime Sparkline (ms par trame) -->
-            <controls:FpsGraphControl Grid.Row="11"
+            <controls:FpsGraphControl x:Name="NormalRow_graph" Grid.Row="11"
                                       Height="{Binding GraphHeight}"
                                       Frametimes="{Binding FrametimeHistory}"
                                       TargetFrametimeMs="{Binding TargetFrametimeMs}"
@@ -415,16 +415,17 @@
                                       DotColor="{Binding GraphDotColor}"
                                       IsVisible="{Binding ShowGraph}"
                                       Margin="{Binding GraphMargin}" />
-        </Grid>
+        </StackPanel>
 
             <!-- Mode Compact (Disposition Horizontale sur une seule ligne) -->
-            <StackPanel Orientation="Horizontal"
+            <StackPanel x:Name="CompactMetricsPanel"
+                        Orientation="Horizontal"
                         Spacing="16"
                         VerticalAlignment="Center"
                         IsVisible="{Binding IsCompact}">
 
                 <!-- SoC (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowSocTemp}">
+                <StackPanel x:Name="CompactItem_soc" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowSocTemp}">
                     <TextBlock Text="{Binding SocName}"
                                Foreground="{Binding SocBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -447,7 +448,7 @@
                 </StackPanel>
 
                 <!-- Thermal State (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowThermalState}">
+                <StackPanel x:Name="CompactItem_thermal" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowThermalState}">
                     <TextBlock Text="THRM"
                                Foreground="{Binding ThermalBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -462,7 +463,7 @@
                 </StackPanel>
 
                 <!-- Power (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowPower}">
+                <StackPanel x:Name="CompactItem_power" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowPower}">
                     <TextBlock Text="PWR"
                                Foreground="{Binding PowerBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -485,7 +486,7 @@
                 </StackPanel>
 
                 <!-- CPU (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowCpu}">
+                <StackPanel x:Name="CompactItem_cpu" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowCpu}">
                     <TextBlock Text="CPU"
                                Foreground="{Binding CpuBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -522,7 +523,7 @@
                 </StackPanel>
 
                 <!-- GPU (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowGpu}">
+                <StackPanel x:Name="CompactItem_gpu" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowGpu}">
                     <TextBlock Text="GPU"
                                Foreground="{Binding GpuBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -559,7 +560,7 @@
                 </StackPanel>
 
                 <!-- VRAM (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowVram}">
+                <StackPanel x:Name="CompactItem_vram" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowVram}">
                     <TextBlock Text="VRAM"
                                Foreground="{Binding VramBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -582,7 +583,7 @@
                 </StackPanel>
 
                 <!-- RAM (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowRam}">
+                <StackPanel x:Name="CompactItem_ram" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowRam}">
                     <TextBlock Text="RAM"
                                Foreground="{Binding RamBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -606,7 +607,7 @@
                 </StackPanel>
 
                 <!-- SWAP (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowSwap}">
+                <StackPanel x:Name="CompactItem_swap" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowSwap}">
                     <TextBlock Text="SWAP"
                                Foreground="{Binding SwapBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -629,7 +630,7 @@
                 </StackPanel>
 
                 <!-- BAT (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowBatteryRow}">
+                <StackPanel x:Name="CompactItem_battery" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowBatteryRow}">
                     <TextBlock Text="BAT"
                                Foreground="{Binding BatBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -676,7 +677,7 @@
                 </StackPanel>
 
                 <!-- FPS (Horizontal) -->
-                <Button Command="{Binding RequestPermissionCommand}"
+                <Button x:Name="CompactItem_fps" Command="{Binding RequestPermissionCommand}"
                         Background="Transparent"
                         BorderThickness="0"
                         Padding="0"
@@ -723,7 +724,7 @@
                 </Button>
 
                 <!-- Frametime (Horizontal) -->
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowFrametime}">
+                <StackPanel x:Name="CompactItem_frametime" Orientation="Horizontal" VerticalAlignment="Center" Spacing="6" IsVisible="{Binding ShowFrametime}">
                     <TextBlock Text="FT"
                                Foreground="{Binding FpsBadgeFg}"
                                FontSize="{Binding BadgeFontSize}"
@@ -746,7 +747,7 @@
                 </StackPanel>
 
                 <!-- Graph (Horizontal) -->
-                <controls:FpsGraphControl Width="65"
+                <controls:FpsGraphControl x:Name="CompactItem_graph" Width="65"
                                           Height="{Binding GraphHeight}"
                                           Frametimes="{Binding FrametimeHistory}"
                                           TargetFrametimeMs="{Binding TargetFrametimeMs}"

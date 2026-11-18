@@ -272,6 +272,35 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private double _overlayScale = 1.0;
 
     [ObservableProperty]
+    private List<string> _metricOrder = new(AppSettings.DefaultMetricOrder);
+
+    public Action<IReadOnlyList<string>>? MetricOrderChangedCallback { get; set; }
+
+    public void UpdateMetricOrder(List<string> newOrder)
+    {
+        var sanitized = new List<string>();
+        foreach (var id in newOrder)
+        {
+            if (Array.IndexOf(AppSettings.DefaultMetricOrder, id) >= 0 && !sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+        foreach (var id in AppSettings.DefaultMetricOrder)
+        {
+            if (!sanitized.Contains(id))
+            {
+                sanitized.Add(id);
+            }
+        }
+
+        MetricOrder = sanitized;
+        _settingsService.Current.MetricOrder = new List<string>(sanitized);
+        _settingsService.Save();
+        MetricOrderChangedCallback?.Invoke(MetricOrder);
+    }
+
+    [ObservableProperty]
     private double _cardWidth = 200;
 
     [ObservableProperty]
@@ -772,6 +801,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
         LocalizationService.Instance.CurrentLanguage = s.Language;
         _fpsService.SetBlacklist(s.AutoModeBlacklist);
         _fpsService.SetWhitelist(s.AutoModeWhitelist);
+        MetricOrder = s.GetSanitizedMetricOrder();
+        MetricOrderChangedCallback?.Invoke(MetricOrder);
         UpdateFpsCaptureState();
     }
 

@@ -105,6 +105,7 @@ public class LocalizationService : ObservableObject
     public string MetricOnePercentLowFps => IsFrench ? "1% Low FPS" : "1% Low FPS";
     public string MetricFrametime => IsFrench ? "Temps de trame (Frametime)" : "Frametime";
     public string MetricGraph => IsFrench ? "Graphique de Frametime" : "Frametime Sparkline Graph";
+    public string MetricsReorderHint => IsFrench ? "Glissez-déposez les cartes (ou utilisez les flèches) pour changer l'ordre dans le HUD" : "Drag and drop cards (or use the arrow buttons) to change order in the HUD";
     public string BetaNoteText => IsFrench ? "Ces métriques sont en cours de développement." : "These metrics are currently under development.";
 
     // Advanced

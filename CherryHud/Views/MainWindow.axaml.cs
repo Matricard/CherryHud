@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
@@ -40,6 +41,8 @@ public partial class MainWindow : Window
 
             if (DataContext is MainWindowViewModel vm)
             {
+                RegisterMetricControls();
+                ApplyMetricOrder(vm.MetricOrder);
                 SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
@@ -129,6 +132,10 @@ public partial class MainWindow : Window
                     }
                 };
 
+                RegisterMetricControls();
+                ApplyMetricOrder(vm.MetricOrder);
+                vm.MetricOrderChangedCallback = order => Dispatcher.UIThread.Post(() => ApplyMetricOrder(order));
+
                 SetOverlayPosition(vm.OverlayPosition, vm.ActiveGameBounds);
                 ApplyVisibility(vm.IsOverlayVisible);
             }
@@ -141,6 +148,57 @@ public partial class MainWindow : Window
                 disposable.Dispose();
             }
         };
+    }
+
+    private readonly System.Collections.Generic.Dictionary<string, Control> _normalMetricControls = new();
+    private readonly System.Collections.Generic.Dictionary<string, Control> _compactMetricControls = new();
+
+    private void RegisterMetricControls()
+    {
+        if (_normalMetricControls.Count == AppSettings.DefaultMetricOrder.Length &&
+            _compactMetricControls.Count == AppSettings.DefaultMetricOrder.Length)
+        {
+            return;
+        }
+
+        _normalMetricControls.Clear();
+        _compactMetricControls.Clear();
+
+        void AddRow(string id)
+        {
+            var normal = this.FindControl<Control>($"NormalRow_{id}");
+            if (normal != null) _normalMetricControls[id] = normal;
+
+            var compact = this.FindControl<Control>($"CompactItem_{id}");
+            if (compact != null) _compactMetricControls[id] = compact;
+        }
+
+        foreach (var id in AppSettings.DefaultMetricOrder)
+        {
+            AddRow(id);
+        }
+    }
+
+    public void ApplyMetricOrder(IEnumerable<string> order)
+    {
+        var normalPanel = this.FindControl<StackPanel>("NormalMetricsPanel");
+        var compactPanel = this.FindControl<StackPanel>("CompactMetricsPanel");
+        if (normalPanel == null || compactPanel == null) return;
+
+        normalPanel.Children.Clear();
+        compactPanel.Children.Clear();
+
+        foreach (var id in order)
+        {
+            if (_normalMetricControls.TryGetValue(id, out var normal))
+            {
+                normalPanel.Children.Add(normal);
+            }
+            if (_compactMetricControls.TryGetValue(id, out var compact))
+            {
+                compactPanel.Children.Add(compact);
+            }
+        }
     }
 
     private void FinishOverlayDrag()

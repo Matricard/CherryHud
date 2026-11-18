@@ -503,4 +503,46 @@ public class AppSettingsTests
         settingsVm.SelectedTabIndex = 2;
         Assert.Equal(2, settingsVm.SelectedTabIndex);
     }
+
+    [Fact]
+    public void MetricOrder_SanitizationAndReordering_WorksProperly()
+    {
+        var settingsService = new TestSettingsService();
+        using var mainVm = new CherryHud.ViewModels.MainWindowViewModel(
+            new SmcTemperatureService(),
+            new TestFpsService(),
+            new SystemMetricsService(),
+            settingsService);
+
+        var settingsVm = new CherryHud.ViewModels.SettingsViewModel(settingsService, mainVm, new TestFpsService());
+
+        // Initial default order
+        Assert.Equal(AppSettings.DefaultMetricOrder.Length, settingsVm.MetricOrder.Count);
+        Assert.Equal("soc", settingsVm.MetricOrder[0]);
+
+        // Reorder: put "fps" first
+        var customOrder = new System.Collections.Generic.List<string> { "fps", "battery", "cpu", "gpu" };
+        settingsVm.SaveMetricOrder(customOrder);
+
+        // Verify sanitized list has 12 elements starting with fps, battery, cpu, gpu
+        Assert.Equal(12, settingsVm.MetricOrder.Count);
+        Assert.Equal("fps", settingsVm.MetricOrder[0]);
+        Assert.Equal("battery", settingsVm.MetricOrder[1]);
+        Assert.Equal("cpu", settingsVm.MetricOrder[2]);
+        Assert.Equal("gpu", settingsVm.MetricOrder[3]);
+        Assert.Equal("fps", mainVm.MetricOrder[0]);
+        Assert.Equal("fps", settingsService.Current.MetricOrder[0]);
+
+        // Test GetSanitizedMetricOrder with partial/dirty list
+        var dirtySettings = new AppSettings { MetricOrder = new System.Collections.Generic.List<string> { "unknown", "fps", "fps" } };
+        var sanitized = dirtySettings.GetSanitizedMetricOrder();
+        Assert.Equal(12, sanitized.Count);
+        Assert.Equal("fps", sanitized[0]);
+
+        // Reset defaults restores initial order
+        settingsVm.ResetDefaults();
+        Assert.Equal("soc", settingsVm.MetricOrder[0]);
+        Assert.Equal("soc", mainVm.MetricOrder[0]);
+        Assert.Equal("soc", settingsService.Current.MetricOrder[0]);
+    }
 }

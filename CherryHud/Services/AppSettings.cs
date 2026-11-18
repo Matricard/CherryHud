@@ -37,6 +37,36 @@ public class AppSettings
     public double OverlayScale { get; set; } = 1.0;
     public bool AllowOverlayDrag { get; set; } = true;
     
+    public static readonly string[] DefaultMetricOrder =
+    {
+        "soc", "thermal", "power", "cpu", "gpu", "vram", "ram", "swap", "battery", "fps", "frametime", "graph"
+    };
+
+    public List<string> MetricOrder { get; set; } = new(DefaultMetricOrder);
+
+    public List<string> GetSanitizedMetricOrder()
+    {
+        var result = new List<string>();
+        if (MetricOrder != null)
+        {
+            foreach (var id in MetricOrder)
+            {
+                if (Array.IndexOf(DefaultMetricOrder, id) >= 0 && !result.Contains(id))
+                {
+                    result.Add(id);
+                }
+            }
+        }
+        foreach (var id in DefaultMetricOrder)
+        {
+            if (!result.Contains(id))
+            {
+                result.Add(id);
+            }
+        }
+        return result;
+    }
+
     public bool ShowSocTemp { get; set; } = true;
     public bool ShowThermalState { get; set; } = true;
     public bool ShowGpuUsage { get; set; } = true;
