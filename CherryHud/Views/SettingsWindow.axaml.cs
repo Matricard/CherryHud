@@ -142,24 +142,10 @@ public partial class SettingsWindow : Window
                 }
             };
 
-            acBox.SelectionChanged += (_, _) =>
+            acBox.SelectionChanged += (_, e) =>
             {
-                if (acBox.SelectedItem is string selected && !string.IsNullOrWhiteSpace(selected))
+                if (e.AddedItems.Count > 0 && e.AddedItems[0] is string selected && !string.IsNullOrWhiteSpace(selected))
                 {
-                    acBox.Text = selected;
-                    if (DataContext is ViewModels.SettingsViewModel vm)
-                    {
-                        vm.NewAppNameInput = selected;
-                    }
-                    acBox.IsDropDownOpen = false;
-                }
-            };
-
-            acBox.DropDownClosed += (_, _) =>
-            {
-                if (acBox.SelectedItem is string selected && !string.IsNullOrWhiteSpace(selected))
-                {
-                    acBox.Text = selected;
                     if (DataContext is ViewModels.SettingsViewModel vm)
                     {
                         vm.NewAppNameInput = selected;

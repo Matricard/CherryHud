@@ -413,7 +413,6 @@
                                         <AutoCompleteBox x:Name="AppNameAutoCompleteBox"
                                                          ItemsSource="{Binding RunningAppNames}"
                                                          Text="{Binding NewAppNameInput, Mode=TwoWay}"
-                                                         ValueMemberBinding="{Binding}"
                                                          FilterMode="Contains"
                                                          MinimumPrefixLength="0"
                                                          MaxDropDownHeight="220"
@@ -427,12 +426,14 @@
                                                          Padding="8,5,26,5">
                                             <AutoCompleteBox.ItemTemplate>
                                                 <DataTemplate x:DataType="x:String">
-                                                    <Border Background="Transparent" Padding="4,3" HorizontalAlignment="Stretch">
-                                                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                                            <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </Border>
+                                                    <StackPanel Orientation="Horizontal"
+                                                                Spacing="8"
+                                                                VerticalAlignment="Center"
+                                                                Margin="4,3"
+                                                                IsHitTestVisible="False">
+                                                        <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
+                                                    </StackPanel>
                                                 </DataTemplate>
                                             </AutoCompleteBox.ItemTemplate>
                                         </AutoCompleteBox>
