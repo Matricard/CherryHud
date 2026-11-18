@@ -231,7 +231,7 @@ public partial class SettingsViewModel : ViewModelBase
         _mainViewModel = mainViewModel;
         _fpsService = fpsService ?? mainViewModel?.FpsService ?? new FpsService();
 
-        SocName = mainViewModel != null ? mainViewModel.SocName : SystemMetricsService.FormatSocName(new SystemMetricsService().CpuName);
+        SocName = SystemMetricsService.FormatSocBadge(mainViewModel?.CpuName ?? new SystemMetricsService().CpuName);
 
         UpdateCardTitle = Loc.IsFrench ? "Mises à jour" : "Software Updates";
         UpdateCardSubtitle = Loc.IsFrench ? "Vérification en arrière-plan..." : "Checking in background...";

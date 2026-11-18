@@ -20,6 +20,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable
     private readonly IFpsService _fpsService;
     public IFpsService FpsService => _fpsService;
     private readonly ISystemMetricsService _systemMetricsService;
+    public string CpuName => _systemMetricsService.CpuName;
     private readonly CancellationTokenSource _cts = new();
     private readonly double[] _bufferA = new double[HistoryCapacity];
     private readonly double[] _bufferB = new double[HistoryCapacity];

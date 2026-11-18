@@ -353,21 +353,40 @@ public class AppSettingsTests
 
     [Theory]
     [InlineData("Apple M1", "M1")]
-    [InlineData("Apple M1 Pro", "M1Pro")]
-    [InlineData("Apple M2 Max", "M2Max")]
-    [InlineData("Apple M3 Ultra", "M3Ultra")]
+    [InlineData("Apple M1 Pro", "M1 Pro")]
+    [InlineData("Apple M2 Max", "M2 Max")]
+    [InlineData("Apple M3 Ultra", "M3 Ultra")]
     [InlineData("Apple M4", "M4")]
     [InlineData("Apple M5", "M5")]
-    [InlineData("Apple M5 Pro", "M5Pro")]
-    [InlineData("Apple M5 Max", "M5Max")]
+    [InlineData("Apple M5 Pro", "M5 Pro")]
+    [InlineData("Apple M5 Max", "M5 Max")]
     [InlineData("Apple Inc. M2", "M2")]
-    [InlineData("Apple Inc. M2 Pro", "M2Pro")]
+    [InlineData("Apple Inc. M2 Pro", "M2 Pro")]
     [InlineData("Intel Core i7-9750H", "Intel Core i7-9750H")]
     [InlineData(null, "SoC")]
     [InlineData("", "SoC")]
     public void FormatSocName_StripsApplePrefixProperly(string? input, string expected)
     {
         var result = SystemMetricsService.FormatSocName(input);
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData("Apple M1", "M1")]
+    [InlineData("Apple M1 Pro", "M1Pro")]
+    [InlineData("Apple M2 Max", "M2Max")]
+    [InlineData("Apple M3 Ultra", "M3Ult")]
+    [InlineData("Apple M4", "M4")]
+    [InlineData("Apple M5", "M5")]
+    [InlineData("Apple M5 Pro", "M5Pro")]
+    [InlineData("Apple M5 Max", "M5Max")]
+    [InlineData("Apple M6 Ultra", "M6Ult")]
+    [InlineData("Apple Inc. M2 Pro", "M2Pro")]
+    [InlineData(null, "SoC")]
+    [InlineData("", "SoC")]
+    public void FormatSocBadge_FormatsForSettingsProperly(string? input, string expected)
+    {
+        var result = SystemMetricsService.FormatSocBadge(input);
         Assert.Equal(expected, result);
     }
 

@@ -206,7 +206,7 @@ public sealed class SystemMetricsService : ISystemMetricsService
         return "CPU";
     }
 
-    public static string FormatSocName(string? raw)
+    public static string FormatSocHudName(string? raw)
     {
         if (string.IsNullOrWhiteSpace(raw)) return "SoC";
         var cleaned = raw.Trim();
@@ -219,10 +219,26 @@ public sealed class SystemMetricsService : ISystemMetricsService
             cleaned = cleaned[6..].Trim();
         }
 
-        // Supprimer l'espace entre le modèle (M1, M2, M3, M4, M5...) et les déclinaisons Pro, Max ou Ultra (ex: M5 Pro => M5Pro)
+        return string.IsNullOrWhiteSpace(cleaned) ? "SoC" : cleaned;
+    }
+
+    public static string FormatSocName(string? raw) => FormatSocHudName(raw);
+
+    public static string FormatSocBadge(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return "SoC";
+        var cleaned = FormatSocHudName(raw);
+
+        // Dans les paramètres, badge compact avec suffixes à 3 lettres sans espace (e.g. Ultra => Ult, M5 Pro => M5Pro, M3 Ultra => M3Ult)
         cleaned = System.Text.RegularExpressions.Regex.Replace(
             cleaned,
-            @"\b(M\d+)\s+(Pro|Max|Ultra)\b",
+            @"\bUltra\b",
+            "Ult",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned,
+            @"\b(M\d+)\s+(Pro|Max|Ult)\b",
             "$1$2",
             System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
