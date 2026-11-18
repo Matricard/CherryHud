@@ -186,7 +186,8 @@ public class LocalizationService : ObservableObject
     public string WhitelistSectionSubtitle => IsFrench ? "CherryHud s'affichera TOUJOURS pour ces applications en mode auto, même si macOS ne les détecte pas comme jeux" : "CherryHud will ALWAYS show for these applications in auto mode, even if not detected as games";
     public string MoveToWhitelistButton => IsFrench ? "Passer en liste blanche" : "Move to Whitelist";
     public string MoveToBlacklistButton => IsFrench ? "Passer en liste noire" : "Move to Blacklist";
-    public string AddAppPlaceholder => IsFrench ? "Nom de l'application (ex: Unity Hub, Hades, Blender...)" : "Application name (e.g. Unity Hub, Hades, Blender...)";
+    public string AddAppPlaceholder => IsFrench ? "Rechercher une app ouverte ou saisir un nom..." : "Search open app or enter name...";
+    public string RunningAppsTooltip => IsFrench ? "Afficher les applications ouvertes sur macOS" : "Show open applications on macOS";
     public string AddToBlacklistButton => IsFrench ? "+ Liste Noire" : "+ Blacklist";
     public string AddToWhitelistButton => IsFrench ? "+ Liste Blanche" : "+ Whitelist";
     public string CurrentAppDetectedFormat => IsFrench ? "Application active : {0}" : "Active application: {0}";

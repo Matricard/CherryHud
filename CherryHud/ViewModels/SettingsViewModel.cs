@@ -20,6 +20,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public ObservableCollection<string> PositionOptions { get; } = new();
     public ObservableCollection<string> ThemeOptions { get; } = new();
+    public ObservableCollection<string> RunningAppNames { get; } = new();
     public ObservableCollection<string> BlacklistedApps { get; } = new();
     public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
     public ObservableCollection<string> WhitelistedApps { get; } = new();
@@ -240,6 +241,7 @@ public partial class SettingsViewModel : ViewModelBase
 
         LoadFromSettings();
         CheckPermissionStatus();
+        RefreshRunningApps();
         _ = CheckUpdateSilentlyAsync();
 
         LocalizationService.Instance.LanguageChanged += (_, _) =>
@@ -386,6 +388,31 @@ public partial class SettingsViewModel : ViewModelBase
         else
         {
             Avalonia.Threading.Dispatcher.UIThread.Post(Update);
+        }
+    }
+
+    partial void OnSelectedTabIndexChanged(int value)
+    {
+        if (value == 1)
+        {
+            RefreshRunningApps();
+        }
+    }
+
+    [RelayCommand]
+    public void RefreshRunningApps()
+    {
+        try
+        {
+            var apps = _fpsService.GetRunningAppNames();
+            RunningAppNames.Clear();
+            foreach (var app in apps)
+            {
+                RunningAppNames.Add(app);
+            }
+        }
+        catch
+        {
         }
     }
 

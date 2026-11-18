@@ -23,6 +23,8 @@ public class AutoGameModeTests
         public void SetFpsCaptureEnabled(bool enabled) => IsFpsCaptureEnabled = enabled;
         public void RequestPermission() { }
         public void CheckPermission() { }
+        public List<string> MockRunningApps { get; set; } = new() { "Google Chrome", "Spotify", "Terminal", "World of Warcraft" };
+        public IReadOnlyList<string> GetRunningAppNames() => MockRunningApps;
     }
 
     private class MockTempService : ITemperatureService
@@ -316,5 +318,25 @@ public class AutoGameModeTests
 
         vm.ShowGraph = false;
         Assert.False(fps.IsFpsCaptureEnabled);
+    }
+
+    [Fact]
+    public void SettingsViewModel_RunningApps_LoadsAndRefreshesCorrectly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.Contains("Google Chrome", settingsVm.RunningAppNames);
+        Assert.Contains("Spotify", settingsVm.RunningAppNames);
+        Assert.Contains("World of Warcraft", settingsVm.RunningAppNames);
+
+        // Update running apps and refresh
+        fps.MockRunningApps.Add("Hades II");
+        settingsVm.RefreshRunningApps();
+
+        Assert.Contains("Hades II", settingsVm.RunningAppNames);
     }
 }

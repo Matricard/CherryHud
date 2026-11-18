@@ -390,14 +390,45 @@
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,10">
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,Auto,Auto">
-                                    <TextBox Text="{Binding NewAppNameInput, Mode=TwoWay}"
-                                             Watermark="{Binding Loc.AddAppPlaceholder}"
-                                             FontSize="11"
-                                             Background="#1AFFFFFF"
-                                             Foreground="#FFFFFF"
-                                             CornerRadius="6"
-                                             Padding="8,5"
-                                             Margin="0,0,8,0" />
+                                    <Grid Grid.Column="0" Margin="0,0,8,0">
+                                        <AutoCompleteBox x:Name="AppNameAutoCompleteBox"
+                                                         ItemsSource="{Binding RunningAppNames}"
+                                                         Text="{Binding NewAppNameInput, Mode=TwoWay}"
+                                                         FilterMode="Contains"
+                                                         MinimumPrefixLength="0"
+                                                         MaxDropDownHeight="220"
+                                                         Watermark="{Binding Loc.AddAppPlaceholder}"
+                                                         FontSize="11"
+                                                         Background="#1AFFFFFF"
+                                                         Foreground="#FFFFFF"
+                                                         BorderBrush="#25FFFFFF"
+                                                         BorderThickness="1"
+                                                         CornerRadius="6"
+                                                         Padding="8,5,26,5">
+                                            <AutoCompleteBox.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="2,2">
+                                                        <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
+                                                        <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </AutoCompleteBox.ItemTemplate>
+                                        </AutoCompleteBox>
+                                        <Button x:Name="OpenDropdownButton"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Padding="6,4"
+                                                Margin="0,0,3,0"
+                                                Cursor="Hand"
+                                                ToolTip.Tip="{Binding Loc.RunningAppsTooltip}">
+                                            <Path Data="M7 10l5 5 5-5z"
+                                                  Fill="#8A8D9F"
+                                                  Width="10" Height="10"
+                                                  Stretch="Uniform" />
+                                        </Button>
+                                    </Grid>
                                     <Button Grid.Column="1"
                                             Content="{Binding Loc.AddToBlacklistButton}"
                                             Command="{Binding AddCustomBlacklistCommand}"

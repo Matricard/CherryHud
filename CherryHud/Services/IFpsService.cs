@@ -34,6 +34,7 @@ public interface IFpsService
     int TrackedAppPid => 0;
     bool IsProcessAlive(int pid) => false;
     bool IsAppRunning(string appName) => false;
+    IReadOnlyList<string> GetRunningAppNames() => System.Array.Empty<string>();
     void SetBlacklist(IEnumerable<string> blacklist) { }
     void SetWhitelist(IEnumerable<string> whitelist) { }
     void SetFpsCaptureEnabled(bool enabled) { }

@@ -83,6 +83,8 @@ public partial class SettingsWindow : Window
                 }
 
                 if (e.Source is Button || (e.Source as Avalonia.Visual)?.FindAncestorOfType<Button>() != null ||
+                    e.Source is AutoCompleteBox || (e.Source as Avalonia.Visual)?.FindAncestorOfType<AutoCompleteBox>() != null ||
+                    e.Source is TextBox || (e.Source as Avalonia.Visual)?.FindAncestorOfType<TextBox>() != null ||
                     e.Source is ToggleSwitch || (e.Source as Avalonia.Visual)?.FindAncestorOfType<ToggleSwitch>() != null ||
                     e.Source is ComboBox || (e.Source as Avalonia.Visual)?.FindAncestorOfType<ComboBox>() != null ||
                     e.Source is Slider || (e.Source as Avalonia.Visual)?.FindAncestorOfType<Slider>() != null ||
@@ -94,6 +96,45 @@ public partial class SettingsWindow : Window
                 BeginMoveDrag(e);
             }
         }, RoutingStrategies.Bubble);
+
+        var acBox = this.FindControl<AutoCompleteBox>("AppNameAutoCompleteBox");
+        var openBtn = this.FindControl<Button>("OpenDropdownButton");
+
+        if (acBox != null)
+        {
+            acBox.GotFocus += (_, _) =>
+            {
+                if (DataContext is ViewModels.SettingsViewModel vm)
+                {
+                    vm.RefreshRunningApps();
+                }
+                acBox.IsDropDownOpen = true;
+            };
+            acBox.PointerPressed += (_, _) =>
+            {
+                if (DataContext is ViewModels.SettingsViewModel vm)
+                {
+                    vm.RefreshRunningApps();
+                }
+                acBox.IsDropDownOpen = true;
+            };
+        }
+
+        if (openBtn != null && acBox != null)
+        {
+            openBtn.Click += (_, _) =>
+            {
+                if (DataContext is ViewModels.SettingsViewModel vm)
+                {
+                    vm.RefreshRunningApps();
+                }
+                acBox.IsDropDownOpen = !acBox.IsDropDownOpen;
+                if (acBox.IsDropDownOpen)
+                {
+                    acBox.Focus();
+                }
+            };
+        }
     }
 
     private void Close_OnClick(object? sender, RoutedEventArgs e)

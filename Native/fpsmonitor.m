@@ -1131,6 +1131,52 @@ bool FpsMonitor_IsAppRunning(const char *appNameUtf8) {
     return false;
 }
 
+static char s_runningAppsBuffer[32768];
+
+const char* FpsMonitor_GetRunningAppNames(void) {
+    @autoreleasepool {
+        NSMutableSet<NSString *> *names = [NSMutableSet set];
+        pid_t myPid = getpid();
+
+        NSMutableSet<NSNumber *> *windowPids = [NSMutableSet set];
+        CFArrayRef windowList = CGWindowListCopyWindowInfo(kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID);
+        if (windowList) {
+            NSArray *arr = (__bridge NSArray *)windowList;
+            for (NSDictionary *info in arr) {
+                NSNumber *layer = info[(id)kCGWindowLayer];
+                NSNumber *pid = info[(id)kCGWindowOwnerPID];
+                if (layer && [layer intValue] == 0 && pid) {
+                    [windowPids addObject:pid];
+                }
+            }
+            CFRelease(windowList);
+        }
+
+        for (NSRunningApplication *app in [[NSWorkspace sharedWorkspace] runningApplications]) {
+            if (app.processIdentifier == myPid) continue;
+            if (app.isTerminated) continue;
+
+            NSString *name = app.localizedName;
+            if (!name || name.length == 0) continue;
+
+            BOOL isRegular = (app.activationPolicy == NSApplicationActivationPolicyRegular);
+            BOOL hasWindow = [windowPids containsObject:@(app.processIdentifier)];
+
+            if (isRegular || hasWindow) {
+                NSString *trimmed = [name stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+                if (trimmed.length > 0) {
+                    [names addObject:trimmed];
+                }
+            }
+        }
+
+        NSArray<NSString *> *sorted = [[names allObjects] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)];
+        NSString *joined = [sorted componentsJoinedByString:@"\n"];
+        [joined getCString:s_runningAppsBuffer maxLength:sizeof(s_runningAppsBuffer) encoding:NSUTF8StringEncoding];
+        return s_runningAppsBuffer;
+    }
+}
+
 void FpsMonitor_SetBlacklist(const char *newlineSeparated) {
     os_unfair_lock_lock(&s_blacklistLock);
     if (!s_customBlacklist) {

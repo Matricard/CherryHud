@@ -93,6 +93,9 @@ public sealed class FpsService : IFpsService, IDisposable
     private static extern bool FpsMonitor_IsAppRunning([MarshalAs(UnmanagedType.LPUTF8Str)] string appName);
 
     [DllImport(LibraryName)]
+    private static extern IntPtr FpsMonitor_GetRunningAppNames();
+
+    [DllImport(LibraryName)]
     private static extern void FpsMonitor_SetBlacklist([MarshalAs(UnmanagedType.LPUTF8Str)] string newlineSeparated);
 
     [DllImport(LibraryName)]
@@ -234,6 +237,22 @@ public sealed class FpsService : IFpsService, IDisposable
             {
                 return false;
             }
+        }
+    }
+
+    public IReadOnlyList<string> GetRunningAppNames()
+    {
+        try
+        {
+            IntPtr ptr = FpsMonitor_GetRunningAppNames();
+            if (ptr == IntPtr.Zero) return Array.Empty<string>();
+            string raw = Marshal.PtrToStringUTF8(ptr) ?? "";
+            if (string.IsNullOrWhiteSpace(raw)) return Array.Empty<string>();
+            return raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+        catch
+        {
+            return Array.Empty<string>();
         }
     }
 
