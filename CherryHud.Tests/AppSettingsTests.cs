@@ -524,8 +524,8 @@ public class AppSettingsTests
         var customOrder = new System.Collections.Generic.List<string> { "fps", "battery", "cpu", "gpu" };
         settingsVm.SaveMetricOrder(customOrder);
 
-        // Verify sanitized list has 12 elements starting with fps, battery, cpu, gpu
-        Assert.Equal(12, settingsVm.MetricOrder.Count);
+        // Verify sanitized list has 13 elements starting with fps, battery, cpu, gpu
+        Assert.Equal(13, settingsVm.MetricOrder.Count);
         Assert.Equal("fps", settingsVm.MetricOrder[0]);
         Assert.Equal("battery", settingsVm.MetricOrder[1]);
         Assert.Equal("cpu", settingsVm.MetricOrder[2]);
@@ -536,7 +536,7 @@ public class AppSettingsTests
         // Test GetSanitizedMetricOrder with partial/dirty list
         var dirtySettings = new AppSettings { MetricOrder = new System.Collections.Generic.List<string> { "unknown", "fps", "fps" } };
         var sanitized = dirtySettings.GetSanitizedMetricOrder();
-        Assert.Equal(12, sanitized.Count);
+        Assert.Equal(13, sanitized.Count);
         Assert.Equal("fps", sanitized[0]);
 
         // Reset defaults restores initial order

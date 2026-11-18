@@ -714,27 +714,20 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Cartes réordonnables par Drag & Drop ou boutons Flèches -->
+                        <!-- Cartes réordonnables par Drag & Drop -->
                         <StackPanel x:Name="MetricsCardsContainer" Spacing="6">
 
                             <!-- SoC Temp -->
                             <Border x:Name="MetricCard_soc" Tag="soc" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#6B1D38" CornerRadius="5" MinWidth="48" Height="22" Padding="6,0">
                                             <TextBlock Text="{Binding SocName}" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -748,21 +741,14 @@
                             <!-- État Thermique & Throttling -->
                             <Border x:Name="MetricCard_thermal" Tag="thermal" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#661430" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="THRM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -776,21 +762,14 @@
                             <!-- Consommation (Watts) -->
                             <Border x:Name="MetricCard_power" Tag="power" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#5C4200" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="PWR" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -805,21 +784,14 @@
                             <Border x:Name="MetricCard_cpu" Tag="cpu" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <StackPanel Spacing="5">
                                     <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                    PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                    PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                    PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                    ToolTip.Tip="Glisser pour réordonner">
-                                                <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                            </Border>
-                                            <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                                <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                            <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                                <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                        </StackPanel>
+                                        <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                                Margin="0,0,10,0" VerticalAlignment="Center"
+                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                                ToolTip.Tip="Glisser pour réordonner">
+                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                        </Border>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                             <Border Background="#0E3D4F" CornerRadius="5" Width="48" Height="22">
                                                 <TextBlock Text="CPU" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -839,21 +811,14 @@
                             <Border x:Name="MetricCard_gpu" Tag="gpu" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <StackPanel Spacing="5">
                                     <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                    PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                    PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                    PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                    ToolTip.Tip="Glisser pour réordonner">
-                                                <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                            </Border>
-                                            <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                                <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                            <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                                <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                        </StackPanel>
+                                        <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                                Margin="0,0,10,0" VerticalAlignment="Center"
+                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                                ToolTip.Tip="Glisser pour réordonner">
+                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                        </Border>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                             <Border Background="#661422" CornerRadius="5" Width="48" Height="22">
                                                 <TextBlock Text="GPU" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -872,21 +837,14 @@
                             <!-- VRAM -->
                             <Border x:Name="MetricCard_vram" Tag="vram" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#4E1A5B" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="VRAM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -901,21 +859,14 @@
                             <Border x:Name="MetricCard_ram" Tag="ram" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <StackPanel Spacing="5">
                                     <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                    PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                    PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                    PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                    ToolTip.Tip="Glisser pour réordonner">
-                                                <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                            </Border>
-                                            <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                                <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                            <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                                <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                        </StackPanel>
+                                        <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                                Margin="0,0,10,0" VerticalAlignment="Center"
+                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                                ToolTip.Tip="Glisser pour réordonner">
+                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                        </Border>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                             <Border Background="#172F5E" CornerRadius="5" Width="48" Height="22">
                                                 <TextBlock Text="RAM" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -931,21 +882,14 @@
                             <!-- SWAP -->
                             <Border x:Name="MetricCard_swap" Tag="swap" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#0C3D59" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="SWAP" Foreground="#FFFFFF" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -960,21 +904,14 @@
                             <Border x:Name="MetricCard_battery" Tag="battery" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7" IsVisible="{Binding IsLaptop}">
                                 <StackPanel Spacing="6">
                                     <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                    PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                    PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                    PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                    ToolTip.Tip="Glisser pour réordonner">
-                                                <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                            </Border>
-                                            <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                                <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                            <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                                <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                        </StackPanel>
+                                        <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                                Margin="0,0,10,0" VerticalAlignment="Center"
+                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                                ToolTip.Tip="Glisser pour réordonner">
+                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                        </Border>
                                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center" Margin="0,0,10,0">
                                             <Border Background="#523C0F" CornerRadius="5" Width="48" Height="22">
                                                 <TextBlock Text="BAT" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -1008,56 +945,63 @@
 
                             <!-- FPS -->
                             <Border x:Name="MetricCard_fps" Tag="fps" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
-                                <StackPanel Spacing="5">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                    PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                    PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                    PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                    ToolTip.Tip="Glisser pour réordonner">
-                                                <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                            </Border>
-                                            <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                                <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                            <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                                <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                            </Button>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,10,0">
-                                            <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
-                                                <TextBlock Text="FPS" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                            </Border>
-                                            <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
-                                            <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
-                                                <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
-                                            </Border>
-                                        </StackPanel>
-                                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
-                                    </Grid>
-                                    <CheckBox Margin="32,2,0,0" Content="{Binding Loc.MetricOnePercentLowFps}" IsChecked="{Binding ShowOnePercentLowFps}" IsVisible="{Binding ShowFps}" FontSize="11" Foreground="#D0D3E0" />
-                                </StackPanel>
+                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
+                                            <TextBlock Text="FPS" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Loc.MetricFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                            <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowFps}" OnContent="" OffContent="" />
+                                </Grid>
+                            </Border>
+
+                            <!-- 1% Low FPS -->
+                            <Border x:Name="MetricCard_low" Tag="low" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
+                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
+                                            <TextBlock Text="LOW" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="{Binding Loc.MetricOnePercentLowFps}" Foreground="#E0E0E0" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <Border Background="#26FF9F0A" BorderBrush="#66FF9F0A" BorderThickness="1" CornerRadius="4" Padding="5,1" VerticalAlignment="Center">
+                                            <TextBlock Text="Beta *" Foreground="#FF9F0A" FontSize="9" FontWeight="Bold" VerticalAlignment="Center" />
+                                        </Border>
+                                    </StackPanel>
+                                    <ToggleSwitch Grid.Column="2" IsChecked="{Binding ShowOnePercentLowFps}" OnContent="" OffContent="" />
+                                </Grid>
                             </Border>
 
                             <!-- Frametime -->
                             <Border x:Name="MetricCard_frametime" Tag="frametime" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="FT" Foreground="#FFFFFF" FontSize="10.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -1074,21 +1018,14 @@
                             <!-- Graphique Frametime -->
                             <Border x:Name="MetricCard_graph" Tag="graph" Classes="metric-card" Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="9" Padding="9,7">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="3" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <Border Background="Transparent" Width="22" Height="22" Cursor="SizeAll"
-                                                PointerPressed="OnMetricCardDragHandlePointerPressed"
-                                                PointerMoved="OnMetricCardDragHandlePointerMoved"
-                                                PointerReleased="OnMetricCardDragHandlePointerReleased"
-                                                ToolTip.Tip="Glisser pour réordonner">
-                                            <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="12" Height="12" Stretch="Uniform" VerticalAlignment="Center" />
-                                        </Border>
-                                        <Button Click="OnMetricMoveUpClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Monter">
-                                            <Path Data="M7 14l5-5 5 5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                        <Button Click="OnMetricMoveDownClick" Background="Transparent" BorderThickness="0" Padding="2,1" Margin="0" Cursor="Hand" ToolTip.Tip="Descendre">
-                                            <Path Data="M7 10l5 5 5-5z" Fill="#8A8D9F" Width="8" Height="8" Stretch="Uniform" />
-                                        </Button>
-                                    </StackPanel>
+                                    <Border Grid.Column="0" Background="Transparent" Width="24" Height="24" Cursor="SizeAll"
+                                            Margin="0,0,10,0" VerticalAlignment="Center"
+                                            PointerPressed="OnMetricCardDragHandlePointerPressed"
+                                            PointerMoved="OnMetricCardDragHandlePointerMoved"
+                                            PointerReleased="OnMetricCardDragHandlePointerReleased"
+                                            ToolTip.Tip="Glisser pour réordonner">
+                                        <Path Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" Fill="#6E7285" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center" />
+                                    </Border>
                                     <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" Margin="0,0,10,0">
                                         <Border Background="#0F4725" CornerRadius="5" Width="48" Height="22">
                                             <TextBlock Text="GRAPH" Foreground="#FFFFFF" FontSize="9.5" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />

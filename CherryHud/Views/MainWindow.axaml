@@ -331,23 +331,55 @@
                            FontWeight="Bold"
                            VerticalAlignment="Center" />
 
-                <!-- 1% Low FPS Column (in usage column position) -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Width="{Binding UsageColumnWidth}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,4,0" IsVisible="{Binding ShowOnePercentLowFps}">
-                    <TextBlock Text="LOW"
-                               Foreground="#88FFFFFF"
-                               FontSize="{Binding UnitFontSize}"
-                               FontWeight="SemiBold"
-                               VerticalAlignment="Center"
-                               Margin="0,0,2,0" />
-                    <TextBlock Text="{Binding OnePercentLowFpsValue}"
+                <Panel Grid.Column="2" Width="{Binding UsageColumnWidth}" />
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Width="{Binding ValueColumnWidth}" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding FpsValue}"
                                Foreground="{Binding FpsStatusColor}"
                                FontSize="{Binding ValueFontSize}"
                                FontWeight="Bold"
                                VerticalAlignment="Bottom" />
+                    <TextBlock Text="{Binding FpsUnit}"
+                               Foreground="{Binding FpsStatusColor}"
+                               FontSize="{Binding UnitFontSize}"
+                               FontWeight="Heavy"
+                               VerticalAlignment="Top"
+                               Margin="{Binding UnitMargin}" />
                 </StackPanel>
 
+                <Button Grid.Column="0" Grid.ColumnSpan="4"
+                        Command="{Binding RequestPermissionCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Margin="0"
+                        Cursor="Hand"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                    </Button.Styles>
+                </Button>
+            </Grid>
+
+            <!-- 1% Low FPS Row -->
+            <Grid x:Name="NormalRow_low" Grid.Row="10" ColumnDefinitions="Auto,*,Auto,Auto" VerticalAlignment="Center" Margin="{Binding RowMargin}" IsVisible="{Binding ShowOnePercentLowFps}">
+                <TextBlock Grid.Column="0"
+                           Text="LOW"
+                           Foreground="{Binding FpsBadgeFg}"
+                           FontSize="{Binding BadgeFontSize}"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center" />
+
+                <Panel Grid.Column="2" Width="{Binding UsageColumnWidth}" />
+
                 <StackPanel Grid.Column="3" Orientation="Horizontal" Width="{Binding ValueColumnWidth}" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding FpsValue}"
+                    <TextBlock Text="{Binding OnePercentLowFpsValue}"
                                Foreground="{Binding FpsStatusColor}"
                                FontSize="{Binding ValueFontSize}"
                                FontWeight="Bold"
@@ -712,13 +744,46 @@
                                        FontWeight="Heavy"
                                        VerticalAlignment="Top"
                                        Margin="{Binding UnitMargin}" />
-                            <TextBlock Text="{Binding OnePercentLowFpsDisplay}"
-                                       Foreground="#AAFFFFFF"
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+
+                <!-- 1% Low FPS (Horizontal) -->
+                <Button x:Name="CompactItem_low" Command="{Binding RequestPermissionCommand}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Padding="0"
+                        Margin="0"
+                        Cursor="Hand"
+                        VerticalAlignment="Center"
+                        IsVisible="{Binding ShowOnePercentLowFps}">
+                    <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                    </Button.Styles>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="6">
+                        <TextBlock Text="LOW"
+                                   Foreground="{Binding FpsBadgeFg}"
+                                   FontSize="{Binding BadgeFontSize}"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Center" />
+
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding OnePercentLowFpsValue}"
+                                       Foreground="{Binding FpsStatusColor}"
                                        FontSize="{Binding ValueFontSize}"
-                                       FontWeight="Medium"
-                                       VerticalAlignment="Bottom"
-                                       Margin="4,0,0,0"
-                                       IsVisible="{Binding ShowOnePercentLowFps}" />
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Bottom" />
+                            <TextBlock Text="{Binding FpsUnit}"
+                                       Foreground="{Binding FpsStatusColor}"
+                                       FontSize="{Binding UnitFontSize}"
+                                       FontWeight="Heavy"
+                                       VerticalAlignment="Top"
+                                       Margin="{Binding UnitMargin}" />
                         </StackPanel>
                     </StackPanel>
                 </Button>

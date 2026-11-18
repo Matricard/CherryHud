@@ -39,7 +39,7 @@ public class AppSettings
     
     public static readonly string[] DefaultMetricOrder =
     {
-        "soc", "thermal", "power", "cpu", "gpu", "vram", "ram", "swap", "battery", "fps", "frametime", "graph"
+        "soc", "thermal", "power", "cpu", "gpu", "vram", "ram", "swap", "battery", "fps", "low", "frametime", "graph"
     };
 
     public List<string> MetricOrder { get; set; } = new(DefaultMetricOrder);
