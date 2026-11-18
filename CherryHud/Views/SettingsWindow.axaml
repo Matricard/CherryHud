@@ -291,24 +291,15 @@
                                             TickFrequency="5"
                                             IsSnapToTickEnabled="True"
                                             Value="{Binding OverlayScalePercent}"
-                                            Width="120"
+                                            Width="140"
                                             VerticalAlignment="Center" />
                                     <TextBlock Text="{Binding OverlayScaleDisplay}"
                                                Foreground="#FFFFFF"
                                                FontSize="12"
                                                FontWeight="Bold"
-                                               Width="42"
+                                               Width="45"
                                                TextAlignment="Right"
                                                VerticalAlignment="Center" />
-                                    <Button Content="{Binding Loc.ScaleResetButton}"
-                                            Command="{Binding ResetOverlayScaleCommand}"
-                                            FontSize="10.5"
-                                            Padding="7,3"
-                                            Background="#20FFFFFF"
-                                            Foreground="#D0D3E0"
-                                            BorderThickness="0"
-                                            CornerRadius="6"
-                                            VerticalAlignment="Center" />
                                 </StackPanel>
                             </Grid>
                         </Border>
