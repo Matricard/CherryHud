@@ -171,6 +171,26 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OnSuggestionPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is string appName && !string.IsNullOrWhiteSpace(appName))
+        {
+            var acBox = this.FindControl<AutoCompleteBox>("AppNameAutoCompleteBox");
+            if (acBox != null)
+            {
+                acBox.Text = appName;
+                acBox.IsDropDownOpen = false;
+            }
+
+            if (DataContext is ViewModels.SettingsViewModel vm)
+            {
+                vm.NewAppNameInput = appName;
+            }
+
+            e.Handled = true;
+        }
+    }
+
     private void Close_OnClick(object? sender, RoutedEventArgs e)
     {
         Close();

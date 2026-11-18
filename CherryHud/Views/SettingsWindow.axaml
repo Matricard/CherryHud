@@ -426,14 +426,24 @@
                                                          Padding="8,5,26,5">
                                             <AutoCompleteBox.ItemTemplate>
                                                 <DataTemplate x:DataType="x:String">
-                                                    <StackPanel Orientation="Horizontal"
-                                                                Spacing="8"
-                                                                VerticalAlignment="Center"
-                                                                Margin="4,3"
-                                                                IsHitTestVisible="False">
-                                                        <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
-                                                        <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
-                                                    </StackPanel>
+                                                    <Border Background="Transparent"
+                                                            Padding="8,5"
+                                                            HorizontalAlignment="Stretch"
+                                                            Cursor="Hand"
+                                                            PointerPressed="OnSuggestionPointerPressed">
+                                                        <Border.Styles>
+                                                            <Style Selector="Border:pointerover">
+                                                                <Setter Property="Background" Value="#25FFFFFF" />
+                                                            </Style>
+                                                        </Border.Styles>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                    Spacing="8"
+                                                                    VerticalAlignment="Center"
+                                                                    IsHitTestVisible="False">
+                                                            <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
+                                                            <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
+                                                        </StackPanel>
+                                                    </Border>
                                                 </DataTemplate>
                                             </AutoCompleteBox.ItemTemplate>
                                         </AutoCompleteBox>
