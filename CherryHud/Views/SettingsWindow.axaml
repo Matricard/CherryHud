@@ -449,38 +449,6 @@
                                             Padding="10,5"
                                             CornerRadius="6" />
                                 </Grid>
-
-                                <!-- Raccourci app actuelle détectée -->
-                                <Border Background="#12FFFFFF"
-                                        CornerRadius="6"
-                                        Padding="10,6"
-                                        IsVisible="{Binding HasDetectedCurrentApp}">
-                                    <Grid ColumnDefinitions="*,Auto,Auto">
-                                        <TextBlock Text="{Binding DetectedCurrentAppDisplay}"
-                                                   Foreground="#CCD0E0"
-                                                   FontSize="11"
-                                                   VerticalAlignment="Center" />
-                                        <Button Grid.Column="1"
-                                                Content="{Binding Loc.AddCurrentToBlacklistButton}"
-                                                Command="{Binding AddCurrentAppToBlacklistCommand}"
-                                                Background="#20F28B82"
-                                                Foreground="#FFA5A5"
-                                                FontSize="10"
-                                                FontWeight="Medium"
-                                                Padding="8,3"
-                                                CornerRadius="4"
-                                                Margin="8,0,6,0" />
-                                        <Button Grid.Column="2"
-                                                Content="{Binding Loc.AddCurrentToWhitelistButton}"
-                                                Command="{Binding AddCurrentAppToWhitelistCommand}"
-                                                Background="#207ED884"
-                                                Foreground="#9BEAA1"
-                                                FontSize="10"
-                                                FontWeight="Medium"
-                                                Padding="8,3"
-                                                CornerRadius="4" />
-                                    </Grid>
-                                </Border>
                             </StackPanel>
                         </Border>
 

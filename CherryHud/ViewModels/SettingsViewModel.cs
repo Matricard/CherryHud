@@ -29,22 +29,6 @@ public partial class SettingsViewModel : ViewModelBase
     [ObservableProperty]
     private string _newAppNameInput = "";
 
-    public string DetectedCurrentAppName
-    {
-        get
-        {
-            string name = _mainViewModel?.TrackedAppName ?? "";
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                name = _fpsService.GetTrackedAppName();
-            }
-            return !string.IsNullOrWhiteSpace(name) && name != "None" ? name : "";
-        }
-    }
-
-    public bool HasDetectedCurrentApp => !string.IsNullOrWhiteSpace(DetectedCurrentAppName);
-    public string DetectedCurrentAppDisplay => string.Format(Loc.CurrentAppDetectedFormat, DetectedCurrentAppName);
-
     public void UpdatePositionOptions()
     {
         int prev = SelectedPositionIndex;
@@ -507,44 +491,6 @@ public partial class SettingsViewModel : ViewModelBase
             WhitelistedApps.Add(trimmed);
         }
         NewAppNameInput = "";
-        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
-        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
-        _settingsService.Save();
-        _fpsService.SetBlacklist(BlacklistedApps);
-        _fpsService.SetWhitelist(WhitelistedApps);
-        OnPropertyChanged(nameof(HasBlacklistedApps));
-        OnPropertyChanged(nameof(HasWhitelistedApps));
-    }
-
-    [RelayCommand]
-    public void AddCurrentAppToBlacklist()
-    {
-        string current = DetectedCurrentAppName;
-        if (string.IsNullOrWhiteSpace(current)) return;
-        WhitelistedApps.Remove(current);
-        if (!BlacklistedApps.Contains(current))
-        {
-            BlacklistedApps.Add(current);
-        }
-        _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
-        _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
-        _settingsService.Save();
-        _fpsService.SetBlacklist(BlacklistedApps);
-        _fpsService.SetWhitelist(WhitelistedApps);
-        OnPropertyChanged(nameof(HasBlacklistedApps));
-        OnPropertyChanged(nameof(HasWhitelistedApps));
-    }
-
-    [RelayCommand]
-    public void AddCurrentAppToWhitelist()
-    {
-        string current = DetectedCurrentAppName;
-        if (string.IsNullOrWhiteSpace(current)) return;
-        BlacklistedApps.Remove(current);
-        if (!WhitelistedApps.Contains(current))
-        {
-            WhitelistedApps.Add(current);
-        }
         _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
         _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
         _settingsService.Save();
