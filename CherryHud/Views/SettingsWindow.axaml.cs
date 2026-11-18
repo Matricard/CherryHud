@@ -117,55 +117,14 @@ public partial class SettingsWindow : Window
             }
         }, RoutingStrategies.Bubble);
 
-        var acBox = this.FindControl<AutoCompleteBox>("AppNameAutoCompleteBox");
-        var openBtn = this.FindControl<Button>("OpenDropdownButton");
-
-        if (acBox != null)
+        var txtBox = this.FindControl<TextBox>("AppNameTextBox");
+        if (txtBox != null)
         {
-            acBox.GotFocus += (_, _) =>
+            txtBox.GotFocus += (_, _) =>
             {
                 if (DataContext is ViewModels.SettingsViewModel vm)
                 {
                     vm.RefreshRunningApps();
-                }
-            };
-
-            acBox.PointerPressed += (_, _) =>
-            {
-                if (string.IsNullOrEmpty(acBox.Text))
-                {
-                    if (DataContext is ViewModels.SettingsViewModel vm)
-                    {
-                        vm.RefreshRunningApps();
-                    }
-                    acBox.IsDropDownOpen = true;
-                }
-            };
-
-            acBox.SelectionChanged += (_, e) =>
-            {
-                if (e.AddedItems.Count > 0 && e.AddedItems[0] is string selected && !string.IsNullOrWhiteSpace(selected))
-                {
-                    if (DataContext is ViewModels.SettingsViewModel vm)
-                    {
-                        vm.NewAppNameInput = selected;
-                    }
-                }
-            };
-        }
-
-        if (openBtn != null && acBox != null)
-        {
-            openBtn.Click += (_, _) =>
-            {
-                if (DataContext is ViewModels.SettingsViewModel vm)
-                {
-                    vm.RefreshRunningApps();
-                }
-                acBox.IsDropDownOpen = !acBox.IsDropDownOpen;
-                if (acBox.IsDropDownOpen)
-                {
-                    acBox.Focus();
                 }
             };
         }
@@ -173,21 +132,30 @@ public partial class SettingsWindow : Window
 
     private void OnSuggestionPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (sender is Border border && border.DataContext is string appName && !string.IsNullOrWhiteSpace(appName))
+        if (sender is Control ctrl && ctrl.DataContext is string appName && !string.IsNullOrWhiteSpace(appName))
         {
-            var acBox = this.FindControl<AutoCompleteBox>("AppNameAutoCompleteBox");
-            if (acBox != null)
-            {
-                acBox.Text = appName;
-                acBox.IsDropDownOpen = false;
-            }
-
             if (DataContext is ViewModels.SettingsViewModel vm)
             {
-                vm.NewAppNameInput = appName;
+                vm.SelectRunningApp(appName);
             }
 
+            var txtBox = this.FindControl<TextBox>("AppNameTextBox");
+            txtBox?.Focus();
             e.Handled = true;
+        }
+    }
+
+    private void OnSuggestionButtonClick(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control ctrl && ctrl.DataContext is string appName && !string.IsNullOrWhiteSpace(appName))
+        {
+            if (DataContext is ViewModels.SettingsViewModel vm)
+            {
+                vm.SelectRunningApp(appName);
+            }
+
+            var txtBox = this.FindControl<TextBox>("AppNameTextBox");
+            txtBox?.Focus();
         }
     }
 

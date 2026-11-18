@@ -363,4 +363,55 @@ public class AutoGameModeTests
         Assert.Contains("Spotify", settingsVm.WhitelistedApps);
         Assert.Empty(settingsVm.NewAppNameInput);
     }
+
+    [Fact]
+    public void SettingsViewModel_FilteringAndSelectingRunningApp_WorksProperly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Type to search "Chrome"
+        settingsVm.NewAppNameInput = "Chrome";
+        Assert.True(settingsVm.IsSuggestionsOpen);
+        Assert.Single(settingsVm.FilteredRunningApps);
+        Assert.Equal("Google Chrome", settingsVm.FilteredRunningApps[0]);
+
+        // User clicks / selects "Google Chrome"
+        settingsVm.SelectRunningAppCommand.Execute("Google Chrome");
+        Assert.Equal("Google Chrome", settingsVm.NewAppNameInput);
+        Assert.False(settingsVm.IsSuggestionsOpen);
+
+        // Add to blacklist
+        settingsVm.AddCustomBlacklistCommand.Execute(null);
+        Assert.Contains("Google Chrome", settingsVm.BlacklistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
+
+    [Fact]
+    public void SettingsViewModel_FilteringAndSelectingRunningApp_Whitelist_WorksProperly()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        // Toggle suggestions directly (chevron button)
+        settingsVm.ToggleSuggestionsCommand.Execute(null);
+        Assert.True(settingsVm.IsSuggestionsOpen);
+        Assert.NotEmpty(settingsVm.FilteredRunningApps);
+
+        // User selects "Google Chrome"
+        settingsVm.SelectRunningAppCommand.Execute("Google Chrome");
+        Assert.Equal("Google Chrome", settingsVm.NewAppNameInput);
+        Assert.False(settingsVm.IsSuggestionsOpen);
+
+        // Add to whitelist
+        settingsVm.AddCustomWhitelistCommand.Execute(null);
+        Assert.Contains("Google Chrome", settingsVm.WhitelistedApps);
+        Assert.Empty(settingsVm.NewAppNameInput);
+    }
 }

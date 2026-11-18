@@ -21,13 +21,25 @@ public partial class SettingsViewModel : ViewModelBase
     public ObservableCollection<string> PositionOptions { get; } = new();
     public ObservableCollection<string> ThemeOptions { get; } = new();
     public ObservableCollection<string> RunningAppNames { get; } = new();
+    public ObservableCollection<string> FilteredRunningApps { get; } = new();
     public ObservableCollection<string> BlacklistedApps { get; } = new();
     public bool HasBlacklistedApps => BlacklistedApps.Count > 0;
     public ObservableCollection<string> WhitelistedApps { get; } = new();
     public bool HasWhitelistedApps => WhitelistedApps.Count > 0;
 
     [ObservableProperty]
+    private bool _isSuggestionsOpen;
+
+    [ObservableProperty]
     private string _newAppNameInput = "";
+
+    private bool _isSelectingSuggestion;
+
+    partial void OnNewAppNameInputChanged(string value)
+    {
+        if (_isSelectingSuggestion) return;
+        FilterRunningApps(value, openPopupIfMatches: true);
+    }
 
     public void UpdatePositionOptions()
     {
@@ -394,9 +406,60 @@ public partial class SettingsViewModel : ViewModelBase
             {
                 RunningAppNames.Add(app);
             }
+            FilterRunningApps(NewAppNameInput, openPopupIfMatches: false);
         }
         catch
         {
+        }
+    }
+
+    public void FilterRunningApps(string query, bool openPopupIfMatches = false)
+    {
+        FilteredRunningApps.Clear();
+        var trimmed = query?.Trim() ?? "";
+        var matches = string.IsNullOrWhiteSpace(trimmed)
+            ? (System.Collections.Generic.IEnumerable<string>)RunningAppNames
+            : RunningAppNames.Where(a => a.Contains(trimmed, StringComparison.OrdinalIgnoreCase));
+
+        foreach (var app in matches)
+        {
+            FilteredRunningApps.Add(app);
+        }
+
+        if (openPopupIfMatches)
+        {
+            IsSuggestionsOpen = !string.IsNullOrWhiteSpace(trimmed) && FilteredRunningApps.Count > 0;
+        }
+    }
+
+    [RelayCommand]
+    public void ToggleSuggestions()
+    {
+        RefreshRunningApps();
+        if (IsSuggestionsOpen)
+        {
+            IsSuggestionsOpen = false;
+        }
+        else
+        {
+            FilterRunningApps(NewAppNameInput, openPopupIfMatches: false);
+            IsSuggestionsOpen = FilteredRunningApps.Count > 0;
+        }
+    }
+
+    [RelayCommand]
+    public void SelectRunningApp(string appName)
+    {
+        if (string.IsNullOrWhiteSpace(appName)) return;
+        _isSelectingSuggestion = true;
+        try
+        {
+            NewAppNameInput = appName.Trim();
+            IsSuggestionsOpen = false;
+        }
+        finally
+        {
+            _isSelectingSuggestion = false;
         }
     }
 
@@ -471,6 +534,7 @@ public partial class SettingsViewModel : ViewModelBase
             BlacklistedApps.Add(trimmed);
         }
         NewAppNameInput = "";
+        IsSuggestionsOpen = false;
         _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
         _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
         _settingsService.Save();
@@ -491,6 +555,7 @@ public partial class SettingsViewModel : ViewModelBase
             WhitelistedApps.Add(trimmed);
         }
         NewAppNameInput = "";
+        IsSuggestionsOpen = false;
         _settingsService.Current.AutoModeBlacklist = BlacklistedApps.ToList();
         _settingsService.Current.AutoModeWhitelist = WhitelistedApps.ToList();
         _settingsService.Save();

@@ -410,44 +410,18 @@
                             <StackPanel Spacing="8">
                                 <Grid ColumnDefinitions="*,Auto,Auto">
                                     <Grid Grid.Column="0" Margin="0,0,8,0">
-                                        <AutoCompleteBox x:Name="AppNameAutoCompleteBox"
-                                                         ItemsSource="{Binding RunningAppNames}"
-                                                         Text="{Binding NewAppNameInput, Mode=TwoWay}"
-                                                         FilterMode="Contains"
-                                                         MinimumPrefixLength="0"
-                                                         MaxDropDownHeight="220"
-                                                         Watermark="{Binding Loc.AddAppPlaceholder}"
-                                                         FontSize="11"
-                                                         Background="#1AFFFFFF"
-                                                         Foreground="#FFFFFF"
-                                                         BorderBrush="#25FFFFFF"
-                                                         BorderThickness="1"
-                                                         CornerRadius="6"
-                                                         Padding="8,5,26,5">
-                                            <AutoCompleteBox.ItemTemplate>
-                                                <DataTemplate x:DataType="x:String">
-                                                    <Border Background="Transparent"
-                                                            Padding="8,5"
-                                                            HorizontalAlignment="Stretch"
-                                                            Cursor="Hand"
-                                                            PointerPressed="OnSuggestionPointerPressed">
-                                                        <Border.Styles>
-                                                            <Style Selector="Border:pointerover">
-                                                                <Setter Property="Background" Value="#25FFFFFF" />
-                                                            </Style>
-                                                        </Border.Styles>
-                                                        <StackPanel Orientation="Horizontal"
-                                                                    Spacing="8"
-                                                                    VerticalAlignment="Center"
-                                                                    IsHitTestVisible="False">
-                                                            <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
-                                                            <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
-                                                        </StackPanel>
-                                                    </Border>
-                                                </DataTemplate>
-                                            </AutoCompleteBox.ItemTemplate>
-                                        </AutoCompleteBox>
+                                        <TextBox x:Name="AppNameTextBox"
+                                                 Text="{Binding NewAppNameInput, Mode=TwoWay}"
+                                                 Watermark="{Binding Loc.AddAppPlaceholder}"
+                                                 FontSize="11"
+                                                 Background="#1AFFFFFF"
+                                                 Foreground="#FFFFFF"
+                                                 BorderBrush="#25FFFFFF"
+                                                 BorderThickness="1"
+                                                 CornerRadius="6"
+                                                 Padding="8,5,26,5" />
                                         <Button x:Name="OpenDropdownButton"
+                                                Command="{Binding ToggleSuggestionsCommand}"
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 Background="Transparent"
@@ -461,6 +435,48 @@
                                                   Width="10" Height="10"
                                                   Stretch="Uniform" />
                                         </Button>
+
+                                        <Popup PlacementTarget="{Binding #AppNameTextBox}"
+                                               Placement="Bottom"
+                                               IsLightDismissEnabled="True"
+                                               MinWidth="{Binding #AppNameTextBox.Bounds.Width}"
+                                               MaxHeight="220"
+                                               IsOpen="{Binding IsSuggestionsOpen, Mode=TwoWay}">
+                                            <Border Background="#1C1E2A"
+                                                    BorderBrush="#383D54"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6"
+                                                    Padding="3"
+                                                    BoxShadow="0 4 16 #80000000">
+                                                <ScrollViewer MaxHeight="210">
+                                                    <ItemsControl ItemsSource="{Binding FilteredRunningApps}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="x:String">
+                                                                <Button HorizontalAlignment="Stretch"
+                                                                        HorizontalContentAlignment="Left"
+                                                                        Background="Transparent"
+                                                                        BorderThickness="0"
+                                                                        Padding="8,6"
+                                                                        CornerRadius="4"
+                                                                        Cursor="Hand"
+                                                                        PointerPressed="OnSuggestionPointerPressed"
+                                                                        Click="OnSuggestionButtonClick">
+                                                                    <Button.Styles>
+                                                                        <Style Selector="Button:pointerover /template/ ContentPresenter">
+                                                                            <Setter Property="Background" Value="#2AFFFFFF" />
+                                                                        </Style>
+                                                                    </Button.Styles>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center" IsHitTestVisible="False">
+                                                                        <Ellipse Width="6" Height="6" Fill="#7ED884" VerticalAlignment="Center" />
+                                                                        <TextBlock Text="{Binding}" Foreground="#FFFFFF" FontSize="11" VerticalAlignment="Center" />
+                                                                    </StackPanel>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </Border>
+                                        </Popup>
                                     </Grid>
                                     <Button Grid.Column="1"
                                             Content="{Binding Loc.AddToBlacklistButton}"
