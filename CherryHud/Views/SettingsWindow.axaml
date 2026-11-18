@@ -107,6 +107,19 @@
                 <Style Selector="TabItem:selected:pointerover /template/ Border#PART_LayoutRoot">
                     <Setter Property="Background" Value="#383C4E" />
                 </Style>
+
+                <!-- Disabled tab -->
+                <Style Selector="TabItem:disabled">
+                    <Setter Property="Opacity" Value="0.35" />
+                    <Setter Property="Cursor" Value="Arrow" />
+                </Style>
+                <Style Selector="TabItem:disabled /template/ Border#PART_LayoutRoot">
+                    <Setter Property="Background" Value="Transparent" />
+                    <Setter Property="BorderBrush" Value="Transparent" />
+                </Style>
+                <Style Selector="TabItem:disabled:pointerover /template/ Border#PART_LayoutRoot">
+                    <Setter Property="Background" Value="Transparent" />
+                </Style>
             </TabControl.Styles>
 
             <!-- Onglet 1 : Général -->
@@ -273,6 +286,27 @@
                             </Grid>
                         </Border>
 
+                        <!-- Position Card -->
+                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
+                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
+                                    <TextBlock Text="{Binding Loc.PositionTitle}"
+                                               Foreground="#FFFFFF"
+                                               FontSize="12"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Loc.PositionSubtitle}"
+                                               Foreground="#8A8D9F"
+                                               FontSize="11"
+                                               TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ComboBox Grid.Column="1"
+                                          ItemsSource="{Binding PositionOptions}"
+                                          SelectedIndex="{Binding SelectedPositionIndex}"
+                                          Width="145"
+                                          FontSize="11.5" />
+                            </Grid>
+                        </Border>
+
                         <!-- Scale Card (Grossissement) -->
                         <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
                             <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
@@ -301,27 +335,6 @@
                                                TextAlignment="Right"
                                                VerticalAlignment="Center" />
                                 </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <!-- Position Card -->
-                        <Border Background="#24141724" BorderBrush="#1AFFFFFF" BorderThickness="1" CornerRadius="10" Padding="13,9">
-                            <Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding Loc.PositionTitle}"
-                                               Foreground="#FFFFFF"
-                                               FontSize="12"
-                                               FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Loc.PositionSubtitle}"
-                                               Foreground="#8A8D9F"
-                                               FontSize="11"
-                                               TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ComboBox Grid.Column="1"
-                                          ItemsSource="{Binding PositionOptions}"
-                                          SelectedIndex="{Binding SelectedPositionIndex}"
-                                          Width="145"
-                                          FontSize="11.5" />
                             </Grid>
                         </Border>
 
@@ -367,9 +380,13 @@
             </TabItem>
 
             <!-- Onglet 3 : Applications -->
-            <TabItem>
+            <TabItem IsEnabled="{Binding AutoGameMode}"
+                     ToolTip.Tip="{Binding ApplicationsTabTooltip}"
+                     ToolTip.ShowOnDisabled="True">
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center"
+                                ToolTip.Tip="{Binding ApplicationsTabTooltip}"
+                                ToolTip.ShowOnDisabled="True">
                         <Path Width="15" Height="15"
                               Stretch="Uniform"
                               Fill="#FF7597"

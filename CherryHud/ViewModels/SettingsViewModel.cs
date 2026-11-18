@@ -169,6 +169,7 @@ public partial class SettingsViewModel : ViewModelBase
 
     public bool ShowBatterySubOptions => IsLaptop && ShowBattery;
     public string BatteryThresholdDisplay => $"≥ {BatteryHideThresholdPercent} %";
+    public string? ApplicationsTabTooltip => AutoGameMode ? null : Loc.ApplicationsTabDisabledTooltip;
 
     [ObservableProperty]
     private bool _isLaptop;
@@ -391,6 +392,11 @@ public partial class SettingsViewModel : ViewModelBase
     {
         if (value == 2)
         {
+            if (!AutoGameMode)
+            {
+                SelectedTabIndex = 0;
+                return;
+            }
             RefreshRunningApps();
         }
     }
@@ -619,6 +625,7 @@ public partial class SettingsViewModel : ViewModelBase
         CheckPermissionStatus();
         RefreshUpdateCardText();
         OnPropertyChanged(nameof(Loc));
+        OnPropertyChanged(nameof(ApplicationsTabTooltip));
     }
 
     partial void OnAutoGameModeChanged(bool value)
@@ -629,6 +636,11 @@ public partial class SettingsViewModel : ViewModelBase
         {
             _mainViewModel.SetAutoGameMode(value);
         }
+        if (!value && SelectedTabIndex == 2)
+        {
+            SelectedTabIndex = 0;
+        }
+        OnPropertyChanged(nameof(ApplicationsTabTooltip));
     }
 
     partial void OnLaunchAtLoginChanged(bool value)

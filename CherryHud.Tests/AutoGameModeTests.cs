@@ -414,4 +414,36 @@ public class AutoGameModeTests
         Assert.Contains("Google Chrome", settingsVm.WhitelistedApps);
         Assert.Empty(settingsVm.NewAppNameInput);
     }
+
+    [Fact]
+    public void SettingsViewModel_WhenAutoGameModeDisabled_ApplicationsTabDisabledAndRedirected()
+    {
+        var fps = new MockFpsService { IsGameActive = false };
+        var settings = new MockSettingsService();
+
+        using var mainVm = new MainWindowViewModel(new MockTempService(), fps, new MockMetricsService(), settings);
+        var settingsVm = new SettingsViewModel(settings, mainVm, fps);
+
+        Assert.True(settingsVm.AutoGameMode);
+        Assert.Null(settingsVm.ApplicationsTabTooltip);
+
+        // Can navigate to Applications tab (index 2) when AutoGameMode is true
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
+
+        // Disable AutoGameMode -> automatically redirects away from Applications tab (to index 0)
+        settingsVm.AutoGameMode = false;
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+        Assert.Equal(LocalizationService.Instance.ApplicationsTabDisabledTooltip, settingsVm.ApplicationsTabTooltip);
+
+        // Attempting to select Applications tab (index 2) when disabled redirects back to 0
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(0, settingsVm.SelectedTabIndex);
+
+        // Re-enabling AutoGameMode allows navigation again
+        settingsVm.AutoGameMode = true;
+        Assert.Null(settingsVm.ApplicationsTabTooltip);
+        settingsVm.SelectedTabIndex = 2;
+        Assert.Equal(2, settingsVm.SelectedTabIndex);
+    }
 }

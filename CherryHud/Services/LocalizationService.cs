@@ -41,6 +41,7 @@ public class LocalizationService : ObservableObject
     public string TabGeneral => IsFrench ? "Général" : "General";
     public string TabHud => "HUD";
     public string TabApplications => IsFrench ? "Applications" : "Applications";
+    public string ApplicationsTabDisabledTooltip => IsFrench ? "Le Mode Auto doit être activé pour gérer les applications" : "Auto Mode must be enabled to manage applications";
     public string TabMetrics => IsFrench ? "Métriques" : "Metrics";
     public string TabAbout => IsFrench ? "À propos" : "About";
 
@@ -57,7 +58,7 @@ public class LocalizationService : ObservableObject
     public string LaunchAtLoginSubtitle => IsFrench ? "Ouvrir CherryHud automatiquement à l'ouverture du Mac" : "Automatically open CherryHud when your Mac starts up";
 
     // Position Card
-    public string PositionTitle => IsFrench ? "Emplacement de l'overlay" : "Overlay Position";
+    public string PositionTitle => IsFrench ? "Position" : "Position";
     public string PositionSubtitle => IsFrench ? "Coin de l'écran où ancrer le HUD" : "Screen corner where the HUD is anchored";
     public string PositionTopLeft => IsFrench ? "Haut Gauche" : "Top Left";
     public string PositionTopRight => IsFrench ? "Haut Droite" : "Top Right";
@@ -65,22 +66,22 @@ public class LocalizationService : ObservableObject
     public string PositionBottomRight => IsFrench ? "Bas Droite" : "Bottom Right";
     public string PositionCustom => IsFrench ? "Personnalisé" : "Custom";
     public string AutoTrackGameWindowTitle => IsFrench ? "Suivi de la fenêtre de jeu" : "Game Window Auto-Tracking";
-    public string AutoTrackGameWindowSubtitle => IsFrench ? "Ancre l'overlay directement dans le coin du jeu lorsqu'il est en mode fenêtré" : "Anchor overlay inside the game window's corner when running windowed";
+    public string AutoTrackGameWindowSubtitle => IsFrench ? "Ancre le HUD directement dans le coin du jeu lorsqu'il est en mode fenêtré" : "Anchor HUD inside the game window's corner when running windowed";
 
     // Theme Card
-    public string ThemeTitle => IsFrench ? "Thème de l'overlay" : "Overlay Theme";
+    public string ThemeTitle => IsFrench ? "Thème" : "Theme";
     public string ThemeSubtitle => IsFrench ? "Choisissez la densité d'affichage du HUD" : "Choose HUD display density";
     public string ThemeNormal => IsFrench ? "Normal" : "Normal";
     public string ThemeCompact => IsFrench ? "Compact" : "Compact";
 
     // Scale Card
-    public string ScaleTitle => IsFrench ? "Échelle du HUD" : "HUD Scale";
-    public string ScaleSubtitle => IsFrench ? "Ajustez la taille d'affichage de l'overlay (grossissement)" : "Adjust overlay display size and magnification";
+    public string ScaleTitle => IsFrench ? "Échelle" : "Scale";
+    public string ScaleSubtitle => IsFrench ? "Ajustez la taille d'affichage (grossissement)" : "Adjust display size and magnification";
     public string ScaleResetButton => IsFrench ? "100%" : "100%";
 
     // Drag & Drop Card
-    public string AllowDragTitle => IsFrench ? "Glisser-déposer de l'overlay" : "Overlay Drag & Drop";
-    public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre de l'overlay à la souris" : "Allow moving the overlay freely with the mouse";
+    public string AllowDragTitle => IsFrench ? "Glisser-déposer" : "Drag & Drop";
+    public string AllowDragSubtitle => IsFrench ? "Autoriser le déplacement libre à la souris" : "Allow moving freely with the mouse";
 
     // Metrics
     public string MetricSocTemp => IsFrench ? "Température moyenne du processeur (CPU + GPU)" : "Processor average temperature (CPU + GPU)";
