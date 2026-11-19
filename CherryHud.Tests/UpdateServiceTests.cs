@@ -96,4 +96,42 @@ public class UpdateServiceTests
         string iconPath = System.IO.Path.Combine("..", "CherryHud", "Assets", "update-icon.png");
         Assert.True(System.IO.File.Exists(iconPath) || System.IO.File.Exists("CherryHud/Assets/update-icon.png") || System.IO.File.Exists("Assets/update-icon.png"));
     }
+
+    [Fact]
+    public void TrayIconUpdateAsset_Exists()
+    {
+        string iconPath = System.IO.Path.Combine("..", "CherryHud", "Assets", "tray-icon-update.png");
+        Assert.True(System.IO.File.Exists(iconPath) || System.IO.File.Exists("CherryHud/Assets/tray-icon-update.png") || System.IO.File.Exists("Assets/tray-icon-update.png"));
+    }
+
+    [Fact]
+    public void UpdateService_StateTogglesAvailability()
+    {
+        bool wasNotified = false;
+        bool lastState = false;
+        System.Action<bool> handler = isAvailable =>
+        {
+            wasNotified = true;
+            lastState = isAvailable;
+        };
+
+        UpdateService.UpdateAvailabilityChanged += handler;
+        try
+        {
+            UpdateService.SetUpdateAvailable(true, "9.9.9");
+            Assert.True(UpdateService.IsUpdateAvailable);
+            Assert.True(wasNotified);
+            Assert.True(lastState);
+
+            wasNotified = false;
+            UpdateService.SetUpdateAvailable(false, "1.0.2");
+            Assert.False(UpdateService.IsUpdateAvailable);
+            Assert.True(wasNotified);
+            Assert.False(lastState);
+        }
+        finally
+        {
+            UpdateService.UpdateAvailabilityChanged -= handler;
+        }
+    }
 }

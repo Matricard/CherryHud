@@ -14,6 +14,9 @@ namespace CherryHud;
 
 public partial class App : Application
 {
+    private TrayIcon? _trayIcon;
+    private WindowIcon? _defaultTrayIcon;
+    private WindowIcon? _updateTrayIcon;
     private NativeMenuItem? _toggleVisibilityMenuItem;
     private NativeMenuItem? _autoModeMenuItem;
     private NativeMenuItem? _settingsMenuItem;
@@ -82,25 +85,30 @@ public partial class App : Application
     {
         _mainViewModel = vm;
         var icons = TrayIcon.GetIcons(this);
-        if (icons != null && icons.Count > 0 && icons[0].Menu is NativeMenu menu)
+        if (icons != null && icons.Count > 0)
         {
-            if (menu.Items.Count >= 7)
+            _trayIcon = icons[0];
+            LoadTrayIcons();
+            if (_trayIcon.Menu is NativeMenu menu)
             {
-                _toggleVisibilityMenuItem = menu.Items[0] as NativeMenuItem;
-                _autoModeMenuItem = menu.Items[1] as NativeMenuItem;
-                _settingsMenuItem = menu.Items[3] as NativeMenuItem;
-                _updateMenuItem = menu.Items[4] as NativeMenuItem;
-                _quitMenuItem = menu.Items[6] as NativeMenuItem;
-            }
+                if (menu.Items.Count >= 7)
+                {
+                    _toggleVisibilityMenuItem = menu.Items[0] as NativeMenuItem;
+                    _autoModeMenuItem = menu.Items[1] as NativeMenuItem;
+                    _settingsMenuItem = menu.Items[3] as NativeMenuItem;
+                    _updateMenuItem = menu.Items[4] as NativeMenuItem;
+                    _quitMenuItem = menu.Items[6] as NativeMenuItem;
+                }
 
-            // Sync menu state right before menu opens on macOS
-            menu.NeedsUpdate += (_, _) =>
-            {
-                UpdateAutoModeMenuItem(vm.IsAutoModeActive);
-                UpdateVisibilityMenuItem(vm.IsOverlayVisible);
-                UpdateTrayMenuLanguage();
-                UpdateTrayUpdateItem();
-            };
+                // Sync menu state right before menu opens on macOS
+                menu.NeedsUpdate += (_, _) =>
+                {
+                    UpdateAutoModeMenuItem(vm.IsAutoModeActive);
+                    UpdateVisibilityMenuItem(vm.IsOverlayVisible);
+                    UpdateTrayMenuLanguage();
+                    UpdateTrayUpdateItem();
+                };
+            }
         }
 
         vm.PropertyChanged += (_, e) =>
@@ -141,6 +149,35 @@ public partial class App : Application
         UpdateTrayUpdateItem();
     }
 
+    private void LoadTrayIcons()
+    {
+        _defaultTrayIcon ??= _trayIcon?.Icon;
+        if (_defaultTrayIcon == null)
+        {
+            try
+            {
+                var defaultUri = new Uri("avares://CherryHud/Assets/tray-icon.png");
+                if (Avalonia.Platform.AssetLoader.Exists(defaultUri))
+                {
+                    using var stream = Avalonia.Platform.AssetLoader.Open(defaultUri);
+                    _defaultTrayIcon = new WindowIcon(stream);
+                }
+            }
+            catch { }
+        }
+
+        try
+        {
+            var updateUri = new Uri("avares://CherryHud/Assets/tray-icon-update.png");
+            if (Avalonia.Platform.AssetLoader.Exists(updateUri))
+            {
+                using var stream = Avalonia.Platform.AssetLoader.Open(updateUri);
+                _updateTrayIcon = new WindowIcon(stream);
+            }
+        }
+        catch { }
+    }
+
     private void UpdateVisibilityMenuItem(bool isVisible)
     {
         if (_toggleVisibilityMenuItem != null)
@@ -166,9 +203,27 @@ public partial class App : Application
 
     private void UpdateTrayUpdateItem()
     {
+        bool isUpdate = UpdateService.IsUpdateAvailable;
+
+        if (_trayIcon != null)
+        {
+            if (isUpdate && _updateTrayIcon != null)
+            {
+                MacOSProperties.SetIsTemplateIcon(_trayIcon, false);
+                _trayIcon.Icon = _updateTrayIcon;
+                _trayIcon.ToolTipText = $"CherryHud ({LocalizationService.Instance.TrayUpdate})";
+            }
+            else if (_defaultTrayIcon != null)
+            {
+                MacOSProperties.SetIsTemplateIcon(_trayIcon, true);
+                _trayIcon.Icon = _defaultTrayIcon;
+                _trayIcon.ToolTipText = "CherryHud";
+            }
+        }
+
         if (_updateMenuItem != null)
         {
-            _updateMenuItem.IsVisible = UpdateService.IsUpdateAvailable;
+            _updateMenuItem.IsVisible = isUpdate;
             _updateMenuItem.Header = LocalizationService.Instance.TrayUpdate;
             if (_updateMenuItem.Icon == null)
             {
